@@ -122,7 +122,7 @@ Summary:
 - GHCR image publish: `.github/workflows/publish-ghcr.yml`
 - Supply-chain SBOM/attestation baseline: `.github/workflows/supply-chain.yml`
 
-## 10) Docs index
+## 9) Docs index
 - Contributor guide: `docs/CONTRIBUTING.md`
 - Plugin authoring: `docs/adding-a-plugin.md`
 - Connector authoring: `docs/adding-a-connector.md`
@@ -132,7 +132,7 @@ Summary:
 - Architecture plan usage: `docs/how-to-use-architecture-plan.md`
 - Roadmap status: `docs/roadmap-gap-analysis.md`
 
-## 11) Visual preview
+## 10) Visual preview
 
 ![OpenCNAPP architecture preview](raw%20cnapp%20idea/opencnapp_architecture.png)
 
