@@ -3,25 +3,23 @@ set -euo pipefail
 
 OS="$(uname -s)"
 ARCH="$(uname -m)"
- codex/implement-full-opencnapp-architecture-dh0yai
 MODE="docker"
+
 if [[ "${1:-}" == "--local" ]]; then
   MODE="local"
 fi
 
 echo "[OpenCNAPP Setup] OS=$OS ARCH=$ARCH MODE=$MODE"
 
-
-echo "[OpenCNAPP Setup] OS=$OS ARCH=$ARCH"
- main
-
 check_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "[ERROR] Missing dependency: $1"
- codex/implement-full-opencnapp-architecture-dh0yai
     return 1
   fi
 }
+
+check_cmd python3 || exit 1
+check_cmd bash || exit 1
 
 if [[ "$MODE" == "docker" ]]; then
   if ! check_cmd docker; then
@@ -30,34 +28,11 @@ if [[ "$MODE" == "docker" ]]; then
   fi
 fi
 
-check_cmd python3 || exit 1
-check_cmd bash || exit 1
-
-
-    exit 1
-  fi
-}
-
-check_cmd docker
-check_cmd python3
-check_cmd bash
-
-if docker compose version >/dev/null 2>&1; then
-  COMPOSE="docker compose"
-elif command -v docker-compose >/dev/null 2>&1; then
-  COMPOSE="docker-compose"
-else
-  echo "[ERROR] Docker Compose not found"
-  exit 1
-fi
-
- main
 if [[ ! -f .env ]]; then
   cp .env.example .env
   echo "[INFO] Created .env from .env.example"
 fi
 
- codex/implement-full-opencnapp-architecture-dh0yai
 if [[ "$MODE" == "docker" ]]; then
   if docker compose version >/dev/null 2>&1; then
     COMPOSE="docker compose"
@@ -101,17 +76,3 @@ echo "[INFO] Building dashboard"
 echo "[INFO] Local mode complete. Start services manually:"
 echo "  Backend: PYTHONPATH=. python3 -m uvicorn api.main:app --host 127.0.0.1 --port 8000"
 echo "  Frontend: cd dashboard && npm run dev -- --host 127.0.0.1 --port 3000"
-
-echo "[INFO] Pulling/building containers..."
-$COMPOSE build
-
-echo "[INFO] Starting OpenCNAPP core stack"
-$COMPOSE up -d postgres redis api worker dashboard
-
-echo "[INFO] Stack started"
-echo "API docs: http://localhost:8000/docs"
-echo "Dashboard: http://localhost:3000"
-
-echo "[INFO] Optional runtime profile: $COMPOSE --profile runtime up -d"
-echo "[INFO] Optional CIEM profile: $COMPOSE --profile ciem up -d"
- main
