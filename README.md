@@ -72,13 +72,18 @@ docker compose --profile ciem up -d
 ```
 
 ## 5) Architecture and plan mapping
-- Architecture assets directory: `raw cnapp idea/`
-  - GitHub: https://github.com/mayurrrsec/OPEN-CNAPP/tree/main/raw%20cnapp%20idea
-- Spec + roadmap source: `raw cnapp idea/opencnapp_final_spec_v3.md`
-- Final plan HTML: `raw cnapp idea/opencnapp_final_plan_v3.html`
+- Architecture assets directory (repo path): `raw cnapp idea/`
+  - GitHub folder: https://github.com/mayurrrsec/OPEN-CNAPP/tree/main/raw%20cnapp%20idea
+- Spec + roadmap source:
+  - repo path: `raw cnapp idea/opencnapp_final_spec_v3.md`
+  - GitHub URL: https://github.com/mayurrrsec/OPEN-CNAPP/blob/main/raw%20cnapp%20idea/opencnapp_final_spec_v3.md
+- Final plan HTML:
+  - repo path: `raw cnapp idea/opencnapp_final_plan_v3.html`
+  - GitHub URL: https://github.com/mayurrrsec/OPEN-CNAPP/blob/main/raw%20cnapp%20idea/opencnapp_final_plan_v3.html
 - Architecture diagrams:
-  - `raw cnapp idea/cnapp_architecture.svg`
-  - `raw cnapp idea/opencnapp_architecture.png`
+  - SVG repo path: `raw cnapp idea/cnapp_architecture.svg`
+  - PNG repo path: `raw cnapp idea/opencnapp_architecture.png`
+  - PNG GitHub URL: https://github.com/mayurrrsec/OPEN-CNAPP/blob/main/raw%20cnapp%20idea/opencnapp_architecture.png
 - How to use the plan in this repo: `docs/how-to-use-architecture-plan.md`
 - Roadmap completion status: `docs/roadmap-gap-analysis.md`
 
@@ -129,7 +134,7 @@ Summary:
 
 ## 11) Visual preview
 
-![OpenCNAPP architecture preview](raw cnapp idea/opencnapp_architecture.png)
+![OpenCNAPP architecture preview](raw%20cnapp%20idea/opencnapp_architecture.png)
 
 ## 12) Troubleshooting
 - **`error: pathspec 'work' did not match any file(s) known to git`**:
