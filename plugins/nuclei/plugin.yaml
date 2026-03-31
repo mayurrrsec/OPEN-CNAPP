@@ -1,0 +1,8 @@
+name: nuclei
+display_name: Nuclei
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/nuclei:latest
+normalizer: api.adapters.nuclei

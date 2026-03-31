@@ -1,0 +1,8 @@
+name: gitleaks
+display_name: Gitleaks
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/gitleaks:latest
+normalizer: api.adapters.gitleaks

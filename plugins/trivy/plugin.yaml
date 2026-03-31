@@ -1,0 +1,8 @@
+name: trivy
+display_name: Trivy
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/trivy:latest
+normalizer: api.adapters.trivy
