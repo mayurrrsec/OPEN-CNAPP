@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OpenCNAPP — Local-First Architecture Plan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap');
+:root{
+  --bg:#08090c;--s1:#0f1117;--s2:#161b26;--s3:#1d2436;
+  --border:#232a3a;--border2:#2d3650;
+  --text:#dde4f0;--muted:#5a6a8a;--dim:#2d3a52;
+  --blue:#3b8cf7;--blue-d:#0a1830;--blue-m:#1a3a6a;
+  --teal:#20d4b8;--teal-d:#061a18;
+  --green:#4ade80;--green-d:#071a0f;
+  --amber:#f5b730;--amber-d:#1a1100;
+  --red:#f56565;--red-d:#1a0808;
+  --purple:#a78bfa;--purple-d:#100d20;
+  --pink:#f472b6;--pink-d:#1a0818;
+  --orange:#fb923c;--orange-d:#1a0d00;
+  --sans:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased}
+
+/* NAV */
+.sidenav{width:240px;min-height:100vh;background:var(--s1);border-right:1px solid var(--border);position:fixed;top:0;left:0;overflow-y:auto;padding-bottom:40px;z-index:50}
+.nav-brand{padding:20px 18px 14px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.nav-brand .logo{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-0.5px}
+.nav-brand .logo span{color:var(--teal)}
+.nav-brand .ver{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:1px}
+.nav-group{padding:10px 18px 2px;font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+.nav-link{display:flex;align-items:center;gap:8px;padding:6px 18px;font-size:12px;color:var(--muted);text-decoration:none;cursor:pointer;border-left:2px solid transparent;transition:all .15s}
+.nav-link:hover{color:var(--text);background:var(--s2);border-left-color:var(--border2)}
+.nav-link.active{color:var(--teal);border-left-color:var(--teal);background:var(--teal-d)}
+.nav-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+/* MAIN */
+.main{margin-left:240px;padding:52px 60px;max-width:1020px}
+
+/* HEADER */
+.hdr{margin-bottom:52px;padding-bottom:32px;border-bottom:1px solid var(--border)}
+.hdr-eye{font-family:var(--mono);font-size:9px;color:var(--teal);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.hdr h1{font-size:38px;font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:14px}
+.hdr h1 .hl{color:var(--teal)}
+.hdr .sub{color:var(--muted);font-size:14px;max-width:620px;line-height:1.8}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.tag{padding:3px 10px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:1px solid}
+.tag-t{color:var(--teal);border-color:var(--teal);background:var(--teal-d)}
+.tag-b{color:var(--blue);border-color:var(--blue);background:var(--blue-d)}
+.tag-g{color:var(--green);border-color:var(--green);background:var(--green-d)}
+.tag-a{color:var(--amber);border-color:var(--amber);background:var(--amber-d)}
+
+/* SECTION */
+.sec{margin-bottom:64px;scroll-margin-top:28px}
+.sec-hdr{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.sec-n{font-family:var(--mono);font-size:10px;color:var(--dim);width:30px;flex-shrink:0}
+.sec-title{font-size:22px;font-weight:700;letter-spacing:-0.5px}
+.sec-desc{font-size:13px;color:var(--muted);margin-bottom:20px;margin-left:44px;line-height:1.7}
+
+/* CARDS / GRIDS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:18px 20px}
+.card-t{font-size:13px;font-weight:600;margin-bottom:6px}
+.card-d{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:600;border:1px solid;white-space:nowrap}
+.b-blue{color:var(--blue);border-color:var(--blue);background:var(--blue-d)}
+.b-teal{color:var(--teal);border-color:var(--teal);background:var(--teal-d)}
+.b-green{color:var(--green);border-color:var(--green);background:var(--green-d)}
+.b-amber{color:var(--amber);border-color:var(--amber);background:var(--amber-d)}
+.b-red{color:var(--red);border-color:var(--red);background:var(--red-d)}
+.b-purple{color:var(--purple);border-color:var(--purple);background:var(--purple-d)}
+.b-pink{color:var(--pink);border-color:var(--pink);background:var(--pink-d)}
+.b-orange{color:var(--orange);border-color:var(--orange);background:var(--orange-d)}
+.b-muted{color:var(--muted);border-color:var(--border2);background:var(--s2)}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0}
+th{background:var(--s2);color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border2);font-weight:500}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.mono{font-family:var(--mono);font-size:10px;color:var(--teal)}
+
+/* CODE */
+.code{background:#070910;border:1px solid var(--border);border-radius:6px;margin:12px 0;overflow:hidden}
+.code-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:var(--s1);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--muted)}
+.code-hdr .lang{color:var(--teal);font-weight:600}
+pre{padding:16px;overflow-x:auto;font-family:var(--mono);font-size:11.5px;line-height:1.65;color:#b8c4d8}
+.ck{color:var(--blue)}
+.cs{color:var(--green)}
+.cc{color:#3a4a6a}
+.cf{color:var(--amber)}
+.cn{color:var(--pink)}
+code{font-family:var(--mono);font-size:10px;background:var(--s3);padding:1px 5px;border-radius:3px;color:var(--teal)}
+
+/* CALLOUTS */
+.call{border-radius:6px;padding:14px 18px;margin:14px 0;border-left:3px solid;font-size:13px;line-height:1.7}
+.call-b{background:var(--blue-d);border-color:var(--blue);color:#7aaee8}
+.call-t{background:var(--teal-d);border-color:var(--teal);color:#50c8b8}
+.call-a{background:var(--amber-d);border-color:var(--amber);color:#d4a030}
+.call-g{background:var(--green-d);border-color:var(--green);color:#40b060}
+.call-r{background:var(--red-d);border-color:var(--red);color:#c05050}
+.call strong{font-weight:700;color:var(--text)}
+
+/* PHASE BLOCKS */
+.phase{border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden}
+.phase-hdr{padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.phase-n{font-family:var(--mono);font-size:9px;min-width:50px}
+.phase-title{font-size:13px;font-weight:700;flex:1}
+.phase-dur{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.phase-body{padding:12px 18px}
+.ptask{display:flex;gap:10px;padding:5px 0;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
+.ptask:last-child{border-bottom:none}
+.ptask::before{content:'›';color:var(--dim);flex-shrink:0;font-size:14px;line-height:1.5}
+
+/* DOMAIN CARDS */
+.dcard{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:10px}
+.dcard-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px}
+.dcard-title{font-size:13px;font-weight:700}
+.dcard-desc{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+.tool-entry{display:flex;gap:10px;padding:7px 0;border-top:1px solid var(--border)}
+.te-name{font-family:var(--mono);font-size:10px;color:var(--text);min-width:150px;flex-shrink:0}
+.te-info{font-size:11px;color:var(--muted);line-height:1.5}
+.te-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+
+hr{border:none;border-top:1px solid var(--border);margin:32px 0}
+
+/* PLUGIN SYSTEM */
+.plugin-matrix{overflow-x:auto}
+.pm-table{min-width:700px}
+.pm-table th:first-child,.pm-table td:first-child{min-width:180px}
+.check{color:var(--green)}
+.cross{color:var(--red)}
+.partial{color:var(--amber)}
+
+/* STEPS */
+.steps{list-style:none;padding:0}
+.step{display:flex;gap:14px;margin-bottom:18px}
+.step-n{font-family:var(--mono);font-size:10px;color:var(--teal);width:22px;flex-shrink:0;padding-top:1px}
+.step-b{flex:1}
+.step-t{font-size:13px;font-weight:600;margin-bottom:3px}
+.step-d{font-size:12px;color:var(--muted);line-height:1.6}
+
+@media(max-width:880px){.sidenav{display:none}.main{margin-left:0;padding:24px}.grid2,.grid3{grid-template-columns:1fr}}
+@media print{.sidenav{display:none}.main{margin-left:0;padding:20px}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidenav">
+  <div class="nav-brand">
+    <div class="logo">Open<span>CNAPP</span></div>
+    <div class="ver">LOCAL-FIRST · MULTI-CLOUD · OSS</div>
+  </div>
+  <div class="nav-group">Foundation</div>
+  <a class="nav-link" href="#philosophy"><span class="nav-dot" style="background:#20d4b8"></span>Design philosophy</a>
+  <a class="nav-link" href="#domains"><span class="nav-dot" style="background:#3b8cf7"></span>Security domains</a>
+  <a class="nav-link" href="#tools"><span class="nav-dot" style="background:#4ade80"></span>All tools — full map</a>
+
+  <div class="nav-group">Architecture</div>
+  <a class="nav-link" href="#arch"><span class="nav-dot" style="background:#f5b730"></span>Local-first architecture</a>
+  <a class="nav-link" href="#plugin"><span class="nav-dot" style="background:#a78bfa"></span>Plugin system</a>
+  <a class="nav-link" href="#schema"><span class="nav-dot" style="background:#f472b6"></span>Data schema</a>
+  <a class="nav-link" href="#dataflow"><span class="nav-dot" style="background:#fb923c"></span>Data flows</a>
+
+  <div class="nav-group">Installation</div>
+  <a class="nav-link" href="#local-setup"><span class="nav-dot" style="background:#3b8cf7"></span>Local setup (Docker)</a>
+  <a class="nav-link" href="#connectors"><span class="nav-dot" style="background:#20d4b8"></span>Cloud connectors</a>
+  <a class="nav-link" href="#cspm-install"><span class="nav-dot" style="background:#4ade80"></span>CSPM tools</a>
+  <a class="nav-link" href="#kspm-install"><span class="nav-dot" style="background:#a78bfa"></span>KSPM tools</a>
+  <a class="nav-link" href="#cwpp-install"><span class="nav-dot" style="background:#f56565"></span>CWPP / Falco</a>
+  <a class="nav-link" href="#ciem-install"><span class="nav-dot" style="background:#f472b6"></span>CIEM tools</a>
+  <a class="nav-link" href="#cicd-install"><span class="nav-dot" style="background:#f5b730"></span>CI/CD integrations</a>
+  <a class="nav-link" href="#pentest-install"><span class="nav-dot" style="background:#fb923c"></span>Pentest runner</a>
+
+  <div class="nav-group">Platform</div>
+  <a class="nav-link" href="#normalizer"><span class="nav-dot" style="background:#3b8cf7"></span>Normalizer service</a>
+  <a class="nav-link" href="#api"><span class="nav-dot" style="background:#20d4b8"></span>API + scheduler</a>
+  <a class="nav-link" href="#dashboard"><span class="nav-dot" style="background:#4ade80"></span>Dashboard</a>
+  <a class="nav-link" href="#alerting"><span class="nav-dot" style="background:#f5b730"></span>Alerting</a>
+
+  <div class="nav-group">Rollout</div>
+  <a class="nav-link" href="#roadmap"><span class="nav-dot" style="background:#a78bfa"></span>Roadmap</a>
+  <a class="nav-link" href="#docker-compose"><span class="nav-dot" style="background:#f56565"></span>docker-compose.yml</a>
+  <a class="nav-link" href="#oss"><span class="nav-dot" style="background:#20d4b8"></span>Open-sourcing guide</a>
+</nav>
+
+<main class="main">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-eye">Architecture Plan · v2.0 · Local-First</div>
+  <h1>Build <span class="hl">OpenCNAPP</span><br>The Open-Source Way</h1>
+  <p class="sub">A self-hosted, multi-cloud, fully modular security platform. Runs locally via Docker Compose. Supports Azure, AWS, GCP, with or without Kubernetes, with or without CI/CD — every component optional and pluggable.</p>
+  <div class="tags">
+    <span class="tag tag-t">Local Docker Compose</span>
+    <span class="tag tag-b">Multi-Cloud</span>
+    <span class="tag tag-g">No K8s required</span>
+    <span class="tag tag-a">Plugin Architecture</span>
+    <span class="tag tag-t">100% Open Source</span>
+  </div>
+</div>
+
+<!-- 1. PHILOSOPHY -->
+<section class="sec" id="philosophy">
+  <div class="sec-hdr"><span class="sec-n">01</span><h2 class="sec-title">Design philosophy — built for everyone</h2></div>
+  <p class="sec-desc">The core shift from the previous plan: nothing is assumed. Every tool, every cloud, every integration is optional. Users adopt what they have.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t" style="color:var(--teal)">What changed from v1</div>
+      <div class="card-d">
+        <ul style="padding-left:16px;margin-top:6px">
+          <li>No Azure/AKS assumption — runs on your laptop or a $5/mo VM</li>
+          <li>No Kubernetes required — optional K8s plugin only</li>
+          <li>No CI/CD assumption — tools work standalone OR integrated</li>
+          <li>Every scanner is a plugin — enable what you have, skip what you don't</li>
+          <li>Multi-cloud from day 1 — Azure, AWS, GCP as equal first-class connectors</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t" style="color:var(--amber)">Three user archetypes we support</div>
+      <div class="card-d">
+        <div style="margin-bottom:8px"><span class="badge b-blue">Solo dev</span> &nbsp;Running locally, scanning one AWS account, no K8s, basic CI/CD via GitHub Actions</div>
+        <div style="margin-bottom:8px"><span class="badge b-teal">SMB team</span> &nbsp;Self-hosted VM, Azure + some K8s, mixed CI/CD (GitHub + Azure DevOps), Slack alerts</div>
+        <div><span class="badge b-amber">Growing company</span> &nbsp;Multi-cloud, AKS+EKS, full CI/CD gates, custom pentest schedules, public dashboard</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="call call-t">
+    <strong>The golden rule:</strong> The platform should work with zero plugins enabled (just the UI + database). Each plugin you enable adds coverage. The more you enable, the more it looks like Wiz. But none are required to start.
+  </div>
+</section>
+
+<!-- 2. DOMAINS -->
+<section class="sec" id="domains">
+  <div class="sec-hdr"><span class="sec-n">02</span><h2 class="sec-title">Security domains — full CNAPP spectrum</h2></div>
+
+  <table>
+    <thead><tr><th>Domain</th><th>What it protects</th><th>Needs Cloud?</th><th>Needs K8s?</th><th>CI/CD?</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-blue">CSPM</span></td><td>Cloud resource misconfigurations (storage, IAM, networking)</td><td>✓ Yes</td><td>No</td><td>Optional</td><td><span class="badge b-red">Critical</span></td></tr>
+      <tr><td><span class="badge b-teal">KSPM</span></td><td>Kubernetes cluster &amp; workload security posture</td><td>Optional</td><td>✓ Yes</td><td>Optional</td><td><span class="badge b-red">Critical if K8s</span></td></tr>
+      <tr><td><span class="badge b-red">CWPP</span></td><td>Runtime threats in running containers/VMs (real-time)</td><td>Optional</td><td>Optional</td><td>No</td><td><span class="badge b-red">Critical</span></td></tr>
+      <tr><td><span class="badge b-purple">CIEM</span></td><td>Identity attack paths, over-privileged roles, Entra/IAM mapping</td><td>✓ Yes</td><td>No</td><td>No</td><td><span class="badge b-amber">High</span></td></tr>
+      <tr><td><span class="badge b-pink">Image Sec</span></td><td>CVEs + secrets in container images before &amp; after deployment</td><td>Optional</td><td>Optional</td><td>✓ Ideal</td><td><span class="badge b-amber">High</span></td></tr>
+      <tr><td><span class="badge b-green">IaC Sec</span></td><td>Misconfigs in Terraform/Bicep/Helm before deployment</td><td>No</td><td>No</td><td>✓ Yes</td><td><span class="badge b-amber">High</span></td></tr>
+      <tr><td><span class="badge b-amber">Secrets</span></td><td>Keys/tokens/passwords committed to git repos</td><td>No</td><td>No</td><td>✓ Ideal</td><td><span class="badge b-amber">High</span></td></tr>
+      <tr><td><span class="badge b-orange">SSPM</span></td><td>SaaS posture: O365, Google Workspace, GitHub, Okta</td><td>SaaS auth</td><td>No</td><td>No</td><td><span class="badge b-muted">Medium</span></td></tr>
+      <tr><td><span class="badge b-red">Pentest</span></td><td>Active exploitation testing — scheduled or on-demand from UI</td><td>Optional</td><td>Optional</td><td>Optional</td><td><span class="badge b-muted">Medium</span></td></tr>
+      <tr><td><span class="badge b-muted">Network</span></td><td>Exposed ports, weak TLS, DNS hygiene, open services</td><td>No</td><td>No</td><td>No</td><td><span class="badge b-muted">Medium</span></td></tr>
+      <tr><td><span class="badge b-muted">Compliance</span></td><td>Map findings to CIS, PCI-DSS, SOC2, ISO27001 frameworks</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-muted">Overlay</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 3. ALL TOOLS -->
+<section class="sec" id="tools">
+  <div class="sec-hdr"><span class="sec-n">03</span><h2 class="sec-title">Every open-source tool — full map</h2></div>
+  <p class="sec-desc">Organized by domain. Each tool shows which clouds it supports, whether it needs K8s, and how it runs.</p>
+
+  <!-- CSPM -->
+  <div class="dcard">
+    <div class="dcard-hdr"><span class="dcard-title">CSPM — Cloud Security Posture Management</span><span class="badge b-blue">Multi-cloud</span></div>
+    <p class="dcard-desc">Audits your cloud provider configurations against security benchmarks. Runs periodically via scheduler.</p>
+    <div class="tool-entry"><div><div class="te-name">Prowler</div><div class="te-badges"><span class="badge b-teal">Azure</span><span class="badge b-orange">AWS</span><span class="badge b-blue">GCP</span></div></div><div class="te-info">500+ checks across all three major clouds. Outputs JSON/HTML/CSV. Most comprehensive OSS CSPM. Docker image available. <strong>Use this as primary CSPM.</strong></div></div>
+    <div class="tool-entry"><div><div class="te-name">ScoutSuite</div><div class="te-badges"><span class="badge b-teal">Azure</span><span class="badge b-orange">AWS</span><span class="badge b-blue">GCP</span><span class="badge b-muted">Alibaba</span></div></div><div class="te-info">Multi-cloud, self-contained HTML report per scan. Good for periodic deep audits alongside Prowler.</div></div>
+    <div class="tool-entry"><div><div class="te-name">CloudSploit</div><div class="te-badges"><span class="badge b-orange">AWS</span><span class="badge b-teal">Azure</span><span class="badge b-blue">GCP</span></div></div><div class="te-info">Aqua Security OSS. Continuous scanning mode available. Good AWS depth.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Steampipe</div><div class="te-badges"><span class="badge b-orange">AWS</span><span class="badge b-teal">Azure</span><span class="badge b-blue">GCP</span><span class="badge b-muted">+100 plugins</span></div></div><div class="te-info">SQL-based cloud querying. Run CIS benchmark mods. Extremely flexible — query any cloud resource via SQL. Dashboard plugin included.</div></div>
+    <div class="tool-entry"><div><div class="te-name">cs-suite</div><div class="te-badges"><span class="badge b-orange">AWS</span></div></div><div class="te-info">AWS-focused. Good for AWS-only shops. Complements Prowler.</div></div>
+  </div>
+
+  <!-- KSPM -->
+  <div class="dcard">
+    <div class="dcard-hdr"><span class="dcard-title">KSPM — Kubernetes Security Posture Management</span><span class="badge b-purple">K8s optional</span></div>
+    <p class="dcard-desc">Only activate if you have Kubernetes. Works with AKS, EKS, GKE, and self-hosted K8s equally.</p>
+    <div class="tool-entry"><div><div class="te-name">Kubescape</div><div class="te-badges"><span class="badge b-purple">AKS</span><span class="badge b-orange">EKS</span><span class="badge b-blue">GKE</span><span class="badge b-muted">Self-hosted</span></div></div><div class="te-info">CIS K8s benchmark, NSA hardening, RBAC audit, network policy gaps. Operator mode (continuous) or CLI mode (JSON output). Best all-rounder.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Polaris</div><div class="te-badges"><span class="badge b-purple">Any K8s</span></div></div><div class="te-info">Pod-spec checks: root containers, missing limits, missing probes, :latest tags. Has built-in web UI. Lightweight, great for devs.</div></div>
+    <div class="tool-entry"><div><div class="te-name">kube-bench</div><div class="te-badges"><span class="badge b-purple">Any K8s</span></div></div><div class="te-info">CIS Kubernetes Benchmark against node config. CLI only. Run after cluster setup or config changes.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Trivy (operator)</div><div class="te-badges"><span class="badge b-purple">Any K8s</span></div></div><div class="te-info">Trivy Operator creates VulnerabilityReport and ConfigAuditReport CRDs per workload. Continuous in-cluster scanning.</div></div>
+    <div class="tool-entry"><div><div class="te-name">KubeAudit</div><div class="te-badges"><span class="badge b-purple">Any K8s</span></div></div><div class="te-info">Shopify OSS. Audits K8s manifests before deploy (CI/CD) and live clusters. Good complement to Kubescape.</div></div>
+  </div>
+
+  <!-- CWPP -->
+  <div class="dcard">
+    <div class="dcard-hdr"><span class="dcard-title">CWPP — Runtime Protection</span><span class="badge b-red">Real-time</span></div>
+    <p class="dcard-desc">Monitors running workloads for active threats. Works with containers, VMs, and bare-metal.</p>
+    <div class="tool-entry"><div><div class="te-name">Falco</div><div class="te-badges"><span class="badge b-purple">K8s</span><span class="badge b-muted">Docker</span><span class="badge b-muted">VM</span></div></div><div class="te-info">Syscall-level monitoring. Deploy as DaemonSet (K8s) or systemd service (VM). Detects shell spawns, file writes, suspicious network. <strong>Most important runtime tool.</strong></div></div>
+    <div class="tool-entry"><div><div class="te-name">Tracee</div><div class="te-badges"><span class="badge b-purple">K8s</span><span class="badge b-muted">Docker</span><span class="badge b-muted">Linux</span></div></div><div class="te-info">eBPF-based runtime by Aqua. Works on newer kernels better than Falco. Use as alternative, not alongside Falco.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Tetragon</div><div class="te-badges"><span class="badge b-purple">K8s</span><span class="badge b-muted">Linux</span></div></div><div class="te-info">Cilium's eBPF-based security enforcement. Deep kernel visibility + real enforcement (can kill processes). More advanced than Falco.</div></div>
+    <div class="tool-entry"><div><div class="te-name">OSSEC / Wazuh</div><div class="te-badges"><span class="badge b-muted">VM</span><span class="badge b-muted">Bare-metal</span><span class="badge b-muted">Windows</span></div></div><div class="te-info">Host-based IDS for VMs and non-containerized workloads. Wazuh is the maintained fork with a full dashboard. Use when you have VMs not containers.</div></div>
+  </div>
+
+  <!-- CIEM -->
+  <div class="dcard">
+    <div class="dcard-hdr"><span class="dcard-title">CIEM — Cloud Identity &amp; Entitlements</span><span class="badge b-purple">Attack paths</span></div>
+    <div class="tool-entry"><div><div class="te-name">BloodHound CE + AzureHound</div><div class="te-badges"><span class="badge b-teal">Azure / Entra ID</span></div></div><div class="te-info">Maps Entra ID attack paths — service principals, managed identities, roles, to Key Vault / subscriptions. Best free CIEM tool. Full graph UI in BloodHound Community Edition.</div></div>
+    <div class="tool-entry"><div><div class="te-name">BloodHound CE + SharpHound</div><div class="te-badges"><span class="badge b-orange">AWS</span></div></div><div class="te-info">AWS IAM graph — who can assume what role, path to admin. Same BloodHound UI.</div></div>
+    <div class="tool-entry"><div><div class="te-name">PMapper</div><div class="te-badges"><span class="badge b-orange">AWS</span></div></div><div class="te-info">Maps AWS IAM privilege escalation paths. CLI + graph output. Good for AWS-heavy shops.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Cartography</div><div class="te-badges"><span class="badge b-orange">AWS</span><span class="badge b-blue">GCP</span><span class="badge b-teal">Azure</span></div></div><div class="te-info">Lyft OSS. Maps relationships between cloud assets and identities in Neo4j. More general than BloodHound, includes non-identity resources.</div></div>
+  </div>
+
+  <!-- IMAGE + IaC + SECRETS -->
+  <div class="dcard">
+    <div class="dcard-hdr"><span class="dcard-title">Image Security · IaC Security · Secrets Detection</span><span class="badge b-pink">Shift-left</span></div>
+    <div class="tool-entry"><div><div class="te-name">Trivy</div><div class="te-badges"><span class="badge b-pink">Images</span><span class="badge b-green">IaC</span><span class="badge b-amber">Secrets</span><span class="badge b-purple">K8s</span></div></div><div class="te-info">Swiss army knife. Scans container images (CVEs), Dockerfiles, Terraform, Helm, K8s manifests, and secrets all in one tool. Industry standard. <strong>If you can only add one tool to CI/CD, make it Trivy.</strong></div></div>
+    <div class="tool-entry"><div><div class="te-name">Grype + Syft</div><div class="te-badges"><span class="badge b-pink">Images</span><span class="badge b-muted">SBOM</span></div></div><div class="te-info">Syft generates SBOM (Software Bill of Materials). Grype scans the SBOM for CVEs. Best for compliance-driven SBOM requirements.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Checkov</div><div class="te-badges"><span class="badge b-green">Terraform</span><span class="badge b-green">Bicep</span><span class="badge b-green">ARM</span><span class="badge b-green">Helm</span><span class="badge b-green">K8s YAML</span></div></div><div class="te-info">Bridgecrew/Palo Alto OSS. 1000+ IaC checks. CI/CD gate or standalone scan. VS Code plugin too.</div></div>
+    <div class="tool-entry"><div><div class="te-name">KICS</div><div class="te-badges"><span class="badge b-green">Terraform</span><span class="badge b-green">Docker</span><span class="badge b-green">Ansible</span><span class="badge b-green">+more</span></div></div><div class="te-info">Checkmarx OSS. Broadest IaC language support (Ansible, Pulumi, CloudFormation, Bicep). Complement to Checkov.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Gitleaks</div><div class="te-badges"><span class="badge b-amber">Git repos</span></div></div><div class="te-info">Fast secrets scanner. Azure keys, AWS access keys, Stripe tokens, JWT secrets. Pre-commit hook + CI gate.</div></div>
+    <div class="tool-entry"><div><div class="te-name">TruffleHog</div><div class="te-badges"><span class="badge b-amber">Git history</span></div></div><div class="te-info">Deep git history. Finds verified secrets committed years ago and deleted. Run once on all repos.</div></div>
+    <div class="tool-entry"><div><div class="te-name">detect-secrets</div><div class="te-badges"><span class="badge b-amber">Git repos</span></div></div><div class="te-info">Yelp OSS. Lighter-weight alternative to Gitleaks. Good for adding to existing repos without disrupting workflow.</div></div>
+  </div>
+
+  <!-- SSPM + NETWORK + PENTEST -->
+  <div class="dcard">
+    <div class="dcard-hdr"><span class="dcard-title">SSPM · Network Security · Pentest Tools</span><span class="badge b-orange">Active scanning</span></div>
+    <div class="tool-entry"><div><div class="te-name">ScubaGear</div><div class="te-badges"><span class="badge b-orange">O365</span><span class="badge b-muted">M365</span></div></div><div class="te-info">CISA-developed. MFA, Teams, Exchange DKIM/DMARC, SharePoint. PowerShell. Run monthly.</div></div>
+    <div class="tool-entry"><div><div class="te-name">DragonFly (GWS)</div><div class="te-badges"><span class="badge b-blue">Google Workspace</span></div></div><div class="te-info">Google Workspace configuration audit. Similar to ScubaGear but for GWS.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Nuclei</div><div class="te-badges"><span class="badge b-red">Web apps</span><span class="badge b-red">APIs</span><span class="badge b-red">Cloud</span></div></div><div class="te-info">10,000+ templates. Scan web apps, APIs, cloud infra for known vulns. UI-triggered from dashboard. Fast.</div></div>
+    <div class="tool-entry"><div><div class="te-name">kube-hunter</div><div class="te-badges"><span class="badge b-purple">K8s only</span></div></div><div class="te-info">Hunts AKS/EKS/GKE attack paths: exposed APIs, privilege escalation, token leaks. UI-triggered.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Nmap + Naabu</div><div class="te-badges"><span class="badge b-red">Network</span></div></div><div class="te-info">Port scanning and service detection. Naabu (ProjectDiscovery) is faster for large scopes. UI-triggered.</div></div>
+    <div class="tool-entry"><div><div class="te-name">Nikto</div><div class="te-badges"><span class="badge b-red">Web servers</span></div></div><div class="te-info">Classic web server scanner. Checks for outdated software, dangerous files, misconfigs. UI-triggered.</div></div>
+    <div class="tool-entry"><div><div class="te-name">SSLyze</div><div class="te-badges"><span class="badge b-muted">TLS/SSL</span></div></div><div class="te-info">TLS configuration scanner. Weak ciphers, expired certs, HSTS missing. Schedule weekly.</div></div>
+    <div class="tool-entry"><div><div class="te-name">CloudFox</div><div class="te-badges"><span class="badge b-orange">AWS</span><span class="badge b-teal">Azure</span></div></div><div class="te-info">Cloud-focused attack surface enumeration. Finds exposed services, secrets, overpermissioned roles. UI-triggered pentest.</div></div>
+  </div>
+</section>
+
+<!-- 4. ARCHITECTURE -->
+<section class="sec" id="arch">
+  <div class="sec-hdr"><span class="sec-n">04</span><h2 class="sec-title">Local-first architecture — runs on Docker Compose</h2></div>
+  <p class="sec-desc">The entire platform runs as Docker Compose on any Linux/Mac/Windows machine. No cloud required for the platform itself. Cloud credentials are injected via environment variables to scanners.</p>
+
+  <div class="call call-t">
+    <strong>Deployment model:</strong> Platform runs locally (Docker Compose) or on a single VM. Scanners reach out to clouds via APIs — they don't need to run in the cloud. The dashboard is a web UI accessed via browser. Everything talks over a private Docker network.
+  </div>
+
+  <div class="grid3" style="margin:20px 0">
+    <div class="card">
+      <div class="card-t" style="color:var(--teal)">Option A — Developer laptop</div>
+      <div class="card-d">docker compose up on Mac/Linux/Windows WSL2. Scans your personal cloud accounts. Dashboard at localhost:3000. Ideal for solo security engineers.</div>
+    </div>
+    <div class="card">
+      <div class="card-t" style="color:var(--blue)">Option B — Internal VM</div>
+      <div class="card-d">Deploy on a $20/mo Ubuntu VM. Internal team access. All company cloud accounts connected. Persistent storage. Recommended for teams of 2-10.</div>
+    </div>
+    <div class="card">
+      <div class="card-t" style="color:var(--amber)">Option C — Self-hosted server</div>
+      <div class="card-d">On-prem server or company-owned cloud VM. Nginx + TLS in front. LDAP/SSO auth. Persistent volumes. For larger teams wanting full control.</div>
+    </div>
+  </div>
+
+  <div style="background:#070910;border:1px solid var(--border);border-radius:8px;padding:24px;margin:16px 0;overflow-x:auto">
+    <svg width="100%" viewBox="0 0 800 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#2d3650" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="at" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#20d4b8" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#f56565" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- CLOUD CONNECTORS (left) -->
+      <rect x="10" y="10" width="150" height="200" rx="8" fill="#0a0c12" stroke="#2d3650" stroke-width="0.8"/>
+      <text x="85" y="30" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a" text-anchor="middle" font-weight="600" letter-spacing="1">CLOUD CONNECTORS</text>
+      <rect x="22" y="38" width="126" height="28" rx="4" fill="#0a1830" stroke="#3b8cf7" stroke-width="0.6"/>
+      <text x="85" y="57" font-family="JetBrains Mono" font-size="9" fill="#3b8cf7" text-anchor="middle">Azure / Entra ID</text>
+      <rect x="22" y="74" width="126" height="28" rx="4" fill="#1a0d00" stroke="#fb923c" stroke-width="0.6"/>
+      <text x="85" y="93" font-family="JetBrains Mono" font-size="9" fill="#fb923c" text-anchor="middle">AWS</text>
+      <rect x="22" y="110" width="126" height="28" rx="4" fill="#061a18" stroke="#20d4b8" stroke-width="0.6"/>
+      <text x="85" y="129" font-family="JetBrains Mono" font-size="9" fill="#20d4b8" text-anchor="middle">GCP</text>
+      <rect x="22" y="146" width="126" height="28" rx="4" fill="#1a0818" stroke="#f472b6" stroke-width="0.6"/>
+      <text x="85" y="165" font-family="JetBrains Mono" font-size="9" fill="#f472b6" text-anchor="middle">K8s (optional)</text>
+      <rect x="22" y="182" width="126" height="20" rx="4" fill="#0f1117" stroke="#2d3650" stroke-width="0.6"/>
+      <text x="85" y="196" font-family="JetBrains Mono" font-size="8" fill="#5a6a8a" text-anchor="middle">Git / CI / SaaS...</text>
+
+      <!-- CI/CD (top right) -->
+      <rect x="640" y="10" width="150" height="120" rx="8" fill="#0a0c12" stroke="#2d3650" stroke-width="0.8"/>
+      <text x="715" y="30" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a" text-anchor="middle" font-weight="600" letter-spacing="1">CI/CD PLUGINS</text>
+      <rect x="652" y="38" width="126" height="22" rx="4" fill="#071a0f" stroke="#4ade80" stroke-width="0.6"/>
+      <text x="715" y="53" font-family="JetBrains Mono" font-size="9" fill="#4ade80" text-anchor="middle">GitHub Actions</text>
+      <rect x="652" y="66" width="126" height="22" rx="4" fill="#071a0f" stroke="#4ade80" stroke-width="0.6"/>
+      <text x="715" y="81" font-family="JetBrains Mono" font-size="9" fill="#4ade80" text-anchor="middle">Azure DevOps</text>
+      <rect x="652" y="94" width="126" height="22" rx="4" fill="#071a0f" stroke="#4ade80" stroke-width="0.6"/>
+      <text x="715" y="109" font-family="JetBrains Mono" font-size="9" fill="#4ade80" text-anchor="middle">GitLab / Jenkins</text>
+
+      <!-- PLUGIN ENGINE (center top) -->
+      <rect x="200" y="10" width="420" height="100" rx="8" fill="#0f1117" stroke="#20d4b8" stroke-width="0.8"/>
+      <text x="410" y="30" font-family="JetBrains Mono" font-size="8" fill="#20d4b8" text-anchor="middle" font-weight="600" letter-spacing="2">PLUGIN ENGINE — SCANNER REGISTRY</text>
+      <!-- scanner pills -->
+      <rect x="212" y="38" width="58" height="18" rx="3" fill="#0a1830" stroke="#3b8cf7" stroke-width="0.5"/>
+      <text x="241" y="51" font-family="JetBrains Mono" font-size="7" fill="#3b8cf7" text-anchor="middle">Prowler</text>
+      <rect x="276" y="38" width="62" height="18" rx="3" fill="#0a1830" stroke="#3b8cf7" stroke-width="0.5"/>
+      <text x="307" y="51" font-family="JetBrains Mono" font-size="7" fill="#3b8cf7" text-anchor="middle">ScoutSuite</text>
+      <rect x="344" y="38" width="68" height="18" rx="3" fill="#100d20" stroke="#a78bfa" stroke-width="0.5"/>
+      <text x="378" y="51" font-family="JetBrains Mono" font-size="7" fill="#a78bfa" text-anchor="middle">Kubescape</text>
+      <rect x="418" y="38" width="52" height="18" rx="3" fill="#1a0808" stroke="#f56565" stroke-width="0.5"/>
+      <text x="444" y="51" font-family="JetBrains Mono" font-size="7" fill="#f56565" text-anchor="middle">Falco</text>
+      <rect x="476" y="38" width="52" height="18" rx="3" fill="#100d20" stroke="#a78bfa" stroke-width="0.5"/>
+      <text x="502" y="51" font-family="JetBrains Mono" font-size="7" fill="#a78bfa" text-anchor="middle">BloodHound</text>
+      <rect x="534" y="38" width="44" height="18" rx="3" fill="#1a0818" stroke="#f472b6" stroke-width="0.5"/>
+      <text x="556" y="51" font-family="JetBrains Mono" font-size="7" fill="#f472b6" text-anchor="middle">Trivy</text>
+      <rect x="212" y="62" width="54" height="18" rx="3" fill="#1a1100" stroke="#f5b730" stroke-width="0.5"/>
+      <text x="239" y="75" font-family="JetBrains Mono" font-size="7" fill="#f5b730" text-anchor="middle">Gitleaks</text>
+      <rect x="272" y="62" width="56" height="18" rx="3" fill="#071a0f" stroke="#4ade80" stroke-width="0.5"/>
+      <text x="300" y="75" font-family="JetBrains Mono" font-size="7" fill="#4ade80" text-anchor="middle">Checkov</text>
+      <rect x="334" y="62" width="52" height="18" rx="3" fill="#1a0d00" stroke="#fb923c" stroke-width="0.5"/>
+      <text x="360" y="75" font-family="JetBrains Mono" font-size="7" fill="#fb923c" text-anchor="middle">Nuclei</text>
+      <rect x="392" y="62" width="70" height="18" rx="3" fill="#1a0d00" stroke="#fb923c" stroke-width="0.5"/>
+      <text x="427" y="75" font-family="JetBrains Mono" font-size="7" fill="#fb923c" text-anchor="middle">kube-hunter</text>
+      <rect x="468" y="62" width="52" height="18" rx="3" fill="#1a0808" stroke="#f56565" stroke-width="0.5"/>
+      <text x="494" y="75" font-family="JetBrains Mono" font-size="7" fill="#f56565" text-anchor="middle">SSLyze</text>
+      <rect x="526" y="62" width="56" height="18" rx="3" fill="#1a0808" stroke="#f56565" stroke-width="0.5"/>
+      <text x="554" y="75" font-family="JetBrains Mono" font-size="7" fill="#f56565" text-anchor="middle">CloudFox</text>
+      <text x="598" y="75" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a">+more</text>
+      <text x="410" y="96" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a" text-anchor="middle">each scanner = Docker container + normalizer adapter + schedule config</text>
+
+      <!-- arrows from connectors to engine -->
+      <line x1="160" y1="110" x2="198" y2="65" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+      <line x1="640" y1="65" x2="622" y2="65" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+
+      <!-- NORMALIZER -->
+      <rect x="200" y="138" width="420" height="46" rx="6" fill="#0f1117" stroke="#2d3650" stroke-width="0.8"/>
+      <text x="410" y="157" font-family="JetBrains Mono" font-size="9" fill="#dde4f0" text-anchor="middle" font-weight="500">Normalizer Service (Python)</text>
+      <text x="410" y="175" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a" text-anchor="middle">each scanner output → common JSON: { tool, domain, severity, resource_id, finding, remediation, ts }</text>
+      <line x1="410" y1="110" x2="410" y2="136" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+
+      <!-- STORAGE ROW -->
+      <rect x="200" y="208" width="196" height="50" rx="6" fill="#0a1830" stroke="#3b8cf7" stroke-width="0.8"/>
+      <text x="298" y="228" font-family="JetBrains Mono" font-size="9" fill="#3b8cf7" text-anchor="middle" font-weight="500">PostgreSQL</text>
+      <text x="298" y="246" font-family="JetBrains Mono" font-size="8" fill="#2d3a52" text-anchor="middle">findings · scans · config · users</text>
+
+      <rect x="424" y="208" width="196" height="50" rx="6" fill="#061a18" stroke="#20d4b8" stroke-width="0.8"/>
+      <text x="522" y="228" font-family="JetBrains Mono" font-size="9" fill="#20d4b8" text-anchor="middle" font-weight="500">Redis</text>
+      <text x="522" y="246" font-family="JetBrains Mono" font-size="8" fill="#2d3a52" text-anchor="middle">job queue · scan status · sessions</text>
+
+      <line x1="298" y1="184" x2="298" y2="206" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+      <line x1="522" y1="184" x2="522" y2="206" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+
+      <!-- SCHEDULER + WORKER ROW -->
+      <rect x="200" y="284" width="196" height="50" rx="6" fill="#0f1117" stroke="#2d3650" stroke-width="0.8"/>
+      <text x="298" y="304" font-family="JetBrains Mono" font-size="9" fill="#dde4f0" text-anchor="middle" font-weight="500">Scheduler (APScheduler)</text>
+      <text x="298" y="322" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a" text-anchor="middle">cron jobs → fire scanner containers</text>
+
+      <rect x="424" y="284" width="196" height="50" rx="6" fill="#0f1117" stroke="#2d3650" stroke-width="0.8"/>
+      <text x="522" y="304" font-family="JetBrains Mono" font-size="9" fill="#dde4f0" text-anchor="middle" font-weight="500">Celery Workers</text>
+      <text x="522" y="322" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a" text-anchor="middle">on-demand jobs from UI</text>
+
+      <line x1="298" y1="258" x2="298" y2="282" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+      <line x1="522" y1="258" x2="522" y2="282" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+
+      <!-- FastAPI -->
+      <rect x="200" y="360" width="420" height="46" rx="6" fill="#0f1117" stroke="#2d3650" stroke-width="0.8"/>
+      <text x="410" y="379" font-family="JetBrains Mono" font-size="9" fill="#dde4f0" text-anchor="middle" font-weight="500">FastAPI Backend</text>
+      <text x="410" y="397" font-family="JetBrains Mono" font-size="8" fill="#3d4a6a" text-anchor="middle">/findings  /scans  /trigger-scan  /plugins  /connectors  /ws/alerts  /reports</text>
+
+      <line x1="298" y1="334" x2="298" y2="358" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+      <line x1="522" y1="334" x2="522" y2="358" stroke="#2d3650" stroke-width="0.8" marker-end="url(#a)"/>
+
+      <!-- DASHBOARD -->
+      <rect x="200" y="432" width="420" height="94" rx="6" fill="#100d20" stroke="#a78bfa" stroke-width="0.8"/>
+      <text x="410" y="452" font-family="JetBrains Mono" font-size="9" fill="#a78bfa" text-anchor="middle" font-weight="500">React Dashboard — localhost:3000</text>
+
+      <rect x="212" y="460" width="88" height="52" rx="4" fill="#0d0a1c" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="256" y="480" font-family="JetBrains Mono" font-size="7.5" fill="#c4b5fd" text-anchor="middle" font-weight="500">Posture</text>
+      <text x="256" y="494" font-family="JetBrains Mono" font-size="6.5" fill="#3d4a6a" text-anchor="middle">risk score · trends</text>
+
+      <rect x="308" y="460" width="88" height="52" rx="4" fill="#0d0a1c" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="352" y="480" font-family="JetBrains Mono" font-size="7.5" fill="#c4b5fd" text-anchor="middle" font-weight="500">Findings</text>
+      <text x="352" y="494" font-family="JetBrains Mono" font-size="6.5" fill="#3d4a6a" text-anchor="middle">filter · sort · assign</text>
+
+      <rect x="404" y="460" width="88" height="52" rx="4" fill="#0d0a1c" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="448" y="480" font-family="JetBrains Mono" font-size="7.5" fill="#c4b5fd" text-anchor="middle" font-weight="500">Pentest</text>
+      <text x="448" y="494" font-family="JetBrains Mono" font-size="6.5" fill="#3d4a6a" text-anchor="middle">trigger · reports</text>
+
+      <rect x="500" y="460" width="108" height="52" rx="4" fill="#0d0a1c" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="554" y="480" font-family="JetBrains Mono" font-size="7.5" fill="#c4b5fd" text-anchor="middle" font-weight="500">Plugin Manager</text>
+      <text x="554" y="494" font-family="JetBrains Mono" font-size="6.5" fill="#3d4a6a" text-anchor="middle">enable/disable tools</text>
+
+      <line x1="410" y1="406" x2="410" y2="430" stroke="#a78bfa" stroke-width="0.8" marker-end="url(#a)"/>
+
+      <!-- Falco real-time arrow -->
+      <text x="88" y="265" font-family="JetBrains Mono" font-size="7" fill="#f56565" text-anchor="middle">Falco webhook</text>
+      <line x1="160" y1="160" x2="198" y2="380" stroke="#f56565" stroke-width="0.6" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+
+      <!-- CI/CD arrow -->
+      <line x1="715" y1="130" x2="715" y2="380" stroke="#4ade80" stroke-width="0.6" stroke-dasharray="3 3" marker-end="url(#a)"/>
+      <line x1="715" y1="380" x2="622" y2="380" stroke="#4ade80" stroke-width="0.6" stroke-dasharray="3 3" marker-end="url(#a)"/>
+    </svg>
+  </div>
+</section>
+
+<!-- 5. PLUGIN SYSTEM -->
+<section class="sec" id="plugin">
+  <div class="sec-hdr"><span class="sec-n">05</span><h2 class="sec-title">Plugin system — the core of flexibility</h2></div>
+  <p class="sec-desc">Every scanner is a plugin. Each plugin is self-contained: Docker image + normalizer adapter + default schedule + required config. Users enable only what they have.</p>
+
+  <div class="code">
+    <div class="code-hdr"><span>Plugin manifest — each scanner defines itself (YAML)</span><span class="lang">YAML</span></div>
+    <pre>
+<span class="cc"># plugins/prowler/plugin.yaml</span>
+id: prowler
+name: Prowler CSPM
+domain: cspm
+description: 500+ security checks for AWS, Azure, GCP
+version: "4.x"
+
+<span class="cc"># Which clouds this plugin supports</span>
+clouds_supported: [aws, azure, gcp]
+requires_k8s: false
+requires_cicd: false
+
+<span class="cc"># Docker image to run</span>
+image: toniblyx/prowler:latest
+
+<span class="cc"># Config inputs — shown in dashboard Plugin Manager UI</span>
+config_schema:
+  - key: CLOUD_PROVIDER
+    label: Cloud provider
+    type: select
+    options: [aws, azure, gcp]
+    required: true
+  - key: AZURE_SUBSCRIPTION_ID
+    label: Azure subscription ID
+    type: string
+    required_if: "CLOUD_PROVIDER == azure"
+  - key: AWS_PROFILE
+    label: AWS profile name
+    type: string
+    required_if: "CLOUD_PROVIDER == aws"
+
+<span class="cc"># Default schedule — user can override in UI</span>
+default_schedule: "0 */6 * * *"   <span class="cc"># every 6 hours</span>
+run_mode: scheduled                <span class="cc"># scheduled | on_demand | continuous</span>
+
+<span class="cc"># Command template — vars filled from config</span>
+command:
+  - prowler
+  - "{{ CLOUD_PROVIDER }}"
+  - -M json
+  - -o /output/results.json
+
+output:
+  format: json
+  path: /output/results.json
+  normalizer: prowler_normalizer   <span class="cc"># maps to normalizers/prowler.py</span>
+
+<span class="cc"># UI features this plugin contributes</span>
+dashboard_widgets:
+  - type: finding_count_by_check
+  - type: severity_breakdown
+
+tags: [cspm, azure, aws, gcp, cis-benchmark]</pre>
+  </div>
+
+  <div class="call call-b">
+    <strong>Adding a new tool</strong> is just: (1) write a <code>plugin.yaml</code>, (2) write a normalizer adapter (~50 lines of Python), (3) drop both in the <code>plugins/</code> folder. The platform auto-discovers it. No code changes to the core platform needed.
+  </div>
+
+  <h3 style="font-size:15px;font-weight:600;margin:20px 0 12px">Plugin matrix — which tools apply to which setups</h3>
+  <div class="plugin-matrix">
+    <table class="pm-table">
+      <thead><tr><th>Plugin</th><th>Domain</th><th>AWS</th><th>Azure</th><th>GCP</th><th>K8s</th><th>No cloud</th><th>Run mode</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">prowler</td><td><span class="badge b-blue">CSPM</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td>—</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">scoutsuite</td><td><span class="badge b-blue">CSPM</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td>—</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">steampipe</td><td><span class="badge b-blue">CSPM</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td>—</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">kubescape</td><td><span class="badge b-purple">KSPM</span></td><td class="partial">EKS</td><td class="partial">AKS</td><td class="partial">GKE</td><td class="check">✓</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">polaris</td><td><span class="badge b-purple">KSPM</span></td><td>—</td><td>—</td><td>—</td><td class="check">✓ any</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">kube-bench</td><td><span class="badge b-purple">KSPM</span></td><td>—</td><td>—</td><td>—</td><td class="check">✓ any</td><td>—</td><td><span class="badge b-muted">on-demand</span></td></tr>
+        <tr><td class="mono">falco</td><td><span class="badge b-red">CWPP</span></td><td>—</td><td>—</td><td>—</td><td class="check">✓</td><td class="partial">Docker</td><td><span class="badge b-red">continuous</span></td></tr>
+        <tr><td class="mono">wazuh</td><td><span class="badge b-red">CWPP</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td class="check">✓ VM/bare</td><td><span class="badge b-red">continuous</span></td></tr>
+        <tr><td class="mono">azurehound</td><td><span class="badge b-purple">CIEM</span></td><td>—</td><td class="check">✓</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">pmapper</td><td><span class="badge b-purple">CIEM</span></td><td class="check">✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">trivy</td><td><span class="badge b-pink">Image+IaC</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td><span class="badge b-green">CI/CD+sched</span></td></tr>
+        <tr><td class="mono">checkov</td><td><span class="badge b-green">IaC</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td><span class="badge b-green">CI/CD</span></td></tr>
+        <tr><td class="mono">gitleaks</td><td><span class="badge b-amber">Secrets</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td><span class="badge b-green">CI/CD+sched</span></td></tr>
+        <tr><td class="mono">scubagear</td><td><span class="badge b-orange">SSPM</span></td><td>—</td><td class="partial">M365</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-muted">scheduled</span></td></tr>
+        <tr><td class="mono">nuclei</td><td><span class="badge b-red">Pentest</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td><span class="badge b-red">on-demand</span></td></tr>
+        <tr><td class="mono">kube-hunter</td><td><span class="badge b-red">Pentest</span></td><td>—</td><td>—</td><td>—</td><td class="check">✓ any</td><td>—</td><td><span class="badge b-red">on-demand</span></td></tr>
+        <tr><td class="mono">cloudfox</td><td><span class="badge b-red">Pentest</span></td><td class="check">✓</td><td class="check">✓</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-red">on-demand</span></td></tr>
+        <tr><td class="mono">nmap / naabu</td><td><span class="badge b-red">Network</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td><span class="badge b-red">on-demand</span></td></tr>
+        <tr><td class="mono">sslyze</td><td><span class="badge b-muted">Network</span></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td><span class="badge b-muted">scheduled</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 6. SCHEMA -->
+<section class="sec" id="schema">
+  <div class="sec-hdr"><span class="sec-n">06</span><h2 class="sec-title">Universal findings schema</h2></div>
+  <div class="code">
+    <div class="code-hdr"><span>PostgreSQL schema — cloud-agnostic, tool-agnostic</span><span class="lang">SQL</span></div>
+    <pre>
+<span class="ck">CREATE TABLE</span> plugins (
+  id           TEXT <span class="ck">PRIMARY KEY</span>,             <span class="cc">-- e.g. 'prowler', 'kubescape'</span>
+  name         TEXT, domain TEXT, version TEXT,
+  enabled      BOOLEAN <span class="ck">DEFAULT FALSE</span>,
+  config       JSONB,                           <span class="cc">-- user-provided credentials/settings</span>
+  schedule     TEXT,                            <span class="cc">-- cron expression</span>
+  run_mode     TEXT                             <span class="cc">-- scheduled|on_demand|continuous</span>
+);
+
+<span class="ck">CREATE TABLE</span> connectors (
+  id           UUID <span class="ck">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  cloud        TEXT,                            <span class="cc">-- aws | azure | gcp | onprem | saas</span>
+  name         TEXT,                            <span class="cc">-- user-given name e.g. "prod-azure"</span>
+  credentials  JSONB,                           <span class="cc">-- encrypted at rest</span>
+  metadata     JSONB,                           <span class="cc">-- subscription_id, account_id, etc.</span>
+  created_at   TIMESTAMPTZ <span class="ck">DEFAULT NOW()</span>
+);
+
+<span class="ck">CREATE TABLE</span> scans (
+  id            UUID <span class="ck">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  plugin_id     TEXT <span class="ck">REFERENCES</span> plugins(id),
+  connector_id  UUID <span class="ck">REFERENCES</span> connectors(id),
+  trigger       TEXT,                           <span class="cc">-- scheduled | manual | cicd | webhook</span>
+  status        TEXT,                           <span class="cc">-- queued|running|completed|failed</span>
+  started_at    TIMESTAMPTZ,
+  finished_at   TIMESTAMPTZ,
+  summary       JSONB                           <span class="cc">-- {critical:3, high:12, medium:45}</span>
+);
+
+<span class="ck">CREATE TABLE</span> findings (
+  id            UUID <span class="ck">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  scan_id       UUID <span class="ck">REFERENCES</span> scans(id),
+  plugin_id     TEXT,
+  domain        TEXT,                           <span class="cc">-- cspm|kspm|cwpp|ciem|image|iac|secrets|sspm|pentest</span>
+  cloud         TEXT,                           <span class="cc">-- aws|azure|gcp|onprem|none</span>
+  severity      TEXT,                           <span class="cc">-- CRITICAL|HIGH|MEDIUM|LOW|INFO</span>
+  resource_type TEXT,
+  resource_id   TEXT,
+  resource_name TEXT,
+  region        TEXT,
+  check_id      TEXT,
+  title         TEXT <span class="ck">NOT NULL</span>,
+  description   TEXT,
+  remediation   TEXT,
+  references    JSONB,                          <span class="cc">-- [{url, title}]</span>
+  frameworks    TEXT[],                         <span class="cc">-- ['cis-1.4', 'pci-dss-3.2', 'soc2']</span>
+  raw_output    JSONB,
+  status        TEXT <span class="ck">DEFAULT</span> <span class="cs">'open'</span>,          <span class="cc">-- open|acknowledged|suppressed|resolved</span>
+  assigned_to   TEXT,
+  first_seen    TIMESTAMPTZ <span class="ck">DEFAULT NOW()</span>,
+  last_seen     TIMESTAMPTZ <span class="ck">DEFAULT NOW()</span>,
+  tags          TEXT[] <span class="ck">DEFAULT</span> <span class="cs">'{}'</span>
+);</pre>
+  </div>
+</section>
+
+<!-- 7. DATA FLOWS -->
+<section class="sec" id="dataflow">
+  <div class="sec-hdr"><span class="sec-n">07</span><h2 class="sec-title">Three data flows</h2></div>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-t" style="color:var(--blue)">Flow 1 — Scheduled scan</div>
+      <ol style="padding-left:16px;font-size:12px;color:var(--muted);margin-top:8px;line-height:2">
+        <li>APScheduler fires cron trigger</li>
+        <li>Pulls plugin config + connector creds</li>
+        <li>Runs Docker container for scanner</li>
+        <li>Container outputs JSON to shared volume</li>
+        <li>Normalizer maps → common schema</li>
+        <li>Upsert to PostgreSQL findings table</li>
+        <li>Dashboard refreshes on next poll</li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="card-t" style="color:var(--red)">Flow 2 — UI-triggered pentest</div>
+      <ol style="padding-left:16px;font-size:12px;color:var(--muted);margin-top:8px;line-height:2">
+        <li>User clicks "Run Nuclei" in dashboard</li>
+        <li>POST /api/trigger-scan { plugin, params }</li>
+        <li>FastAPI → Redis job queue</li>
+        <li>Celery worker picks up job</li>
+        <li>Runs scanner Docker container</li>
+        <li>Normalizer → PostgreSQL</li>
+        <li>WebSocket pushes "complete" + results to UI</li>
+      </ol>
+    </div>
+    <div class="card">
+      <div class="card-t" style="color:var(--green)">Flow 3 — CI/CD pipeline</div>
+      <ol style="padding-left:16px;font-size:12px;color:var(--muted);margin-top:8px;line-height:2">
+        <li>PR opened / commit pushed</li>
+        <li>Pipeline runs Trivy, Checkov, Gitleaks</li>
+        <li>Each tool outputs JSON artifact</li>
+        <li>POST to /api/ingest with tool name + JSON</li>
+        <li>Normalizer maps → findings</li>
+        <li>PR gets comment with finding count</li>
+        <li>Gate fails if CRITICAL findings exist</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="call call-a">
+    <strong>Falco is different:</strong> it runs as a daemon (not triggered) and pushes alerts via webhook to <code>POST /webhook/falco</code> in real time. FastAPI writes them as CRITICAL findings and broadcasts to all WebSocket clients immediately.
+  </div>
+</section>
+
+<!-- 8. LOCAL SETUP -->
+<section class="sec" id="local-setup">
+  <div class="sec-hdr"><span class="sec-n">08</span><h2 class="sec-title">Local setup — get running in 15 minutes</h2></div>
+
+  <div class="code">
+    <div class="code-hdr"><span>Prerequisites + first run</span><span class="lang">bash</span></div>
+    <pre>
+<span class="cc"># Prerequisites: Docker Desktop (Mac/Windows) or Docker Engine (Linux)</span>
+<span class="cc"># That's it. No cloud account needed to start.</span>
+
+<span class="cc"># Clone the project</span>
+git clone https://github.com/your-org/opencnapp
+cd opencnapp
+
+<span class="cc"># Copy example env file and edit with your settings</span>
+cp .env.example .env
+<span class="cc"># Minimum required in .env:</span>
+<span class="cc">#   POSTGRES_PASSWORD=changeme</span>
+<span class="cc">#   REDIS_PASSWORD=changeme</span>
+<span class="cc">#   SECRET_KEY=generate-with-openssl-rand-hex-32</span>
+<span class="cc">#   ENCRYPTION_KEY=generate-with-openssl-rand-hex-32  (for connector creds at rest)</span>
+
+<span class="cc"># Start the core platform (no scanners yet)</span>
+docker compose up -d core
+
+<span class="cc"># Open dashboard</span>
+open http://localhost:3000
+<span class="cc"># Default login: admin / changeme (prompted to change on first login)</span>
+
+<span class="cc"># ── OPTIONAL: enable specific scanner plugins ──</span>
+
+<span class="cc"># Enable Prowler (CSPM) — add Azure/AWS/GCP creds via UI or .env</span>
+docker compose --profile prowler up -d
+
+<span class="cc"># Enable Falco (runtime) — needs Docker socket access</span>
+docker compose --profile falco up -d
+
+<span class="cc"># Enable BloodHound CE (CIEM)</span>
+docker compose --profile bloodhound up -d
+
+<span class="cc"># Enable everything</span>
+docker compose --profile all up -d
+
+<span class="cc"># View logs</span>
+docker compose logs -f api
+docker compose logs -f normalizer</pre>
+  </div>
+</section>
+
+<!-- 9. CONNECTORS -->
+<section class="sec" id="connectors">
+  <div class="sec-hdr"><span class="sec-n">09</span><h2 class="sec-title">Cloud connectors — add your infrastructure</h2></div>
+  <p class="sec-desc">Connectors are added via the dashboard UI. Each connector stores credentials encrypted in PostgreSQL and injects them into scanner containers at runtime.</p>
+
+  <div class="grid2">
+    <div>
+      <h4 style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--teal)">Azure connector</h4>
+      <div class="code">
+        <div class="code-hdr"><span>App Registration setup</span><span class="lang">bash</span></div>
+        <pre>
+<span class="cc"># Create service principal for OpenCNAPP</span>
+az ad sp create-for-rbac \
+  --name "opencnapp-scanner" \
+  --role "Security Reader" \
+  --scopes /subscriptions/YOUR_SUB_ID
+
+<span class="cc"># Also add Reader role for resource enumeration</span>
+az role assignment create \
+  --assignee &lt;appId&gt; \
+  --role Reader \
+  --scope /subscriptions/YOUR_SUB_ID
+
+<span class="cc"># Outputs: appId, password, tenant</span>
+<span class="cc"># Paste these into Dashboard → Connectors → Add Azure</span></pre>
+      </div>
+    </div>
+    <div>
+      <h4 style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--orange)">AWS connector</h4>
+      <div class="code">
+        <div class="code-hdr"><span>IAM setup for scanner</span><span class="lang">bash</span></div>
+        <pre>
+<span class="cc"># Create IAM user or role with SecurityAudit policy</span>
+aws iam create-user --user-name opencnapp-scanner
+aws iam attach-user-policy \
+  --user-name opencnapp-scanner \
+  --policy-arn arn:aws:iam::aws:policy/SecurityAudit
+aws iam attach-user-policy \
+  --user-name opencnapp-scanner \
+  --policy-arn arn:aws:iam::aws:policy/ReadOnlyAccess
+
+<span class="cc"># Create access key</span>
+aws iam create-access-key --user-name opencnapp-scanner
+<span class="cc"># Add key to Dashboard → Connectors → Add AWS</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="call call-b">
+    <strong>No cloud account?</strong> You can still use OpenCNAPP for local scanning: secrets detection on local git repos, IaC scanning of Terraform files, network scanning of local services, and web app scanning via Nuclei. Add cloud connectors later when you have them.
+  </div>
+</section>
+
+<!-- 10. CSPM INSTALL -->
+<section class="sec" id="cspm-install">
+  <div class="sec-hdr"><span class="sec-n">10</span><h2 class="sec-title">CSPM — Prowler setup</h2></div>
+  <div class="code">
+    <div class="code-hdr"><span>docker-compose profile for Prowler — multi-cloud</span><span class="lang">yaml</span></div>
+    <pre>
+<span class="cc"># In docker-compose.yml — prowler service</span>
+prowler-scheduler:
+  image: toniblyx/prowler:latest
+  profiles: [prowler, all]
+  volumes:
+    - ./output/prowler:/output
+    - ./plugins/prowler:/plugin:ro
+  environment:
+    <span class="cc"># Azure</span>
+    AZURE_CLIENT_ID:       ${AZURE_CLIENT_ID:-}
+    AZURE_CLIENT_SECRET:   ${AZURE_CLIENT_SECRET:-}
+    AZURE_TENANT_ID:       ${AZURE_TENANT_ID:-}
+    AZURE_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID:-}
+    <span class="cc"># AWS</span>
+    AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    AWS_DEFAULT_REGION:    ${AWS_DEFAULT_REGION:-us-east-1}
+    <span class="cc"># Normalizer config</span>
+    DATABASE_URL:          postgresql://cnapp:${POSTGRES_PASSWORD}@postgres/cnapp
+    SCAN_TOOL:             prowler
+  networks: [cnapp-net]
+  <span class="cc"># Not long-running — triggered by scheduler service</span>
+  restart: "no"</pre>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">The scheduler service calls <code>docker compose run prowler-scheduler prowler azure -M json -o /output/results.json</code> on the configured cron. Output lands in <code>./output/prowler/</code>, normalizer picks it up.</p>
+</section>
+
+<!-- 11. KSPM -->
+<section class="sec" id="kspm-install">
+  <div class="sec-hdr"><span class="sec-n">11</span><h2 class="sec-title">KSPM — Kubescape (only if you have K8s)</h2></div>
+  <div class="call call-a"><strong>Skip this entire section</strong> if you don't have Kubernetes. The platform works perfectly without it. Enable it later when K8s is in scope.</div>
+  <div class="code">
+    <div class="code-hdr"><span>Kubescape — local kubeconfig mode (no in-cluster required)</span><span class="lang">bash</span></div>
+    <pre>
+<span class="cc"># Option A: Run against local kubeconfig (from your laptop/VM)</span>
+<span class="cc"># Kubescape reads ~/.kube/config to connect to remote clusters</span>
+docker run --rm \
+  -v ~/.kube:/root/.kube:ro \
+  -v $(pwd)/output/kubescape:/output \
+  quay.io/kubescape/kubescape:latest \
+  scan framework cis-aks-t1.3 \
+  --format json --output /output/results.json
+
+<span class="cc"># Option B: In-cluster operator (if you want continuous K8s scanning)</span>
+<span class="cc"># This deploys into the cluster itself, not from your local Docker Compose</span>
+helm repo add kubescape https://kubescape.github.io/helm-charts/
+helm install kubescape kubescape/kubescape-operator \
+  --namespace kubescape --create-namespace \
+  --set clusterName=my-cluster \
+  --set capabilities.continuousScan=enable
+
+<span class="cc"># For in-cluster option: Kubescape pushes results to your OpenCNAPP API</span>
+<span class="cc"># via a webhook configured in the operator values:</span>
+<span class="cc"># webhookURL: http://your-opencnapp-vm:8080/api/ingest</span></pre>
+  </div>
+</section>
+
+<!-- 12. CWPP -->
+<section class="sec" id="cwpp-install">
+  <div class="sec-hdr"><span class="sec-n">12</span><h2 class="sec-title">CWPP — Falco runtime protection</h2></div>
+  <div class="code">
+    <div class="code-hdr"><span>Falco via Docker (non-K8s option)</span><span class="lang">bash</span></div>
+    <pre>
+<span class="cc"># Falco on a Linux VM or bare-metal host (no K8s needed)</span>
+<span class="cc"># Uses the Docker socket to monitor all containers on the host</span>
+
+falco:
+  image: falcosecurity/falco-no-driver:latest
+  profiles: [falco, all]
+  privileged: true
+  volumes:
+    - /var/run/docker.sock:/host/var/run/docker.sock
+    - /proc:/host/proc:ro
+    - /boot:/host/boot:ro
+    - ./config/falco/falco.yaml:/etc/falco/falco.yaml:ro
+    - ./config/falco/rules.d:/etc/falco/rules.d:ro
+  networks: [cnapp-net]
+  restart: always
+
+falcosidekick:
+  image: falcosecurity/falcosidekick:latest
+  profiles: [falco, all]
+  environment:
+    WEBHOOK_ADDRESS: http://api:8080/webhook/falco
+    SLACK_WEBHOOKURL: ${SLACK_WEBHOOK_URL:-}
+    SLACK_MINIMUMPRIORITY: warning
+    TEAMS_WEBHOOKURL: ${TEAMS_WEBHOOK_URL:-}
+  networks: [cnapp-net]
+  restart: always
+
+<span class="cc"># falco.yaml — key config</span>
+<span class="cc"># json_output: true</span>
+<span class="cc"># json_include_output_property: true</span>
+<span class="cc"># http_output:</span>
+<span class="cc">#   enabled: true</span>
+<span class="cc">#   url: http://falcosidekick:2801</span></pre>
+  </div>
+  <div class="call call-r"><strong>Linux only:</strong> Falco's kernel-level monitoring requires Linux. On Mac/Windows development machines, Falco can only run inside a Linux VM or WSL2. For production monitoring, it should always run on Linux hosts.</div>
+</section>
+
+<!-- 13. CIEM -->
+<section class="sec" id="ciem-install">
+  <div class="sec-hdr"><span class="sec-n">13</span><h2 class="sec-title">CIEM — BloodHound CE</h2></div>
+  <div class="code">
+    <div class="code-hdr"><span>BloodHound CE via Docker Compose profile</span><span class="lang">yaml</span></div>
+    <pre>
+<span class="cc"># BloodHound CE: Neo4j + BHE API + BHE UI</span>
+bloodhound-db:
+  image: neo4j:4.4
+  profiles: [bloodhound, all]
+  environment:
+    NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-bloodhound}
+    NEO4J_dbms_memory_heap_initial__size: 256m
+    NEO4J_dbms_memory_heap_max__size: 1G
+  volumes:
+    - bloodhound-neo4j:/data
+  networks: [cnapp-net]
+
+bloodhound:
+  image: ghcr.io/specterops/bloodhound:latest
+  profiles: [bloodhound, all]
+  environment:
+    bhe_database_connection: "neo4j://neo4j:${NEO4J_PASSWORD}@bloodhound-db:7687"
+  ports: ["8888:8080"]    <span class="cc"># BloodHound UI at localhost:8888</span>
+  networks: [cnapp-net]
+  depends_on: [bloodhound-db]
+
+<span class="cc">## Run AzureHound data collection (Azure CIEM)</span>
+<span class="cc">## Schedule weekly via OpenCNAPP scheduler</span>
+azurehound-collector:
+  image: ghcr.io/bloodhoundad/azurehound:latest
+  profiles: [bloodhound, all]
+  environment:
+    AZURE_TENANT_ID:     ${AZURE_TENANT_ID:-}
+    AZURE_CLIENT_ID:     ${AZURE_CLIENT_ID:-}
+    AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:-}
+  volumes:
+    - ./output/azurehound:/output
+  command: list-all -o /output/data.json
+  networks: [cnapp-net]
+  restart: "no"</pre>
+  </div>
+</section>
+
+<!-- 14. CI/CD -->
+<section class="sec" id="cicd-install">
+  <div class="sec-hdr"><span class="sec-n">14</span><h2 class="sec-title">CI/CD integrations — push findings to OpenCNAPP</h2></div>
+  <p class="sec-desc">CI/CD tools run in the pipeline and POST results to your OpenCNAPP instance. Works with any CI/CD system. No CI/CD at all? Just use the scheduled scanner mode instead.</p>
+
+  <div class="code">
+    <div class="code-hdr"><span>GitHub Actions — Trivy + Checkov + Gitleaks → OpenCNAPP</span><span class="lang">yaml</span></div>
+    <pre>
+<span class="cc"># .github/workflows/security-scan.yml</span>
+name: Security Scan
+on: [push, pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }     <span class="cc"># full history for gitleaks</span>
+
+      <span class="cc"># 1. Gitleaks — secrets in this commit/PR</span>
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        id: gitleaks
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+
+      <span class="cc"># 2. Trivy — IaC + image scanning</span>
+      - name: Trivy IaC scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          format: json
+          output: trivy-iac.json
+          exit-code: '0'            <span class="cc"># don't fail pipeline here, let CNAPP decide</span>
+
+      <span class="cc"># 3. Checkov — deeper IaC</span>
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          output_format: json
+          output_file_path: checkov.json
+          soft_fail: true
+
+      <span class="cc"># 4. POST all results to your OpenCNAPP instance</span>
+      - name: Send to OpenCNAPP
+        run: |
+          for tool in gitleaks trivy-iac checkov; do
+            [ -f "${tool}.json" ] && curl -s -X POST \
+              "${{ secrets.OPENCNAPP_URL }}/api/ingest" \
+              -H "Authorization: Bearer ${{ secrets.OPENCNAPP_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"tool\": \"${tool}\", \"trigger\": \"cicd\",
+                   \"repo\": \"${{ github.repository }}\",
+                   \"commit\": \"${{ github.sha }}\",
+                   \"data\": $(cat ${tool}.json)}"
+          done
+
+      <span class="cc"># 5. Optionally: comment on PR with finding summary</span>
+      - name: PR comment
+        if: github.event_name == 'pull_request'
+        run: |
+          SUMMARY=$(curl -s "${{ secrets.OPENCNAPP_URL }}/api/scan-summary/latest" \
+            -H "Authorization: Bearer ${{ secrets.OPENCNAPP_TOKEN }}")
+          gh pr comment ${{ github.event.number }} --body "$SUMMARY"
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }</pre>
+  </div>
+
+  <div class="code">
+    <div class="code-hdr"><span>Azure DevOps pipeline equivalent</span><span class="lang">yaml</span></div>
+    <pre>
+<span class="cc"># azure-pipelines.yml</span>
+trigger: [main, develop]
+pool: { vmImage: ubuntu-latest }
+
+steps:
+  - script: |
+      docker run --rm -v $(pwd):/scan \
+        zricethezav/gitleaks detect --source /scan \
+        --report-format json --report-path /scan/gitleaks.json || true
+    displayName: Gitleaks scan
+
+  - script: |
+      docker run --rm -v $(pwd):/src \
+        aquasec/trivy:latest config /src \
+        --format json --output /src/trivy.json || true
+    displayName: Trivy IaC scan
+
+  - script: |
+      pip install checkov -q
+      checkov -d . --output json --output-file checkov.json --soft-fail || true
+    displayName: Checkov IaC scan
+
+  - script: |
+      for tool in gitleaks trivy checkov; do
+        [ -f "${tool}.json" ] && curl -s -X POST \
+          "$(OPENCNAPP_URL)/api/ingest" \
+          -H "Authorization: Bearer $(OPENCNAPP_TOKEN)" \
+          -d "{\"tool\":\"${tool}\",\"data\":$(cat ${tool}.json)}"
+      done
+    displayName: Send to OpenCNAPP</pre>
+  </div>
+</section>
+
+<!-- 15. PENTEST RUNNER -->
+<section class="sec" id="pentest-install">
+  <div class="sec-hdr"><span class="sec-n">15</span><h2 class="sec-title">Pentest runner — full list of UI-triggered tools</h2></div>
+  <p class="sec-desc">These tools run on-demand from the dashboard. Each is a Docker container that runs, outputs JSON, and results appear in the UI via WebSocket.</p>
+
+  <table>
+    <thead><tr><th>Tool</th><th>What it scans</th><th>Needs cloud?</th><th>Needs K8s?</th><th>Periodic?</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">nuclei</td><td>Web apps, APIs, cloud services — 10k+ templates</td><td>Optional</td><td>No</td><td>Weekly</td></tr>
+      <tr><td class="mono">kube-hunter</td><td>K8s attack paths: exposed APIs, priv escalation</td><td>No</td><td>✓ Required</td><td>Weekly</td></tr>
+      <tr><td class="mono">cloudfox</td><td>AWS/Azure attack surface: exposed services, secrets</td><td>✓ Required</td><td>No</td><td>Monthly</td></tr>
+      <tr><td class="mono">nmap</td><td>Open ports on IP ranges / subnets</td><td>No</td><td>No</td><td>Weekly</td></tr>
+      <tr><td class="mono">naabu</td><td>Fast port scanning (ProjectDiscovery) — faster than nmap for large ranges</td><td>No</td><td>No</td><td>Weekly</td></tr>
+      <tr><td class="mono">nikto</td><td>Web server misconfigs, outdated software, dangerous files</td><td>No</td><td>No</td><td>Monthly</td></tr>
+      <tr><td class="mono">sslyze</td><td>TLS/SSL configuration: weak ciphers, expired certs, HSTS</td><td>No</td><td>No</td><td>Weekly</td></tr>
+      <tr><td class="mono">trufflehog</td><td>Deep git history secret scan (one-time + periodic)</td><td>No</td><td>No</td><td>Monthly</td></tr>
+      <tr><td class="mono">pmapper</td><td>AWS IAM privilege escalation paths</td><td>✓ AWS</td><td>No</td><td>Weekly</td></tr>
+      <tr><td class="mono">scubagear</td><td>M365/O365 configuration audit (SSPM)</td><td>✓ M365</td><td>No</td><td>Monthly</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code">
+    <div class="code-hdr"><span>Pentest job runner — FastAPI + Docker SDK</span><span class="lang">python</span></div>
+    <pre>
+<span class="cc"># workers/pentest_runner.py</span>
+<span class="ck">import</span> docker, uuid, json
+<span class="ck">from</span> celery <span class="ck">import</span> Celery
+<span class="ck">from</span> .normalizers <span class="ck">import</span> get_normalizer
+<span class="ck">from</span> .database <span class="ck">import</span> insert_findings, update_scan_status
+<span class="ck">from</span> .websocket <span class="ck">import</span> broadcast
+
+app = Celery(<span class="cs">"cnapp"</span>, broker=<span class="cs">"redis://redis:6379/0"</span>)
+client = docker.from_env()
+
+PENTEST_TOOLS = {
+    <span class="cs">"nuclei"</span>: {
+        <span class="cs">"image"</span>: <span class="cs">"projectdiscovery/nuclei:latest"</span>,
+        <span class="cs">"cmd"</span>:   <span class="cs">lambda p: [</span><span class="cs">"nuclei"</span>,<span class="cs">"-u"</span>,p[<span class="cs">"target"</span>],<span class="cs">"-json"</span>,<span class="cs">"-o"</span>,<span class="cs">"/output/out.json"</span>]
+    },
+    <span class="cs">"kube-hunter"</span>: {
+        <span class="cs">"image"</span>: <span class="cs">"aquasec/kube-hunter:latest"</span>,
+        <span class="cs">"cmd"</span>:   <span class="cs">lambda p: [</span><span class="cs">"kube-hunter"</span>,<span class="cs">"--pod"</span>,<span class="cs">"--report"</span>,<span class="cs">"json"</span>]
+    },
+    <span class="cs">"nmap"</span>: {
+        <span class="cs">"image"</span>: <span class="cs">"instrumentisto/nmap:latest"</span>,
+        <span class="cs">"cmd"</span>:   <span class="cs">lambda p: [</span><span class="cs">"nmap"</span>,<span class="cs">"-sV"</span>,<span class="cs">"-oJ"</span>,<span class="cs">"/output/out.json"</span>,p[<span class="cs">"target"</span>]]
+    },
+    <span class="cs">"sslyze"</span>: {
+        <span class="cs">"image"</span>: <span class="cs">"nablac0d3/sslyze:latest"</span>,
+        <span class="cs">"cmd"</span>:   <span class="cs">lambda p: [</span><span class="cs">"sslyze"</span>,<span class="cs">"--json_out=/output/out.json"</span>,p[<span class="cs">"target"</span>]]
+    },
+    <span class="cs">"nikto"</span>: {
+        <span class="cs">"image"</span>: <span class="cs">"frapsoft/nikto:latest"</span>,
+        <span class="cs">"cmd"</span>:   <span class="cs">lambda p: [</span><span class="cs">"nikto"</span>,<span class="cs">"-h"</span>,p[<span class="cs">"target"</span>],<span class="cs">"-Format"</span>,<span class="cs">"json"</span>,<span class="cs">"-output"</span>,<span class="cs">"/output/out.json"</span>]
+    },
+}
+
+@app.task
+<span class="ck">def</span> <span class="cf">run_pentest</span>(tool: str, scan_id: str, params: dict):
+    update_scan_status(scan_id, <span class="cs">"running"</span>)
+    output_dir = <span class="cs">f"/tmp/cnapp-scans/{scan_id}"</span>
+
+    <span class="ck">try</span>:
+        cfg = PENTEST_TOOLS[tool]
+        container = client.containers.run(
+            cfg[<span class="cs">"image"</span>],
+            command=cfg[<span class="cs">"cmd"</span>](params),
+            volumes={output_dir: {<span class="cs">"bind"</span>: <span class="cs">"/output"</span>, <span class="cs">"mode"</span>: <span class="cs">"rw"</span>}},
+            remove=<span class="ck">True</span>, detach=<span class="ck">False</span>
+        )
+        <span class="ck">with</span> open(<span class="cs">f"{output_dir}/out.json"</span>) <span class="ck">as</span> f:
+            raw = json.load(f)
+
+        normalizer = get_normalizer(tool)
+        findings = normalizer.normalize(raw, scan_id)
+        insert_findings(findings)
+        update_scan_status(scan_id, <span class="cs">"completed"</span>, len(findings))
+        broadcast({<span class="cs">"event"</span>: <span class="cs">"scan_complete"</span>, <span class="cs">"scan_id"</span>: scan_id, <span class="cs">"count"</span>: len(findings)})
+
+    <span class="ck">except Exception as</span> e:
+        update_scan_status(scan_id, <span class="cs">"failed"</span>, error=str(e))
+        broadcast({<span class="cs">"event"</span>: <span class="cs">"scan_failed"</span>, <span class="cs">"scan_id"</span>: scan_id, <span class="cs">"error"</span>: str(e)})</pre>
+  </div>
+</section>
+
+<!-- 16. NORMALIZER -->
+<section class="sec" id="normalizer">
+  <div class="sec-hdr"><span class="sec-n">16</span><h2 class="sec-title">Normalizer service — adapters for every tool</h2></div>
+
+  <div class="code">
+    <div class="code-hdr"><span>Base normalizer class + Prowler adapter</span><span class="lang">python</span></div>
+    <pre>
+<span class="cc"># normalizers/base.py</span>
+<span class="ck">from</span> abc <span class="ck">import</span> ABC, abstractmethod
+<span class="ck">from</span> typing <span class="ck">import</span> List
+<span class="ck">import</span> uuid
+<span class="ck">from</span> datetime <span class="ck">import</span> datetime, timezone
+
+SEV_NORM = {
+    <span class="cc"># Prowler</span>
+    <span class="cs">"critical"</span>: <span class="cs">"CRITICAL"</span>, <span class="cs">"high"</span>: <span class="cs">"HIGH"</span>, <span class="cs">"medium"</span>: <span class="cs">"MEDIUM"</span>,
+    <span class="cs">"low"</span>: <span class="cs">"LOW"</span>, <span class="cs">"informational"</span>: <span class="cs">"INFO"</span>,
+    <span class="cc"># Kubescape</span>
+    <span class="cs">"Critical"</span>: <span class="cs">"CRITICAL"</span>, <span class="cs">"High"</span>: <span class="cs">"HIGH"</span>, <span class="cs">"Medium"</span>: <span class="cs">"MEDIUM"</span>, <span class="cs">"Low"</span>: <span class="cs">"LOW"</span>,
+    <span class="cc"># Falco</span>
+    <span class="cs">"EMERGENCY"</span>: <span class="cs">"CRITICAL"</span>, <span class="cs">"ALERT"</span>: <span class="cs">"CRITICAL"</span>, <span class="cs">"CRITICAL"</span>: <span class="cs">"CRITICAL"</span>,
+    <span class="cs">"ERROR"</span>: <span class="cs">"HIGH"</span>, <span class="cs">"WARNING"</span>: <span class="cs">"HIGH"</span>, <span class="cs">"NOTICE"</span>: <span class="cs">"MEDIUM"</span>,
+    <span class="cc"># Trivy</span>
+    <span class="cs">"CRITICAL"</span>: <span class="cs">"CRITICAL"</span>, <span class="cs">"HIGH"</span>: <span class="cs">"HIGH"</span>, <span class="cs">"MEDIUM"</span>: <span class="cs">"MEDIUM"</span>,
+}
+
+<span class="ck">class</span> <span class="cf">BaseNormalizer</span>(ABC):
+    tool: str
+    domain: str
+
+    <span class="ck">def</span> <span class="cf">_base</span>(self, scan_id: str) -> dict:
+        <span class="ck">return</span> {<span class="cs">"id"</span>: str(uuid.uuid4()), <span class="cs">"scan_id"</span>: scan_id,
+                <span class="cs">"tool"</span>: self.tool, <span class="cs">"domain"</span>: self.domain,
+                <span class="cs">"first_seen"</span>: datetime.now(timezone.utc).isoformat(),
+                <span class="cs">"last_seen"</span>: datetime.now(timezone.utc).isoformat(),
+                <span class="cs">"status"</span>: <span class="cs">"open"</span>}
+
+    <span class="ck">def</span> <span class="cf">sev</span>(self, raw_sev: str) -> str:
+        <span class="ck">return</span> SEV_NORM.get(raw_sev, <span class="cs">"INFO"</span>)
+
+    @abstractmethod
+    <span class="ck">def</span> <span class="cf">normalize</span>(self, raw_data, scan_id: str) -> List[dict]:
+        ...
+
+<span class="cc"># normalizers/prowler.py</span>
+<span class="ck">class</span> <span class="cf">ProwlerNormalizer</span>(BaseNormalizer):
+    tool = <span class="cs">"prowler"</span>; domain = <span class="cs">"cspm"</span>
+
+    <span class="ck">def</span> <span class="cf">normalize</span>(self, raw_data, scan_id):
+        findings = []
+        items = raw_data <span class="ck">if isinstance</span>(raw_data, list) <span class="ck">else</span> [raw_data]
+        <span class="ck">for</span> item <span class="ck">in</span> items:
+            <span class="ck">if</span> item.get(<span class="cs">"Status"</span>) != <span class="cs">"FAIL"</span>: <span class="ck">continue</span>  <span class="cc"># skip PASS</span>
+            f = self._base(scan_id)
+            f.update({
+                <span class="cs">"cloud"</span>:         item.get(<span class="cs">"Cloud"</span>, <span class="cs">"aws"</span>).lower(),
+                <span class="cs">"severity"</span>:      self.sev(item.get(<span class="cs">"Severity"</span>, <span class="cs">""</span>)),
+                <span class="cs">"resource_type"</span>: item.get(<span class="cs">"ResourceType"</span>),
+                <span class="cs">"resource_id"</span>:   item.get(<span class="cs">"ResourceId"</span>),
+                <span class="cs">"resource_name"</span>: item.get(<span class="cs">"ResourceName"</span>),
+                <span class="cs">"region"</span>:        item.get(<span class="cs">"Region"</span>),
+                <span class="cs">"check_id"</span>:      item.get(<span class="cs">"CheckId"</span>),
+                <span class="cs">"title"</span>:         item.get(<span class="cs">"CheckTitle"</span>),
+                <span class="cs">"description"</span>:   item.get(<span class="cs">"Description"</span>),
+                <span class="cs">"remediation"</span>:   item.get(<span class="cs">"Remediation"</span>, {}).get(<span class="cs">"Text"</span>),
+                <span class="cs">"frameworks"</span>:    item.get(<span class="cs">"Compliance"</span>, []),
+                <span class="cs">"raw_output"</span>:    item,
+                <span class="cs">"tags"</span>:          [<span class="cs">"cspm"</span>, item.get(<span class="cs">"Cloud"</span>, <span class="cs">"aws"</span>).lower()]
+            })
+            findings.append(f)
+        <span class="ck">return</span> findings</pre>
+  </div>
+</section>
+
+<!-- 17. DASHBOARD -->
+<section class="sec" id="dashboard">
+  <div class="sec-hdr"><span class="sec-n">17</span><h2 class="sec-title">Dashboard — five screens + plugin manager</h2></div>
+  <div class="grid2">
+    <div class="card"><div class="card-t" style="color:var(--teal)">Screen 1: Posture overview</div><div class="card-d">Risk score 0–100. Findings by severity (donut). Findings by domain (bar). 30-day trend. Per-cloud breakdown. Immediate "what's worst" visibility.</div></div>
+    <div class="card"><div class="card-t" style="color:var(--blue)">Screen 2: Findings explorer</div><div class="card-d">Unified table — ALL tools, ALL clouds in one view. Filter: domain, severity, cloud, tool, status, resource type. Search by name. Click → detail panel with remediation. Bulk assign / suppress.</div></div>
+    <div class="card"><div class="card-t" style="color:var(--red)">Screen 3: Pentest runner</div><div class="card-d">Available tools list (only those with docker image present). Target input. Run Now button. Live job status. Results appear as formatted report + added to findings. Scheduled pentest configuration.</div></div>
+    <div class="card"><div class="card-t" style="color:var(--green)">Screen 4: Plugin manager</div><div class="card-d">Enable/disable each scanner. Configure credentials per connector. Set custom schedules. View last scan time + finding count per plugin. This is your "add your infrastructure" screen.</div></div>
+    <div class="card"><div class="card-t" style="color:var(--amber)">Screen 5: Connectors</div><div class="card-d">Add Azure subscriptions, AWS accounts, GCP projects, K8s clusters, git repos. Each connector gets tested on add. Credentials stored encrypted. Multi-account support.</div></div>
+    <div class="card"><div class="card-t" style="color:var(--purple)">Screen 6: Alerts + rules</div><div class="card-d">Real-time Falco alerts via WebSocket. Alert rules: if CRITICAL + cwpp → Slack immediately. Notification channels: Slack, Teams, email, PagerDuty. Alert history with acknowledgement.</div></div>
+  </div>
+</section>
+
+<!-- 18. ROADMAP -->
+<section class="sec" id="roadmap">
+  <div class="sec-hdr"><span class="sec-n">18</span><h2 class="sec-title">12-week implementation roadmap</h2></div>
+
+  <div class="phase">
+    <div class="phase-hdr" style="background:var(--teal-d)">
+      <span class="phase-n" style="color:var(--teal)">W1–2</span>
+      <span class="phase-title">Phase 1 — Core platform</span>
+      <span class="phase-dur">Docker Compose + DB + API + basic UI</span>
+    </div>
+    <div class="phase-body">
+      <div class="ptask">Set up project repo, Docker Compose with PostgreSQL, Redis, FastAPI, React skeleton</div>
+      <div class="ptask">Design + create findings, scans, plugins, connectors schema in PostgreSQL</div>
+      <div class="ptask">Build Plugin Manager screen — enable/disable, configure, test connection</div>
+      <div class="ptask">Build Connectors screen — add Azure/AWS/GCP with credential test</div>
+      <div class="ptask">Write base normalizer class + plugin discovery (auto-scan plugins/ directory)</div>
+      <div class="ptask">Basic findings table with placeholder data — proves the UI works</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-hdr" style="background:var(--blue-d)">
+      <span class="phase-n" style="color:var(--blue)">W3–4</span>
+      <span class="phase-title">Phase 2 — First scanners: CSPM + secrets</span>
+      <span class="phase-dur">First real findings in the dashboard</span>
+    </div>
+    <div class="phase-body">
+      <div class="ptask">Prowler plugin: yaml manifest + normalizer + CronJob via APScheduler</div>
+      <div class="ptask">Gitleaks plugin: yaml + normalizer + pre-commit hook docs</div>
+      <div class="ptask">Checkov plugin: yaml + normalizer</div>
+      <div class="ptask">Posture overview screen with real data: risk score, severity donut, domain bar chart</div>
+      <div class="ptask">CI/CD ingest endpoint: POST /api/ingest for GitHub Actions / Azure DevOps</div>
+      <div class="ptask">Provide sample CI/CD YAML for GitHub Actions and Azure DevOps</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-hdr" style="background:var(--red-d)">
+      <span class="phase-n" style="color:var(--red)">W5–6</span>
+      <span class="phase-title">Phase 3 — Runtime + Pentest runner</span>
+      <span class="phase-dur">Real-time protection + on-demand UI scans</span>
+    </div>
+    <div class="phase-body">
+      <div class="ptask">Falco Docker Compose profile + Falcosidekick → FastAPI webhook</div>
+      <div class="ptask">FastAPI WebSocket for real-time Falco alerts to dashboard</div>
+      <div class="ptask">Celery workers + Docker SDK for running pentest tool containers</div>
+      <div class="ptask">Pentest runner screen: Nuclei, Nmap, Nikto, SSLyze, CloudFox</div>
+      <div class="ptask">Scan status polling + WebSocket "complete" notification + report display</div>
+      <div class="ptask">Alerts + notification rules screen (Slack/Teams webhooks)</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-hdr" style="background:var(--purple-d)">
+      <span class="phase-n" style="color:var(--purple)">W7–8</span>
+      <span class="phase-title">Phase 4 — KSPM + CIEM (K8s users)</span>
+      <span class="phase-dur">Kubernetes and identity coverage (optional for users without K8s)</span>
+    </div>
+    <div class="phase-body">
+      <div class="ptask">Kubescape plugin: local kubeconfig mode + in-cluster operator webhook mode</div>
+      <div class="ptask">Polaris plugin: in-cluster web UI proxy + JSON scan output</div>
+      <div class="ptask">kube-hunter plugin: on-demand from Pentest runner screen</div>
+      <div class="ptask">BloodHound CE Docker Compose profile + AzureHound weekly collector</div>
+      <div class="ptask">PMapper plugin for AWS CIEM</div>
+      <div class="ptask">CIEM graph view in dashboard (embed BloodHound UI in iframe or link-out)</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-hdr" style="background:var(--amber-d)">
+      <span class="phase-n" style="color:var(--amber)">W9–10</span>
+      <span class="phase-title">Phase 5 — SSPM + compliance mapping</span>
+      <span class="phase-dur">O365 posture + framework compliance overlay</span>
+    </div>
+    <div class="phase-body">
+      <div class="ptask">ScubaGear plugin for M365/O365 (runs as PowerShell container)</div>
+      <div class="ptask">TruffleHog plugin: one-time deep history + monthly periodic mode</div>
+      <div class="ptask">Compliance frameworks: map findings.frameworks[] to CIS, PCI-DSS, SOC2, ISO27001</div>
+      <div class="ptask">Compliance report screen: % compliant per framework</div>
+      <div class="ptask">Finding status workflow: open → acknowledged → assigned → resolved</div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-hdr" style="background:var(--green-d)">
+      <span class="phase-n" style="color:var(--green)">W11–12</span>
+      <span class="phase-title">Phase 6 — Open-source release</span>
+      <span class="phase-dur">Documentation, packaging, community</span>
+    </div>
+    <div class="phase-body">
+      <div class="ptask">Write README: 15-minute quick start, architecture overview, plugin authoring guide</div>
+      <div class="ptask">Helm chart for K8s deployment (for users who want to self-host on K8s)</div>
+      <div class="ptask">Publish Docker images to GitHub Container Registry</div>
+      <div class="ptask">GitHub Actions for automated testing of each normalizer adapter</div>
+      <div class="ptask">Community plugin template + contribution guide</div>
+      <div class="ptask">Launch: GitHub release, security community posts, README badges</div>
+    </div>
+  </div>
+</section>
+
+<!-- 19. DOCKER COMPOSE -->
+<section class="sec" id="docker-compose">
+  <div class="sec-hdr"><span class="sec-n">19</span><h2 class="sec-title">docker-compose.yml — complete file</h2></div>
+  <div class="code">
+    <div class="code-hdr"><span>docker-compose.yml — full platform definition</span><span class="lang">yaml</span></div>
+    <pre>
+version: "3.9"
+
+<span class="cc"># Profiles: core (always), prowler, kspm, falco, bloodhound, all</span>
+
+networks:
+  cnapp-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  bloodhound-neo4j:
+  scanner-output:
+
+services:
+
+  <span class="cc">## ── CORE PLATFORM ──────────────────────────────────────</span>
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: [core, prowler, kspm, falco, bloodhound, all]
+    environment:
+      POSTGRES_DB: cnapp
+      POSTGRES_USER: cnapp
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [cnapp-net]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, pg_isready, -U, cnapp]
+      interval: 10s
+
+  redis:
+    image: redis:7-alpine
+    profiles: [core, prowler, kspm, falco, bloodhound, all]
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes: [redis-data:/data]
+    networks: [cnapp-net]
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    profiles: [core, prowler, kspm, falco, bloodhound, all]
+    environment:
+      DATABASE_URL:   postgresql://cnapp:${POSTGRES_PASSWORD}@postgres/cnapp
+      REDIS_URL:      redis://:${REDIS_PASSWORD}@redis:6379/0
+      SECRET_KEY:     ${SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    ports: ["8080:8080"]
+    volumes:
+      - scanner-output:/output
+      - /var/run/docker.sock:/var/run/docker.sock   <span class="cc"># for running scanner containers</span>
+    networks: [cnapp-net]
+    depends_on: {postgres: {condition: service_healthy}, redis: {condition: service_started}}
+    restart: unless-stopped
+
+  worker:
+    build: ./api
+    profiles: [core, prowler, kspm, falco, bloodhound, all]
+    command: celery -A workers.app worker --loglevel=info
+    environment:
+      DATABASE_URL:   postgresql://cnapp:${POSTGRES_PASSWORD}@postgres/cnapp
+      REDIS_URL:      redis://:${REDIS_PASSWORD}@redis:6379/0
+    volumes:
+      - scanner-output:/output
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [cnapp-net]
+    depends_on: [redis, postgres]
+    restart: unless-stopped
+
+  dashboard:
+    build: ./dashboard
+    profiles: [core, prowler, kspm, falco, bloodhound, all]
+    environment:
+      VITE_API_URL: http://localhost:8080
+    ports: ["3000:80"]
+    networks: [cnapp-net]
+    restart: unless-stopped
+
+  <span class="cc">## ── SCANNERS (optional profiles) ──────────────────────</span>
+
+  falco:
+    image: falcosecurity/falco-no-driver:latest
+    profiles: [falco, all]
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - ./config/falco/falco.yaml:/etc/falco/falco.yaml:ro
+    networks: [cnapp-net]
+    restart: always
+
+  falcosidekick:
+    image: falcosecurity/falcosidekick:latest
+    profiles: [falco, all]
+    environment:
+      WEBHOOK_ADDRESS:   http://api:8080/webhook/falco
+      SLACK_WEBHOOKURL:  ${SLACK_WEBHOOK_URL:-}
+      TEAMS_WEBHOOKURL:  ${TEAMS_WEBHOOK_URL:-}
+    networks: [cnapp-net]
+    depends_on: [falco]
+    restart: always
+
+  bloodhound-db:
+    image: neo4j:4.4
+    profiles: [bloodhound, all]
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-bloodhound}
+    volumes: [bloodhound-neo4j:/data]
+    networks: [cnapp-net]
+    restart: unless-stopped
+
+  bloodhound:
+    image: ghcr.io/specterops/bloodhound:latest
+    profiles: [bloodhound, all]
+    environment:
+      bhe_database_connection: "neo4j://neo4j:${NEO4J_PASSWORD:-bloodhound}@bloodhound-db:7687"
+    ports: ["8888:8080"]
+    networks: [cnapp-net]
+    depends_on: [bloodhound-db]
+    restart: unless-stopped</pre>
+  </div>
+</section>
+
+<!-- 20. OSS -->
+<section class="sec" id="oss">
+  <div class="sec-hdr"><span class="sec-n">20</span><h2 class="sec-title">Open-sourcing guide</h2></div>
+  <div class="grid2">
+    <div class="card"><div class="card-t" style="color:var(--teal)">Repository structure</div><div class="card-d" style="font-family:var(--mono);font-size:10px;line-height:2;color:var(--muted)">
+      opencnapp/<br>
+      ├── api/            (FastAPI backend)<br>
+      ├── dashboard/      (React frontend)<br>
+      ├── plugins/        (one dir per scanner)<br>
+      │   ├── prowler/<br>
+      │   │   ├── plugin.yaml<br>
+      │   │   └── normalizer.py<br>
+      │   ├── kubescape/<br>
+      │   └── falco/<br>
+      ├── config/         (falco rules, etc.)<br>
+      ├── docs/<br>
+      ├── docker-compose.yml<br>
+      ├── .env.example<br>
+      └── README.md
+    </div></div>
+    <div class="card"><div class="card-t" style="color:var(--amber)">Community plugin contract</div><div class="card-d">Any contributor can add a new scanner by providing:<br><br>
+      1. <code>plugins/toolname/plugin.yaml</code> — manifest<br>
+      2. <code>plugins/toolname/normalizer.py</code> — adapter<br>
+      3. A Docker image (public or buildable)<br>
+      4. A test with sample tool output<br><br>
+      No core platform changes needed. Auto-discovered on startup.
+    </div></div>
+  </div>
+  <div class="call call-g">
+    <strong>Suggested license:</strong> Apache 2.0 — allows commercial use, modification, distribution. Compatible with all the OSS tools it wraps. Good for community contributions. Avoid GPL as it may conflict with some tool licenses.
+  </div>
+</section>
+
+<hr>
+<div style="text-align:center;padding:24px 0;font-family:var(--mono);font-size:10px;color:var(--dim)">
+  OpenCNAPP · Local-First Open-Source CNAPP · Architecture Plan v2.0<br>
+  Multi-cloud · Plugin-based · Docker Compose · No K8s required
+</div>
+</main>
+
+<script>
+const sections = document.querySelectorAll('.sec');
+const links = document.querySelectorAll('.nav-link');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      links.forEach(l=>l.classList.remove('active'));
+      const a = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+},{threshold:0.25});
+sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+
+<style>
+* { box-sizing: border-box; }
+.road { padding: 8px 0; }
+.phase { margin-bottom: 18px; border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border-tertiary); }
+.phase-header { padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+.phase-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+.phase-title { font-weight: 500; font-size: 14px; color: var(--color-text-primary); }
+.phase-sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+.phase-body { padding: 0 16px 14px; }
+.step { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--color-border-tertiary); align-items: flex-start; }
+.step:last-child { border-bottom: none; }
+.step-num { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); min-width: 22px; padding-top: 1px; }
+.step-content { flex: 1; }
+.step-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 2px; }
+.step-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+.tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 500; margin-right: 4px; }
+.tag-free { background: #EAF3DE; color: #27500A; }
+.tag-paid { background: #E6F1FB; color: #0C447C; }
+.tag-time { background: #F1EFE8; color: #444441; }
+.tag-hot  { background: #FCEBEB; color: #791F1F; }
+
+.ph1 .phase-header { background: #E6F1FB; }
+.ph1 .phase-num { background: #185FA5; color: #E6F1FB; }
+.ph2 .phase-header { background: #E1F5EE; }
+.ph2 .phase-num { background: #0F6E56; color: #E1F5EE; }
+.ph3 .phase-header { background: #FAEEDA; }
+.ph3 .phase-num { background: #854F0B; color: #FAEEDA; }
+.ph4 .phase-header { background: #EEEDFE; }
+.ph4 .phase-num { background: #534AB7; color: #EEEDFE; }
+
+@media (prefers-color-scheme: dark) {
+  .ph1 .phase-header { background: #0C447C; }
+  .ph1 .phase-num { background: #85B7EB; color: #042C53; }
+  .ph2 .phase-header { background: #085041; }
+  .ph2 .phase-num { background: #5DCAA5; color: #04342C; }
+  .ph3 .phase-header { background: #633806; }
+  .ph3 .phase-num { background: #FAC775; color: #412402; }
+  .ph4 .phase-header { background: #3C3489; }
+  .ph4 .phase-num { background: #AFA9EC; color: #26215C; }
+  .tag-free { background: #173404; color: #C0DD97; }
+  .tag-paid { background: #042C53; color: #85B7EB; }
+  .tag-time { background: #2C2C2A; color: #B4B2A9; }
+  .tag-hot  { background: #501313; color: #F09595; }
+  .ph1 .phase-title, .ph2 .phase-title, .ph3 .phase-title, .ph4 .phase-title { color: var(--color-text-primary); }
+}
+</style>
+
+<div class="road">
+
+<!-- Phase 1 -->
+<div class="phase ph1">
+  <div class="phase-header">
+    <div class="phase-num">1</div>
+    <div>
+      <div class="phase-title">Day 1–2 — Activate what you already pay for</div>
+      <div class="phase-sub">Zero cost · Zero install · Immediate visibility · ~3 hours total</div>
+    </div>
+  </div>
+  <div class="phase-body">
+    <div class="step">
+      <div class="step-num">1.1</div>
+      <div class="step-content">
+        <div class="step-title">Enable Defender for Cloud — all plans</div>
+        <div class="step-desc">Azure Portal → Defender for Cloud → Environment Settings → enable <b>Defender for Containers</b>, <b>Defender for Servers</b> (Kafka VMs + Jump VMs), <b>Defender for Storage</b>, <b>Defender for Key Vault</b>. Check your secure score immediately — this is your baseline number.</div>
+        <div style="margin-top:5px"><span class="tag tag-paid">already licensed</span><span class="tag tag-time">~45 min</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">1.2</div>
+      <div class="step-content">
+        <div class="step-title">Enable Defender for Containers → AKS integration</div>
+        <div class="step-desc">This installs the Defender sensor as a DaemonSet in AKS automatically. Gives you runtime alerts, image vulnerability scanning from ACR, and K8s audit log analysis — without touching anything else. In Azure Portal: Defender for Cloud → Workload Protections → Containers.</div>
+        <div style="margin-top:5px"><span class="tag tag-paid">already licensed</span><span class="tag tag-time">~20 min</span><span class="tag tag-hot">do this first</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">1.3</div>
+      <div class="step-content">
+        <div class="step-title">Review Defender recommendations — triage top 10</div>
+        <div class="step-desc">Defender for Cloud → Recommendations → filter by severity "High". You'll see a list of specific misconfigs across all your resources. Don't fix everything — just read and categorise. Note what's in networking (App GW, Firewall rules), Key Vault, and AKS. This becomes your initial risk register.</div>
+        <div style="margin-top:5px"><span class="tag tag-paid">already licensed</span><span class="tag tag-time">~1 hour</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">1.4</div>
+      <div class="step-content">
+        <div class="step-title">Enable ACR vulnerability scanning</div>
+        <div class="step-desc">Defender for Containers automatically scans images pushed to your Azure Container Registry. Go to ACR → Microsoft Defender for Cloud tab and confirm it's active. All future image pushes will be scanned. Historical images get scanned within 24 hrs.</div>
+        <div style="margin-top:5px"><span class="tag tag-paid">already licensed</span><span class="tag tag-time">~10 min</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 2 -->
+<div class="phase ph2">
+  <div class="phase-header">
+    <div class="phase-num">2</div>
+    <div>
+      <div class="phase-title">Week 1 — Scan your K8s and Azure posture</div>
+      <div class="phase-sub">Free open-source tools · One-time scans · Find the unknown unknowns</div>
+    </div>
+  </div>
+  <div class="phase-body">
+    <div class="step">
+      <div class="step-num">2.1</div>
+      <div class="step-content">
+        <div class="step-title">Run Kubescape against AKS — get a K8s risk score</div>
+        <div class="step-desc">Install: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | /bin/bash</code> then run <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">kubescape scan --enable-host-scan --format html --output aks-report.html</code> against your cluster. You'll get a risk score (0–100), failed controls, and exact namespaces/workloads affected. This is your K8s baseline.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~30 min setup + 10 min scan</span><span class="tag tag-hot">most urgent</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2.2</div>
+      <div class="step-content">
+        <div class="step-title">Run kube-bench for CIS K8s benchmark</div>
+        <div class="step-desc">Run as a K8s Job: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job-aks.yaml</code> then <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">kubectl logs job/kube-bench</code>. Gives PASS/FAIL on node configuration, API server settings, etcd. AKS manages master nodes so some checks will be N/A — that's expected.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~20 min</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2.3</div>
+      <div class="step-content">
+        <div class="step-title">Run Prowler against Azure subscription</div>
+        <div class="step-desc">Install: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">pip install prowler</code>. Auth: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">az login</code>. Run: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">prowler azure --az-cli-auth --output-formats html json --output-directory ./prowler-out</code>. Takes 20–40 min. You'll get findings across all 21 services — Storage, Key Vault, Networking, PostgreSQL, Redis, Entra ID. Filter by CRITICAL and HIGH first.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~1 hour total</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2.4</div>
+      <div class="step-content">
+        <div class="step-title">Run AzureHound → BloodHound CE for identity mapping</div>
+        <div class="step-desc">Install BloodHound CE via Docker: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">docker compose up</code> from their repo. Run AzureHound collector to dump Entra ID + RBAC data. Import into BloodHound. Look specifically for: service principals with Key Vault access, Contributor/Owner role assignments, any identity that can reach your PostgreSQL or Redis. This will likely surprise you.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~2 hours first time</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 3 -->
+<div class="phase ph3">
+  <div class="phase-header">
+    <div class="phase-num">3</div>
+    <div>
+      <div class="phase-title">Week 2 — Add runtime detection + shift-left in CI/CD</div>
+      <div class="phase-sub">Falco in K8s · Trivy in pipeline · Gitleaks on repos</div>
+    </div>
+  </div>
+  <div class="phase-body">
+    <div class="step">
+      <div class="step-num">3.1</div>
+      <div class="step-content">
+        <div class="step-title">Deploy Falco in AKS as DaemonSet</div>
+        <div class="step-desc">Install via Helm: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">helm repo add falcosecurity https://falcosecurity.github.io/charts && helm install falco falcosecurity/falco --set falco.grpc.enabled=true -n falco --create-namespace</code>. Configure a webhook to send alerts to Teams or email. Default rules already catch: shell spawned in container, unexpected outbound network, write to /etc, privilege escalation. Test it by exec-ing into a pod — you should get an alert within seconds.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~2 hours</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3.2</div>
+      <div class="step-content">
+        <div class="step-title">Add Trivy to your CI/CD pipeline</div>
+        <div class="step-desc">In Azure DevOps or GitHub Actions, add a Trivy scan step after your Docker build. Block deploys with CRITICAL CVEs. Also add <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">trivy config .</code> to scan your Helm charts and K8s YAML at the same time. Simple YAML snippet: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">aquasecurity/trivy-action</code> GitHub Action or <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">aquasec/trivy</code> Azure DevOps task.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~1 hour per pipeline</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3.3</div>
+      <div class="step-content">
+        <div class="step-title">Run Gitleaks + TruffleHog on all repos (one-time history scan)</div>
+        <div class="step-desc">One-time deep scan: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">trufflehog git &lt;repo-url&gt;</code> on every repo. This finds secrets committed in the past — Azure storage keys, connection strings, Entra client secrets. Then add Gitleaks as a pre-commit hook and CI gate going forward.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~1 hour</span><span class="tag tag-hot">often finds real leaks</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3.4</div>
+      <div class="step-content">
+        <div class="step-title">Run ScubaGear on O365</div>
+        <div class="step-desc">PowerShell: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">Install-Module -Name ScubaGear; Invoke-SCuBA</code>. Checks MFA enforcement, external sharing in SharePoint/Teams, DKIM/DMARC on your domain, legacy auth protocols. Generates an HTML report. Fix any HIGH findings — especially legacy auth (common phishing vector).</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~1 hour</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 4 -->
+<div class="phase ph4">
+  <div class="phase-header">
+    <div class="phase-num">4</div>
+    <div>
+      <div class="phase-title">Week 3–4 — Build the unified dashboard (DefectDojo)</div>
+      <div class="phase-sub">Centralise all findings · assign · track · close · build recurring schedules</div>
+    </div>
+  </div>
+  <div class="phase-body">
+    <div class="step">
+      <div class="step-num">4.1</div>
+      <div class="step-content">
+        <div class="step-title">Deploy DefectDojo on a small Azure VM or K8s namespace</div>
+        <div class="step-desc">Docker Compose: <code style="background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;font-size:11px">git clone https://github.com/DefectDojo/django-DefectDojo && docker compose up</code>. Or deploy the Helm chart into a dedicated namespace in AKS. A Standard_B2s VM (~$30/mo) is enough. This becomes your permanent security operations hub.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free software</span><span class="tag tag-time">~3 hours setup</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4.2</div>
+      <div class="step-content">
+        <div class="step-title">Import all Phase 2+3 findings into DefectDojo</div>
+        <div class="step-desc">DefectDojo has built-in parsers for Prowler JSON, Kubescape JSON, Trivy JSON, Checkov JSON, and Gitleaks. Create a Product per system (e.g. "AKS Cluster", "Azure Infra", "Container Images"). Import each tool's output. DefectDojo deduplicates across scans and tracks findings over time — so re-running Prowler next week shows you what's new vs what's the same.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~2 hours</span></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4.3</div>
+      <div class="step-content">
+        <div class="step-title">Set up recurring scans on a schedule</div>
+        <div class="step-desc">Prowler + Kubescape: cron job weekly (or nightly if you want). Trivy image scan: every CI/CD pipeline run. Falco: always-on. Gitleaks: every commit. ScubaGear: monthly. Store all JSON outputs in an Azure Storage Blob and import to DefectDojo automatically via its API. This closes the loop — you now have continuous visibility without a commercial platform.</div>
+        <div style="margin-top:5px"><span class="tag tag-free">free</span><span class="tag tag-time">~2 hours to automate</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>

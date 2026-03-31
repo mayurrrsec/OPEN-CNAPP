@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="900" viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="900" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="600" y="44" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="700">OpenCNAPP — Architecture Overview</text>
+  <text x="600" y="66" text-anchor="middle" fill="#64748b" font-size="12">Local-first · Multi-cloud · Pluggable by design</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- OUTER: Docker Compose boundary -->
+  <rect x="20" y="82" width="860" height="790" rx="12" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="38" y="100" fill="#334155" font-size="10" font-weight="600" letter-spacing="1">DOCKER COMPOSE — runs on your laptop / server</text>
+
+  <!-- ═══ Layer 1: UI ═══ -->
+  <rect x="40" y="110" width="820" height="78" rx="8" fill="#0c1a35" stroke="#1d4ed8" stroke-width="1"/>
+  <text x="60" y="128" fill="#60a5fa" font-size="10" font-weight="700" letter-spacing="1">UI LAYER</text>
+  <!-- UI items -->
+  <rect x="56" y="135" width="148" height="38" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="130" y="151" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600">React Dashboard</text>
+  <text x="130" y="164" text-anchor="middle" fill="#60a5fa" font-size="9">Findings · Charts · Trends</text>
+
+  <rect x="214" y="135" width="148" height="38" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="288" y="151" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600">Scan Trigger UI</text>
+  <text x="288" y="164" text-anchor="middle" fill="#60a5fa" font-size="9">Run now · Schedule · Progress</text>
+
+  <rect x="372" y="135" width="148" height="38" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="446" y="151" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600">Pentest Runner</text>
+  <text x="446" y="164" text-anchor="middle" fill="#60a5fa" font-size="9">Nuclei · Nmap · kube-hunter</text>
+
+  <rect x="530" y="135" width="148" height="38" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="604" y="151" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600">Tool Config Wizard</text>
+  <text x="604" y="164" text-anchor="middle" fill="#60a5fa" font-size="9">Cloud · K8s · CI tools</text>
+
+  <rect x="688" y="135" width="148" height="38" rx="5" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+  <text x="762" y="151" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="600">Alert Config</text>
+  <text x="762" y="164" text-anchor="middle" fill="#60a5fa" font-size="9">Slack · Teams · Email</text>
+
+  <!-- Arrow UI → API -->
+  <line x1="450" y1="188" x2="450" y2="210" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)" stroke-dasharray="4 2"/>
+
+  <!-- ═══ Layer 2: API ═══ -->
+  <rect x="40" y="210" width="820" height="78" rx="8" fill="#0a1f14" stroke="#16a34a" stroke-width="1"/>
+  <text x="60" y="228" fill="#4ade80" font-size="10" font-weight="700" letter-spacing="1">API LAYER — FastAPI (Python)</text>
+  <rect x="56" y="235" width="130" height="38" rx="5" fill="#14532d" stroke="#22c55e" stroke-width="0.8"/>
+  <text x="121" y="251" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">REST /findings</text>
+  <text x="121" y="264" text-anchor="middle" fill="#4ade80" font-size="9">filter · sort · export</text>
+
+  <rect x="196" y="235" width="130" height="38" rx="5" fill="#14532d" stroke="#22c55e" stroke-width="0.8"/>
+  <text x="261" y="251" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">REST /scans</text>
+  <text x="261" y="264" text-anchor="middle" fill="#4ade80" font-size="9">trigger · status · history</text>
+
+  <rect x="336" y="235" width="148" height="38" rx="5" fill="#14532d" stroke="#22c55e" stroke-width="0.8"/>
+  <text x="410" y="251" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">WS /scan-progress</text>
+  <text x="410" y="264" text-anchor="middle" fill="#4ade80" font-size="9">real-time scan stream</text>
+
+  <rect x="494" y="235" width="162" height="38" rx="5" fill="#14532d" stroke="#22c55e" stroke-width="0.8"/>
+  <text x="575" y="251" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">Webhook /ingest/:tool</text>
+  <text x="575" y="264" text-anchor="middle" fill="#4ade80" font-size="9">CI pipeline · Falco alerts</text>
+
+  <rect x="666" y="235" width="170" height="38" rx="5" fill="#14532d" stroke="#22c55e" stroke-width="0.8"/>
+  <text x="751" y="251" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">Auth (JWT / OIDC)</text>
+  <text x="751" y="264" text-anchor="middle" fill="#4ade80" font-size="9">local v1 · Azure AD/Okta v2</text>
+
+  <!-- Arrow API → Worker -->
+  <line x1="300" y1="288" x2="300" y2="310" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="600" y1="288" x2="600" y2="310" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ═══ Layer 3: Worker ═══ -->
+  <rect x="40" y="310" width="820" height="78" rx="8" fill="#1c1400" stroke="#d97706" stroke-width="1"/>
+  <text x="60" y="328" fill="#fbbf24" font-size="10" font-weight="700" letter-spacing="1">WORKER LAYER — Celery + Redis</text>
+  <rect x="56" y="335" width="148" height="38" rx="5" fill="#3f2800" stroke="#d97706" stroke-width="0.8"/>
+  <text x="130" y="351" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Celery Workers</text>
+  <text x="130" y="364" text-anchor="middle" fill="#fbbf24" font-size="9">async scan execution</text>
+
+  <rect x="214" y="335" width="148" height="38" rx="5" fill="#3f2800" stroke="#d97706" stroke-width="0.8"/>
+  <text x="288" y="351" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Celery Beat</text>
+  <text x="288" y="364" text-anchor="middle" fill="#fbbf24" font-size="9">per-tool cron schedules</text>
+
+  <rect x="372" y="335" width="148" height="38" rx="5" fill="#3f2800" stroke="#d97706" stroke-width="0.8"/>
+  <text x="446" y="351" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Normalizer Pipeline</text>
+  <text x="446" y="364" text-anchor="middle" fill="#fbbf24" font-size="9">tool output → schema</text>
+
+  <rect x="530" y="335" width="148" height="38" rx="5" fill="#3f2800" stroke="#d97706" stroke-width="0.8"/>
+  <text x="604" y="351" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Pentest Job Runner</text>
+  <text x="604" y="364" text-anchor="middle" fill="#fbbf24" font-size="9">Docker job spawner</text>
+
+  <rect x="688" y="335" width="148" height="38" rx="5" fill="#3f2800" stroke="#d97706" stroke-width="0.8"/>
+  <text x="762" y="351" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Alert Dispatcher</text>
+  <text x="762" y="364" text-anchor="middle" fill="#fbbf24" font-size="9">Slack · Teams · Email</text>
+
+  <!-- Arrow Worker → Data -->
+  <line x1="450" y1="388" x2="450" y2="410" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ═══ Layer 4: Data ═══ -->
+  <rect x="40" y="410" width="820" height="78" rx="8" fill="#160b2a" stroke="#7c3aed" stroke-width="1"/>
+  <text x="60" y="428" fill="#a78bfa" font-size="10" font-weight="700" letter-spacing="1">DATA LAYER</text>
+  <rect x="56" y="435" width="200" height="38" rx="5" fill="#2e1065" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="156" y="451" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">PostgreSQL 16</text>
+  <text x="156" y="464" text-anchor="middle" fill="#a78bfa" font-size="9">findings · scans · users</text>
+
+  <rect x="266" y="435" width="180" height="38" rx="5" fill="#2e1065" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="356" y="451" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">Redis</text>
+  <text x="356" y="464" text-anchor="middle" fill="#a78bfa" font-size="9">job queue · pub/sub</text>
+
+  <rect x="456" y="435" width="200" height="38" rx="5" fill="#2e1065" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="556" y="451" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">Local File Store</text>
+  <text x="556" y="464" text-anchor="middle" fill="#a78bfa" font-size="9">raw scan JSON output</text>
+
+  <rect x="666" y="435" width="170" height="38" rx="5" fill="#2e1065" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="751" y="451" text-anchor="middle" fill="#c4b5fd" font-size="11" font-weight="600">tools.yaml Registry</text>
+  <text x="751" y="464" text-anchor="middle" fill="#a78bfa" font-size="9">plugin declarations</text>
+
+  <!-- Arrow Data → Tools -->
+  <line x1="450" y1="488" x2="450" y2="510" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ═══ Layer 5: Tools ═══ -->
+  <rect x="40" y="510" width="820" height="328" rx="8" fill="#0a1c1c" stroke="#0d9488" stroke-width="1"/>
+  <text x="60" y="528" fill="#2dd4bf" font-size="10" font-weight="700" letter-spacing="1">TOOL LAYER — each tool runs in an isolated Docker container</text>
+
+  <!-- CSPM row -->
+  <text x="60" y="550" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">CSPM</text>
+  <rect x="56" y="556" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="111" y="572" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Prowler</text>
+  <text x="111" y="585" text-anchor="middle" fill="#2dd4bf" font-size="9">Azure · AWS · GCP</text>
+  <text x="111" y="596" text-anchor="middle" fill="#0d9488" font-size="8">scheduled / on-demand</text>
+
+  <rect x="176" y="556" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="231" y="572" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">ScoutSuite</text>
+  <text x="231" y="585" text-anchor="middle" fill="#2dd4bf" font-size="9">Azure · AWS · GCP</text>
+  <text x="231" y="596" text-anchor="middle" fill="#0d9488" font-size="8">periodic audit</text>
+
+  <!-- KSPM row -->
+  <text x="316" y="550" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">KSPM (optional K8s)</text>
+  <rect x="312" y="556" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="367" y="572" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Kubescape</text>
+  <text x="367" y="585" text-anchor="middle" fill="#2dd4bf" font-size="9">any K8s cluster</text>
+  <text x="367" y="596" text-anchor="middle" fill="#0d9488" font-size="8">NSA / CIS benchmark</text>
+
+  <rect x="432" y="556" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="487" y="572" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">kube-bench</text>
+  <text x="487" y="585" text-anchor="middle" fill="#2dd4bf" font-size="9">any K8s cluster</text>
+  <text x="487" y="596" text-anchor="middle" fill="#0d9488" font-size="8">CIS K8s benchmark</text>
+
+  <rect x="552" y="556" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="607" y="572" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Polaris</text>
+  <text x="607" y="585" text-anchor="middle" fill="#2dd4bf" font-size="9">any K8s cluster</text>
+  <text x="607" y="596" text-anchor="middle" fill="#0d9488" font-size="8">workload best practices</text>
+
+  <!-- CWPP row -->
+  <text x="690" y="550" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">CWPP</text>
+  <rect x="686" y="556" width="160" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="766" y="572" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Falco</text>
+  <text x="766" y="585" text-anchor="middle" fill="#2dd4bf" font-size="9">K8s DaemonSet / VM binary</text>
+  <text x="766" y="596" text-anchor="middle" fill="#0d9488" font-size="8">always-on · webhook alerts</text>
+
+  <!-- IMAGE + IaC row -->
+  <text x="60" y="620" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">IMAGE SEC</text>
+  <rect x="56" y="626" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="111" y="642" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Trivy</text>
+  <text x="111" y="655" text-anchor="middle" fill="#2dd4bf" font-size="9">any registry</text>
+  <text x="111" y="666" text-anchor="middle" fill="#0d9488" font-size="8">CI ingest or local scan</text>
+
+  <rect x="176" y="626" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="231" y="642" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Grype + Syft</text>
+  <text x="231" y="655" text-anchor="middle" fill="#2dd4bf" font-size="9">any registry</text>
+  <text x="231" y="666" text-anchor="middle" fill="#0d9488" font-size="8">SBOM + CVE scan</text>
+
+  <text x="316" y="620" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">IaC + SECRETS</text>
+  <rect x="312" y="626" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="367" y="642" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Checkov</text>
+  <text x="367" y="655" text-anchor="middle" fill="#2dd4bf" font-size="9">Terraform · Helm · K8s</text>
+  <text x="367" y="666" text-anchor="middle" fill="#0d9488" font-size="8">CI ingest or local scan</text>
+
+  <rect x="432" y="626" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="487" y="642" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">Gitleaks</text>
+  <text x="487" y="655" text-anchor="middle" fill="#2dd4bf" font-size="9">any git repo</text>
+  <text x="487" y="666" text-anchor="middle" fill="#0d9488" font-size="8">CI ingest or local scan</text>
+
+  <rect x="552" y="626" width="110" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="607" y="642" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">TruffleHog</text>
+  <text x="607" y="655" text-anchor="middle" fill="#2dd4bf" font-size="9">git history deep scan</text>
+  <text x="607" y="666" text-anchor="middle" fill="#0d9488" font-size="8">scheduled weekly</text>
+
+  <!-- CIEM + SSPM -->
+  <text x="690" y="620" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">CIEM · SSPM</text>
+  <rect x="686" y="626" width="160" height="44" rx="5" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="766" y="642" text-anchor="middle" fill="#5eead4" font-size="11" font-weight="600">BloodHound CE</text>
+  <text x="766" y="655" text-anchor="middle" fill="#2dd4bf" font-size="9">Azure AD · AWS IAM</text>
+  <text x="766" y="666" text-anchor="middle" fill="#0d9488" font-size="8">identity attack paths</text>
+
+  <!-- PENTEST row -->
+  <text x="60" y="690" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">PENTEST RUNNER (on-demand, requires auth gate)</text>
+  <rect x="56" y="696" width="110" height="44" rx="5" fill="#1f0c0c" stroke="#ef4444" stroke-width="0.8"/>
+  <text x="111" y="712" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600">Nuclei</text>
+  <text x="111" y="725" text-anchor="middle" fill="#ef4444" font-size="9">web vuln · CVE templates</text>
+  <text x="111" y="736" text-anchor="middle" fill="#991b1b" font-size="8">any URL target</text>
+
+  <rect x="176" y="696" width="110" height="44" rx="5" fill="#1f0c0c" stroke="#ef4444" stroke-width="0.8"/>
+  <text x="231" y="712" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600">kube-hunter</text>
+  <text x="231" y="725" text-anchor="middle" fill="#ef4444" font-size="9">K8s attack paths</text>
+  <text x="231" y="736" text-anchor="middle" fill="#991b1b" font-size="8">K8s API endpoint</text>
+
+  <rect x="296" y="696" width="110" height="44" rx="5" fill="#1f0c0c" stroke="#ef4444" stroke-width="0.8"/>
+  <text x="351" y="712" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600">Nmap + Vulnscan</text>
+  <text x="351" y="725" text-anchor="middle" fill="#ef4444" font-size="9">port scan · CVEs</text>
+  <text x="351" y="736" text-anchor="middle" fill="#991b1b" font-size="8">IP / CIDR range</text>
+
+  <rect x="416" y="696" width="110" height="44" rx="5" fill="#1f0c0c" stroke="#ef4444" stroke-width="0.8"/>
+  <text x="471" y="712" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600">SSLyze</text>
+  <text x="471" y="725" text-anchor="middle" fill="#ef4444" font-size="9">TLS config · weak ciphers</text>
+  <text x="471" y="736" text-anchor="middle" fill="#991b1b" font-size="8">hostname:port</text>
+
+  <rect x="536" y="696" width="110" height="44" rx="5" fill="#1f0c0c" stroke="#ef4444" stroke-width="0.8"/>
+  <text x="591" y="712" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600">Nikto</text>
+  <text x="591" y="725" text-anchor="middle" fill="#ef4444" font-size="9">web server misconfigs</text>
+  <text x="591" y="736" text-anchor="middle" fill="#991b1b" font-size="8">web URL target</text>
+
+  <rect x="656" y="696" width="190" height="44" rx="5" fill="#1f0c0c" stroke="#ef4444" stroke-width="0.8"/>
+  <text x="751" y="712" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="600">ScoutSuite (cloud audit)</text>
+  <text x="751" y="725" text-anchor="middle" fill="#ef4444" font-size="9">Azure · AWS · GCP</text>
+  <text x="751" y="736" text-anchor="middle" fill="#991b1b" font-size="8">periodic full audit</text>
+
+  <!-- Add-on tools row label -->
+  <text x="60" y="760" fill="#64748b" font-size="9" font-weight="600" letter-spacing="1">+ COMMUNITY ADAPTERS (via tools.yaml plugin system)</text>
+  <rect x="56" y="766" width="820" height="56" rx="5" fill="#0d1117" stroke="#334155" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <text x="466" y="793" text-anchor="middle" fill="#475569" font-size="11">Any tool with a normalizer adapter · ScubaGear · Terrascan · Grype · AWS Security Hub · Defender for Cloud · ...</text>
+  <text x="466" y="810" text-anchor="middle" fill="#334155" font-size="10">Add any tool: register in tools.yaml + write ~50-line normalizer · no core changes required</text>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- RIGHT SIDE: Cloud targets -->
+  <rect x="900" y="82" width="280" height="430" rx="12" fill="#0c1220" stroke="#1e3a5f" stroke-width="1.5"/>
+  <text x="920" y="104" fill="#60a5fa" font-size="11" font-weight="700" letter-spacing="1">CLOUD TARGETS (scanned)</text>
+  <text x="920" y="118" fill="#334155" font-size="9">Credentials mounted read-only</text>
+
+  <rect x="916" y="128" width="248" height="64" rx="6" fill="#0a1628" stroke="#1d4ed8" stroke-width="0.8"/>
+  <text x="1040" y="148" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="600">Microsoft Azure</text>
+  <text x="1040" y="163" text-anchor="middle" fill="#60a5fa" font-size="9">VNet · AKS · Storage · Key Vault</text>
+  <text x="1040" y="175" text-anchor="middle" fill="#3b82f6" font-size="9">App GW · Postgres · Redis · Entra ID</text>
+  <text x="1040" y="187" text-anchor="middle" fill="#1d4ed8" font-size="8">CSPM · KSPM · CWPP · CIEM · IMAGE</text>
+
+  <rect x="916" y="204" width="248" height="64" rx="6" fill="#1a0e00" stroke="#c2410c" stroke-width="0.8"/>
+  <text x="1040" y="224" text-anchor="middle" fill="#fed7aa" font-size="12" font-weight="600">Amazon AWS</text>
+  <text x="1040" y="239" text-anchor="middle" fill="#fb923c" font-size="9">EC2 · EKS · S3 · RDS · IAM</text>
+  <text x="1040" y="251" text-anchor="middle" fill="#f97316" font-size="9">Lambda · CloudTrail · Security Hub</text>
+  <text x="1040" y="263" text-anchor="middle" fill="#c2410c" font-size="8">CSPM · KSPM · CWPP · CIEM · IMAGE</text>
+
+  <rect x="916" y="280" width="248" height="60" rx="6" fill="#0a1f0a" stroke="#16a34a" stroke-width="0.8"/>
+  <text x="1040" y="300" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600">Google Cloud Platform</text>
+  <text x="1040" y="315" text-anchor="middle" fill="#4ade80" font-size="9">GKE · GCS · Cloud SQL · IAM</text>
+  <text x="1040" y="327" text-anchor="middle" fill="#22c55e" font-size="9">Compute Engine · Cloud Run</text>
+  <text x="1040" y="339" text-anchor="middle" fill="#16a34a" font-size="8">CSPM · CWPP · IaC (v2)</text>
+
+  <rect x="916" y="352" width="248" height="60" rx="6" fill="#1a1a0a" stroke="#ca8a04" stroke-width="0.8"/>
+  <text x="1040" y="372" text-anchor="middle" fill="#fef08a" font-size="12" font-weight="600">On-Premises / Generic K8s</text>
+  <text x="1040" y="387" text-anchor="middle" fill="#facc15" font-size="9">Any K8s cluster (AKS/EKS/GKE/k3s)</text>
+  <text x="1040" y="399" text-anchor="middle" fill="#ca8a04" font-size="9">VMware · Bare metal · kind</text>
+  <text x="1040" y="411" text-anchor="middle" fill="#92400e" font-size="8">KSPM · CWPP · IMAGE</text>
+
+  <!-- CI/CD Ingest box -->
+  <rect x="900" y="528" width="280" height="134" rx="12" fill="#0c1f10" stroke="#166534" stroke-width="1.5"/>
+  <text x="920" y="549" fill="#4ade80" font-size="11" font-weight="700" letter-spacing="1">CI/CD INGEST</text>
+  <text x="920" y="563" fill="#334155" font-size="9">Tools already in your pipeline</text>
+
+  <rect x="916" y="572" width="115" height="36" rx="4" fill="#14532d" stroke="#22c55e" stroke-width="0.7"/>
+  <text x="973" y="588" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">Trivy ✓ CI</text>
+  <text x="973" y="601" text-anchor="middle" fill="#4ade80" font-size="8">already in your CI</text>
+
+  <rect x="1041" y="572" width="115" height="36" rx="4" fill="#14532d" stroke="#22c55e" stroke-width="0.7"/>
+  <text x="1098" y="588" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">Syft ✓ CI</text>
+  <text x="1098" y="601" text-anchor="middle" fill="#4ade80" font-size="8">already in your CI</text>
+
+  <rect x="916" y="616" width="115" height="36" rx="4" fill="#14532d" stroke="#22c55e" stroke-width="0.7"/>
+  <text x="973" y="632" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">Gitleaks</text>
+  <text x="973" y="645" text-anchor="middle" fill="#4ade80" font-size="8">add to CI → ingest</text>
+
+  <rect x="1041" y="616" width="115" height="36" rx="4" fill="#14532d" stroke="#22c55e" stroke-width="0.7"/>
+  <text x="1098" y="632" text-anchor="middle" fill="#86efac" font-size="11" font-weight="600">Checkov</text>
+  <text x="1098" y="645" text-anchor="middle" fill="#4ade80" font-size="8">add to CI → ingest</text>
+
+  <!-- Arrows: cloud targets → API -->
+  <path d="M900 195 L880 195 L880 249 L860 249" fill="none" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr-blue)"/>
+  <path d="M900 265 L880 265 L880 249" fill="none" stroke="#f97316" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <path d="M900 340 L880 340 L880 249" fill="none" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <path d="M900 410 L880 410 L880 249" fill="none" stroke="#facc15" stroke-width="1.2" stroke-dasharray="5 3"/>
+
+  <!-- CI ingest → API webhook -->
+  <path d="M900 590 L882 590 L882 275 L860 275" fill="none" stroke="#4ade80" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr-green)"/>
+
+  <!-- Labels on arrows -->
+  <text x="875" y="245" fill="#64748b" font-size="8" text-anchor="middle">scan</text>
+  <text x="875" y="585" fill="#64748b" font-size="8" text-anchor="middle">POST JSON</text>
+
+  <!-- Legend -->
+  <rect x="900" y="680" width="280" height="180" rx="12" fill="#0d1117" stroke="#1e293b" stroke-width="1"/>
+  <text x="920" y="700" fill="#94a3b8" font-size="10" font-weight="700" letter-spacing="1">LEGEND</text>
+
+  <line x1="920" y1="720" x2="960" y2="720" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="970" y="724" fill="#64748b" font-size="10">Cloud credentials flow (scan)</text>
+
+  <line x1="920" y1="740" x2="960" y2="740" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="970" y="744" fill="#64748b" font-size="10">CI pipeline ingest (POST JSON)</text>
+
+  <line x1="920" y1="760" x2="960" y2="760" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="970" y="764" fill="#64748b" font-size="10">Internal data flow</text>
+
+  <rect x="920" y="774" width="12" height="10" rx="2" fill="#0c2d2d" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="940" y="783" fill="#64748b" font-size="10">Scheduled / periodic scan tool</text>
+
+  <rect x="920" y="794" width="12" height="10" rx="2" fill="#1f0c0c" stroke="#ef4444" stroke-width="0.8"/>
+  <text x="940" y="803" fill="#64748b" font-size="10">On-demand pentest tool</text>
+
+  <rect x="920" y="814" width="12" height="10" rx="2" fill="#14532d" stroke="#22c55e" stroke-width="0.8"/>
+  <text x="940" y="823" fill="#64748b" font-size="10">CI-compatible (ingest or local run)</text>
+
+  <rect x="920" y="834" width="12" height="10" rx="2" fill="#0c1a35" stroke="#1d4ed8" stroke-width="0.8"/>
+  <text x="940" y="843" fill="#64748b" font-size="10">K8s-only (requires kubeconfig)</text>
+
+  <!-- Footer -->
+  <text x="600" y="878" text-anchor="middle" fill="#334155" font-size="10">OpenCNAPP v2.0 — Open Source · Apache 2.0 · github.com/your-org/opencnapp</text>
+</svg>

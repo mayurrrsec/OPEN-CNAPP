@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open-Source CNAPP — Complete Build Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0f12;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #252a3a;
+    --border2: #2e3550;
+    --text: #e2e8f0;
+    --muted: #6b7a99;
+    --dim: #3d4a6b;
+
+    --blue: #4a9eff;
+    --blue-bg: #0a1a30;
+    --teal: #2dd4bf;
+    --teal-bg: #0a2028;
+    --green: #4ade80;
+    --green-bg: #0a1f14;
+    --amber: #fbbf24;
+    --amber-bg: #1f1600;
+    --coral: #f87171;
+    --coral-bg: #1f0a0a;
+    --purple: #a78bfa;
+    --purple-bg: #120f20;
+    --pink: #f472b6;
+    --pink-bg: #1f0a18;
+
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── SIDEBAR LAYOUT ─── */
+  .layout { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 260px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0;
+    overflow-y: auto;
+    z-index: 100;
+    padding: 0 0 40px;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-logo .tag { font-family: var(--mono); font-size: 9px; color: var(--teal); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .sidebar-logo .title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+
+  .nav-section { padding: 12px 20px 4px; font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 20px;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); border-left-color: var(--border2); }
+  .nav-item.active { color: var(--blue); border-left-color: var(--blue); background: var(--blue-bg); }
+  .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .main { margin-left: 260px; max-width: 960px; padding: 48px 56px; }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .page-header .eyebrow { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
+  .page-header h1 { font-size: 32px; font-weight: 300; color: var(--text); line-height: 1.2; margin-bottom: 12px; }
+  .page-header h1 span { color: var(--blue); font-weight: 600; }
+  .page-header p { color: var(--muted); font-size: 14px; max-width: 580px; line-height: 1.7; }
+
+  .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+  .pill { padding: 4px 12px; border-radius: 20px; font-family: var(--mono); font-size: 10px; border: 1px solid; }
+  .pill-blue { color: var(--blue); border-color: var(--blue); background: var(--blue-bg); }
+  .pill-teal { color: var(--teal); border-color: var(--teal); background: var(--teal-bg); }
+  .pill-amber { color: var(--amber); border-color: var(--amber); background: var(--amber-bg); }
+  .pill-green { color: var(--green); border-color: var(--green); background: var(--green-bg); }
+
+  /* ─── SECTIONS ─── */
+  .section { margin-bottom: 64px; scroll-margin-top: 32px; }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .section-num { font-family: var(--mono); font-size: 11px; color: var(--dim); width: 28px; flex-shrink: 0; }
+  .section-title { font-size: 20px; font-weight: 500; color: var(--text); }
+  .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; margin-left: 42px; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+  }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: var(--mono); font-size: 10px; font-weight: 500; }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+  .badge-teal { background: var(--teal-bg); color: var(--teal); border: 1px solid var(--teal); }
+  .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber); }
+  .badge-coral { background: var(--coral-bg); color: var(--coral); border: 1px solid var(--coral); }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple); }
+  .badge-pink { background: var(--pink-bg); color: var(--pink); border: 1px solid var(--pink); }
+
+  /* ─── DOMAIN GRID ─── */
+  .domain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .domain-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .domain-card .dc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .domain-card .dc-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .domain-card .dc-tools { margin-top: 8px; }
+  .tool-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-top: 1px solid var(--border); }
+  .tool-name { font-family: var(--mono); font-size: 11px; color: var(--text); min-width: 130px; flex-shrink: 0; }
+  .tool-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  /* ─── CODE BLOCKS ─── */
+  .code-block {
+    background: #0a0c10;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+  }
+  .code-header .lang { color: var(--teal); }
+  pre {
+    padding: 16px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: #c9d1e0;
+  }
+  .c-kw { color: #4a9eff; }  /* keyword */
+  .c-str { color: #4ade80; } /* string */
+  .c-cm { color: #4d5a78; }  /* comment */
+  .c-fn { color: #fbbf24; }  /* function */
+  .c-num { color: #f472b6; } /* number */
+  .c-op { color: #2dd4bf; }  /* operator/symbol */
+
+  /* ─── STEP BLOCKS ─── */
+  .steps { margin: 0; padding: 0; list-style: none; }
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step-num { font-family: var(--mono); font-size: 11px; color: var(--blue); width: 24px; flex-shrink: 0; padding-top: 2px; }
+  .step-body { flex: 1; }
+  .step-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .step-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* ─── ARCH DIAGRAM ─── */
+  .arch-diagram { background: #0a0c10; border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin: 16px 0; overflow-x: auto; }
+
+  /* ─── TABLE ─── */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 12px 0; }
+  th { background: var(--surface2); color: var(--muted); font-weight: 500; font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border2); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td .mono { font-family: var(--mono); font-size: 11px; color: var(--teal); }
+
+  /* ─── CALLOUTS ─── */
+  .callout { border-radius: 6px; padding: 14px 16px; margin: 16px 0; border-left: 3px solid; font-size: 13px; }
+  .callout-blue { background: var(--blue-bg); border-color: var(--blue); color: #8bb8e8; }
+  .callout-amber { background: var(--amber-bg); border-color: var(--amber); color: #d4a040; }
+  .callout-green { background: var(--green-bg); border-color: var(--green); color: #40c070; }
+  .callout strong { font-weight: 600; }
+
+  /* ─── PHASE BLOCKS ─── */
+  .phase { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+  .phase-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .phase-header:hover { background: var(--surface2); }
+  .phase-num { font-family: var(--mono); font-size: 10px; width: 20px; }
+  .phase-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .phase-time { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .phase-body { padding: 0 20px 16px; }
+  .phase-task { display: flex; gap: 10px; padding: 6px 0; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .phase-task:last-child { border-bottom: none; }
+  .phase-task::before { content: '→'; color: var(--dim); flex-shrink: 0; }
+
+  /* ─── FLOW DIAGRAM ─── */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 16px 0; }
+  .flow-box { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 11px; text-align: center; min-width: 100px; }
+  .flow-box .fb-label { font-weight: 600; color: var(--text); }
+  .flow-box .fb-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+  .flow-arrow { color: var(--dim); padding: 0 6px; font-size: 14px; }
+
+  /* ─── DIVIDER ─── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* ─── INLINE CODE ─── */
+  code { font-family: var(--mono); font-size: 11px; background: var(--surface2); padding: 1px 5px; border-radius: 3px; color: var(--teal); }
+
+  ul.list { padding-left: 0; list-style: none; }
+  ul.list li { padding: 4px 0; color: var(--muted); font-size: 13px; display: flex; gap: 8px; }
+  ul.list li::before { content: '·'; color: var(--dim); flex-shrink: 0; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  @media print {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px; }
+  }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px; }
+    .domain-grid { grid-template-columns: 1fr; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="tag">Build Plan v1.0</div>
+    <div class="title">Open-Source CNAPP<br>Complete Architecture</div>
+  </div>
+  <div class="nav-section">Overview</div>
+  <a class="nav-item" href="#what-is-cnapp"><span class="dot" style="background:#4a9eff"></span>What is CNAPP</a>
+  <a class="nav-item" href="#domains"><span class="dot" style="background:#2dd4bf"></span>Security domains</a>
+  <a class="nav-item" href="#tools"><span class="dot" style="background:#4ade80"></span>All tools mapped</a>
+
+  <div class="nav-section">Architecture</div>
+  <a class="nav-item" href="#arch"><span class="dot" style="background:#fbbf24"></span>System architecture</a>
+  <a class="nav-item" href="#data-flow"><span class="dot" style="background:#f87171"></span>Data flow</a>
+  <a class="nav-item" href="#schema"><span class="dot" style="background:#a78bfa"></span>Findings schema</a>
+
+  <div class="nav-section">Installation</div>
+  <a class="nav-item" href="#install-infra"><span class="dot" style="background:#4a9eff"></span>Infrastructure setup</a>
+  <a class="nav-item" href="#install-cspm"><span class="dot" style="background:#2dd4bf"></span>CSPM tools</a>
+  <a class="nav-item" href="#install-kspm"><span class="dot" style="background:#4ade80"></span>KSPM tools</a>
+  <a class="nav-item" href="#install-cwpp"><span class="dot" style="background:#f87171"></span>CWPP / Falco</a>
+  <a class="nav-item" href="#install-ciem"><span class="dot" style="background:#a78bfa"></span>CIEM tools</a>
+  <a class="nav-item" href="#install-image"><span class="dot" style="background:#f472b6"></span>Image scanning</a>
+  <a class="nav-item" href="#install-secrets"><span class="dot" style="background:#fbbf24"></span>Secrets / IaC</a>
+  <a class="nav-item" href="#install-pentest"><span class="dot" style="background:#f87171"></span>Pentest runner</a>
+
+  <div class="nav-section">Backend</div>
+  <a class="nav-item" href="#normalizer"><span class="dot" style="background:#4a9eff"></span>Normalizer service</a>
+  <a class="nav-item" href="#api"><span class="dot" style="background:#2dd4bf"></span>API layer</a>
+  <a class="nav-item" href="#scheduler"><span class="dot" style="background:#4ade80"></span>Scheduler / jobs</a>
+
+  <div class="nav-section">Dashboard</div>
+  <a class="nav-item" href="#dashboard"><span class="dot" style="background:#a78bfa"></span>React dashboard</a>
+  <a class="nav-item" href="#alerting"><span class="dot" style="background:#fbbf24"></span>Alerting</a>
+
+  <div class="nav-section">Rollout</div>
+  <a class="nav-item" href="#roadmap"><span class="dot" style="background:#4ade80"></span>Implementation roadmap</a>
+  <a class="nav-item" href="#helm"><span class="dot" style="background:#4a9eff"></span>Helm chart layout</a>
+  <a class="nav-item" href="#costs"><span class="dot" style="background:#fbbf24"></span>Cost analysis</a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="eyebrow">Internal Security Platform</div>
+    <h1>Build Your Own <span>Open-Source CNAPP</span></h1>
+    <p>Complete architecture, installation guide, and implementation roadmap for a unified cloud-native security platform on Azure + AKS. Everything Wiz and Orca do — built with open-source tools, running on your own infrastructure.</p>
+    <div class="meta-pills">
+      <span class="pill pill-blue">Azure + AKS</span>
+      <span class="pill pill-teal">100% Open Source</span>
+      <span class="pill pill-amber">~$0 licensing cost</span>
+      <span class="pill pill-green">Self-hosted</span>
+    </div>
+  </div>
+
+  <!-- 1. WHAT IS CNAPP -->
+  <section class="section" id="what-is-cnapp">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">What is CNAPP and what domains does it cover</h2>
+    </div>
+    <p class="section-sub">CNAPP = Cloud-Native Application Protection Platform. It is an umbrella that unifies multiple security disciplines into one view.</p>
+
+    <div class="callout callout-blue">
+      <strong>The commercial secret:</strong> Wiz, Orca, and AccuKnox don't have magic algorithms. They run the same open-source engines in the background (Prowler, Falco, Trivy, etc.), normalize their JSON output into one schema, and present it in a React dashboard. You can build the same thing.
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Domain</th><th>Full Name</th><th>What it answers</th><th>Priority for you</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-blue">CSPM</span></td><td>Cloud Security Posture Mgmt</td><td>Are my Azure resources configured securely? Storage public? Key Vault accessible?</td><td><span class="badge badge-coral">Critical</span></td></tr>
+        <tr><td><span class="badge badge-teal">KSPM</span></td><td>Kubernetes Security Posture Mgmt</td><td>Are my AKS workloads following best practices? RBAC correct? Pods running as root?</td><td><span class="badge badge-coral">Critical</span></td></tr>
+        <tr><td><span class="badge badge-coral">CWPP</span></td><td>Cloud Workload Protection</td><td>Is anything malicious happening RIGHT NOW inside my running containers/VMs?</td><td><span class="badge badge-coral">Critical</span></td></tr>
+        <tr><td><span class="badge badge-purple">CIEM</span></td><td>Cloud Infrastructure Entitlement Mgmt</td><td>Who has access to what? Which service principal can reach Key Vault? Attack paths?</td><td><span class="badge badge-amber">High</span></td></tr>
+        <tr><td><span class="badge badge-blue">Image Sec</span></td><td>Container Image Scanning</td><td>Do my Docker images have CVEs? Secrets baked in? Wrong base images?</td><td><span class="badge badge-amber">High</span></td></tr>
+        <tr><td><span class="badge badge-green">IaC Sec</span></td><td>Infrastructure-as-Code Security</td><td>Does my Terraform/Bicep/Helm create insecure resources before it's deployed?</td><td><span class="badge badge-amber">High</span></td></tr>
+        <tr><td><span class="badge badge-amber">Secrets</span></td><td>Secrets Detection</td><td>Are Azure keys, connection strings, passwords committed to git repos?</td><td><span class="badge badge-amber">High</span></td></tr>
+        <tr><td><span class="badge badge-pink">SSPM</span></td><td>SaaS Security Posture Mgmt</td><td>Is O365/Teams/SharePoint configured safely? MFA enforced? DMARC set?</td><td><span class="badge badge-teal">Medium</span></td></tr>
+        <tr><td><span class="badge badge-coral">Pentest</span></td><td>Active Security Testing</td><td>Can I actually exploit these vulnerabilities? Attack simulation on demand.</td><td><span class="badge badge-teal">Medium</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 2. ALL TOOLS -->
+  <section class="section" id="tools">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Every open-source tool — what it does, how it runs</h2>
+    </div>
+
+    <div class="domain-grid">
+      <!-- CSPM -->
+      <div class="domain-card" style="border-color:#1a2d4a">
+        <div class="dc-top">
+          <span class="dc-label">CSPM — Azure cloud posture</span>
+          <span class="badge badge-blue">Azure</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Checks whether Azure services are configured securely. Runs on a schedule, reads Azure APIs.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">Prowler</span>
+            <span class="tool-desc">400+ Azure checks. VNet, Firewall, Key Vault, Storage, Entra ID, PostgreSQL, Redis. Outputs JSON/HTML/CSV. <strong>Primary CSPM tool.</strong></span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">ScoutSuite</span>
+            <span class="tool-desc">Multi-cloud. Good Azure coverage. HTML report per scan. Good for periodic audit snapshots alongside Prowler.</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Defender for Cloud</span>
+            <span class="tool-desc">✓ You already have it. Azure-native secure score. Enable all plans. Free tier useful but limited.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KSPM -->
+      <div class="domain-card" style="border-color:#0a2028">
+        <div class="dc-top">
+          <span class="dc-label">KSPM — Kubernetes posture</span>
+          <span class="badge badge-teal">AKS</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Checks AKS cluster config, RBAC, pod specs, network policies against CIS benchmarks.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">Kubescape</span>
+            <span class="tool-desc">CIS K8s benchmark, NSA hardening, RBAC, pod security. Has free ARMO cloud UI. <strong>Best single KSPM tool for AKS.</strong></span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Polaris</span>
+            <span class="tool-desc">Deploys in-cluster. Checks pods for root containers, missing resource limits, missing probes, :latest tags. Built-in web UI.</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">kube-bench</span>
+            <span class="tool-desc">✓ You already run this. CIS K8s benchmark against AKS node config. CLI only. Run after AKS changes.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CWPP -->
+      <div class="domain-card" style="border-color:#1f0a0a">
+        <div class="dc-top">
+          <span class="dc-label">CWPP — Runtime protection</span>
+          <span class="badge badge-coral">Real-time</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Monitors running containers and VMs in real time for malicious behaviour. Most important security tool.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">Falco</span>
+            <span class="tool-desc">Deployed as DaemonSet. Syscall-level monitoring. Alerts on shell spawn in container, /etc writes, suspicious outbound. Webhooks to Slack/Teams. <strong>Deploy this first.</strong></span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Tracee</span>
+            <span class="tool-desc">eBPF-based alternative to Falco by Aqua Security. Better on newer AKS kernels. Use one or the other, not both.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CIEM -->
+      <div class="domain-card" style="border-color:#120f20">
+        <div class="dc-top">
+          <span class="dc-label">CIEM — Identity & entitlements</span>
+          <span class="badge badge-purple">Entra ID</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Maps who can access what in Azure — service principals, managed identities, attack paths.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">AzureHound</span>
+            <span class="tool-desc">Collects Entra ID and Azure RBAC data. Feeds into BloodHound graph. Runs as a one-off or scheduled job.</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">BloodHound CE</span>
+            <span class="tool-desc">Free Community Edition. Full graph UI showing attack paths from any identity to Key Vault / subscriptions. <strong>Best CIEM tool available.</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMAGE -->
+      <div class="domain-card" style="border-color:#1f0a18">
+        <div class="dc-top">
+          <span class="dc-label">Container image scanning</span>
+          <span class="badge badge-pink">CI/CD</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Scans Docker images for CVEs, secrets baked in, and misconfigurations before they reach AKS.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">Trivy</span>
+            <span class="tool-desc">✓ Already in CI/CD. Also run in cluster mode: <code>trivy k8s --report summary</code>. Scans ACR images, Helm charts, Dockerfiles. Industry standard.</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Grype + Syft</span>
+            <span class="tool-desc">✓ Already running. Syft generates SBOM, Grype scans it for CVEs. Keep both.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- IaC + Secrets -->
+      <div class="domain-card" style="border-color:#1f1600">
+        <div class="dc-top">
+          <span class="dc-label">IaC security + Secrets detection</span>
+          <span class="badge badge-amber">Shift-left</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Catches misconfigs and secrets before code is even deployed. Lives in CI/CD pipelines.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">Checkov</span>
+            <span class="tool-desc">Scans Terraform, Bicep, ARM, Helm, K8s YAML, Dockerfile. Run as CI/CD gate. JSON/JUnit output.</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Gitleaks</span>
+            <span class="tool-desc">Scans git repos for Azure connection strings, storage keys, Entra client secrets. Run as pre-commit hook + CI gate.</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">TruffleHog</span>
+            <span class="tool-desc">Deep git history scan. Finds secrets committed years ago and deleted. Run once on all repos, then periodically.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SSPM -->
+      <div class="domain-card" style="border-color:#1a1a30">
+        <div class="dc-top">
+          <span class="dc-label">SSPM — O365 / SaaS posture</span>
+          <span class="badge badge-purple">O365</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Checks Microsoft 365 configuration against CISA benchmarks.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">ScubaGear</span>
+            <span class="tool-desc">Developed by CISA (US govt). Checks MFA enforcement, Teams external access, Exchange DKIM/DMARC, SharePoint sharing settings. PowerShell tool. Run monthly.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENTEST -->
+      <div class="domain-card" style="border-color:#1f1010">
+        <div class="dc-top">
+          <span class="dc-label">Pentest / Active scanning</span>
+          <span class="badge badge-coral">On-demand</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Actively tries to find and exploit vulnerabilities. Triggered from dashboard UI.</p>
+        <div class="dc-tools">
+          <div class="tool-row">
+            <span class="tool-name">kube-hunter</span>
+            <span class="tool-desc">Hunts for attack paths in AKS: exposed APIs, privilege escalation, service account token leaks. Run as on-demand job from UI.</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Nuclei</span>
+            <span class="tool-desc">Template-based scanner. 10,000+ templates for APIs, web apps, cloud misconfigs. Fast, highly configurable. Run from UI against your endpoints.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. ARCHITECTURE -->
+  <section class="section" id="arch">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">System architecture — the full picture</h2>
+    </div>
+    <p class="section-sub">Five layers. Each tool plugs into the normalizer. The dashboard talks only to the API. The API talks only to the database and job queue.</p>
+
+    <div class="arch-diagram">
+      <svg width="100%" viewBox="0 0 820 560" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#3d4a6b" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+        </defs>
+
+        <!-- Layer labels -->
+        <text x="10" y="72" font-family="IBM Plex Mono, monospace" font-size="9" fill="#3d4a6b" transform="rotate(-90,10,72)" text-anchor="middle">SCANNERS</text>
+        <text x="10" y="200" font-family="IBM Plex Mono, monospace" font-size="9" fill="#3d4a6b" transform="rotate(-90,10,200)" text-anchor="middle">NORMALIZE</text>
+        <text x="10" y="315" font-family="IBM Plex Mono, monospace" font-size="9" fill="#3d4a6b" transform="rotate(-90,10,315)" text-anchor="middle">STORAGE</text>
+        <text x="10" y="420" font-family="IBM Plex Mono, monospace" font-size="9" fill="#3d4a6b" transform="rotate(-90,10,420)" text-anchor="middle">API</text>
+        <text x="10" y="510" font-family="IBM Plex Mono, monospace" font-size="9" fill="#3d4a6b" transform="rotate(-90,10,510)" text-anchor="middle">DASHBOARD</text>
+
+        <!-- ── SCANNER LAYER ── -->
+        <!-- CSPM -->
+        <rect x="30" y="20" width="120" height="44" rx="5" fill="#0a1a30" stroke="#185FA5" stroke-width="0.8"/>
+        <text x="90" y="36" font-family="IBM Plex Mono" font-size="10" fill="#4a9eff" text-anchor="middle" font-weight="500">CSPM</text>
+        <text x="90" y="52" font-family="IBM Plex Sans" font-size="9" fill="#4d5a78" text-anchor="middle">Prowler · Defender</text>
+
+        <!-- KSPM -->
+        <rect x="162" y="20" width="120" height="44" rx="5" fill="#0a2028" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="222" y="36" font-family="IBM Plex Mono" font-size="10" fill="#2dd4bf" text-anchor="middle" font-weight="500">KSPM</text>
+        <text x="222" y="52" font-family="IBM Plex Sans" font-size="9" fill="#4d5a78" text-anchor="middle">Kubescape · Polaris</text>
+
+        <!-- CWPP -->
+        <rect x="294" y="20" width="120" height="44" rx="5" fill="#1f0a0a" stroke="#A32D2D" stroke-width="0.8"/>
+        <text x="354" y="36" font-family="IBM Plex Mono" font-size="10" fill="#f87171" text-anchor="middle" font-weight="500">CWPP</text>
+        <text x="354" y="52" font-family="IBM Plex Sans" font-size="9" fill="#4d5a78" text-anchor="middle">Falco DaemonSet</text>
+
+        <!-- CIEM -->
+        <rect x="426" y="20" width="120" height="44" rx="5" fill="#120f20" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="486" y="36" font-family="IBM Plex Mono" font-size="10" fill="#a78bfa" text-anchor="middle" font-weight="500">CIEM</text>
+        <text x="486" y="52" font-family="IBM Plex Sans" font-size="9" fill="#4d5a78" text-anchor="middle">AzureHound + BloodHound</text>
+
+        <!-- IMAGE + IaC -->
+        <rect x="558" y="20" width="130" height="44" rx="5" fill="#1f0a18" stroke="#993556" stroke-width="0.8"/>
+        <text x="623" y="36" font-family="IBM Plex Mono" font-size="10" fill="#f472b6" text-anchor="middle" font-weight="500">IMAGE · IaC · SECRETS</text>
+        <text x="623" y="52" font-family="IBM Plex Sans" font-size="9" fill="#4d5a78" text-anchor="middle">Trivy · Checkov · Gitleaks</text>
+
+        <!-- PENTEST -->
+        <rect x="700" y="20" width="108" height="44" rx="5" fill="#1f1000" stroke="#854F0B" stroke-width="0.8"/>
+        <text x="754" y="36" font-family="IBM Plex Mono" font-size="10" fill="#fbbf24" text-anchor="middle" font-weight="500">PENTEST</text>
+        <text x="754" y="52" font-family="IBM Plex Sans" font-size="9" fill="#4d5a78" text-anchor="middle">kube-hunter · Nuclei</text>
+
+        <!-- Arrows down -->
+        <line x1="90"  y1="64" x2="90"  y2="152" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="222" y1="64" x2="222" y2="152" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="354" y1="64" x2="354" y2="152" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="486" y1="64" x2="486" y2="152" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="623" y1="64" x2="623" y2="152" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="754" y1="64" x2="540" y2="152" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+
+        <!-- ── NORMALIZER ── -->
+        <rect x="30" y="152" width="778" height="56" rx="6" fill="#141720" stroke="#2e3550" stroke-width="0.8"/>
+        <text x="419" y="174" font-family="IBM Plex Mono" font-size="11" fill="#e2e8f0" text-anchor="middle" font-weight="500">Result Normalizer — Python service</text>
+        <text x="419" y="192" font-family="IBM Plex Sans" font-size="10" fill="#4d5a78" text-anchor="middle">Each tool output → common JSON schema: { tool, domain, severity, resource_id, finding, remediation, timestamp }</text>
+
+        <!-- Arrow down -->
+        <line x1="419" y1="208" x2="419" y2="255" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+
+        <!-- ── STORAGE LAYER ── -->
+        <rect x="30" y="255" width="370" height="56" rx="6" fill="#0a1a30" stroke="#185FA5" stroke-width="0.8"/>
+        <text x="215" y="277" font-family="IBM Plex Mono" font-size="11" fill="#4a9eff" text-anchor="middle" font-weight="500">PostgreSQL — Findings Store</text>
+        <text x="215" y="295" font-family="IBM Plex Sans" font-size="10" fill="#4d5a78" text-anchor="middle">All normalized findings · scan history · trend data</text>
+
+        <rect x="418" y="255" width="390" height="56" rx="6" fill="#0a2028" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="613" y="277" font-family="IBM Plex Mono" font-size="11" fill="#2dd4bf" text-anchor="middle" font-weight="500">Redis — Job Queue</text>
+        <text x="613" y="295" font-family="IBM Plex Sans" font-size="10" fill="#4d5a78" text-anchor="middle">On-demand scan jobs · Celery workers · scan status</text>
+
+        <!-- Arrows down -->
+        <line x1="215" y1="311" x2="215" y2="358" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="613" y1="311" x2="613" y2="358" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+
+        <!-- ── API LAYER ── -->
+        <rect x="30" y="358" width="778" height="56" rx="6" fill="#141720" stroke="#2e3550" stroke-width="0.8"/>
+        <text x="419" y="378" font-family="IBM Plex Mono" font-size="11" fill="#e2e8f0" text-anchor="middle" font-weight="500">FastAPI Backend</text>
+        <text x="419" y="396" font-family="IBM Plex Sans" font-size="10" fill="#4d5a78" text-anchor="middle">/findings  /scans  /trigger-scan  /scan-status  /alerts  /clusters  /dashboard/summary  WebSocket /ws/alerts</text>
+
+        <!-- Arrow down -->
+        <line x1="419" y1="414" x2="419" y2="455" stroke="#252a3a" stroke-width="1" marker-end="url(#ar)"/>
+
+        <!-- ── DASHBOARD LAYER ── -->
+        <rect x="30" y="455" width="778" height="88" rx="6" fill="#120f20" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="419" y="475" font-family="IBM Plex Mono" font-size="11" fill="#a78bfa" text-anchor="middle" font-weight="500">React Dashboard</text>
+
+        <!-- Dashboard panels -->
+        <rect x="44"  y="486" width="140" height="44" rx="4" fill="#1a1628" stroke="#3C3489" stroke-width="0.5"/>
+        <text x="114" y="503" font-family="IBM Plex Sans" font-size="9" fill="#c4b5fd" text-anchor="middle" font-weight="500">Posture overview</text>
+        <text x="114" y="518" font-family="IBM Plex Sans" font-size="8" fill="#4d5a78" text-anchor="middle">Risk score · trends</text>
+
+        <rect x="196" y="486" width="140" height="44" rx="4" fill="#1a1628" stroke="#3C3489" stroke-width="0.5"/>
+        <text x="266" y="503" font-family="IBM Plex Sans" font-size="9" fill="#c4b5fd" text-anchor="middle" font-weight="500">Findings table</text>
+        <text x="266" y="518" font-family="IBM Plex Sans" font-size="8" fill="#4d5a78" text-anchor="middle">Filter · sort · assign</text>
+
+        <rect x="348" y="486" width="140" height="44" rx="4" fill="#1a1628" stroke="#3C3489" stroke-width="0.5"/>
+        <text x="418" y="503" font-family="IBM Plex Sans" font-size="9" fill="#c4b5fd" text-anchor="middle" font-weight="500">Pen-test runner</text>
+        <text x="418" y="518" font-family="IBM Plex Sans" font-size="8" fill="#4d5a78" text-anchor="middle">Trigger · view report</text>
+
+        <rect x="500" y="486" width="140" height="44" rx="4" fill="#1a1628" stroke="#3C3489" stroke-width="0.5"/>
+        <text x="570" y="503" font-family="IBM Plex Sans" font-size="9" fill="#c4b5fd" text-anchor="middle" font-weight="500">Cluster management</text>
+        <text x="570" y="518" font-family="IBM Plex Sans" font-size="8" fill="#4d5a78" text-anchor="middle">Add AKS · Azure subs</text>
+
+        <rect x="652" y="486" width="142" height="44" rx="4" fill="#1a1628" stroke="#3C3489" stroke-width="0.5"/>
+        <text x="723" y="503" font-family="IBM Plex Sans" font-size="9" fill="#c4b5fd" text-anchor="middle" font-weight="500">Alerts &amp; notifications</text>
+        <text x="723" y="518" font-family="IBM Plex Sans" font-size="8" fill="#4d5a78" text-anchor="middle">Slack · Teams · email</text>
+      </svg>
+    </div>
+
+    <div class="callout callout-amber">
+      <strong>Key design principle:</strong> The dashboard never calls a scanner directly. It only talks to FastAPI. FastAPI reads from PostgreSQL (for findings) or writes to Redis (for on-demand jobs). This keeps everything decoupled — you can add a new tool by writing one normalizer adapter, nothing else changes.
+    </div>
+  </section>
+
+  <!-- 4. DATA FLOW -->
+  <section class="section" id="data-flow">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Two data flows — scheduled vs on-demand</h2>
+    </div>
+
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Every tool falls into one of two flows. Understanding this makes the whole system make sense.</p>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Scheduled flow (most tools)</span><span class="badge badge-green">Continuous</span></div>
+        <div class="flow" style="flex-direction:column;align-items:flex-start;gap:6px;margin:12px 0">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--blue);font-family:var(--mono);font-size:10px">01</span> Kubernetes CronJob fires (e.g. every 6 hours)</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--blue);font-family:var(--mono);font-size:10px">02</span> Scanner pod spins up (Prowler, Kubescape, etc.)</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--blue);font-family:var(--mono);font-size:10px">03</span> Scanner runs, outputs JSON to shared volume or stdout</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--blue);font-family:var(--mono);font-size:10px">04</span> Normalizer sidecar/init container picks up JSON</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--blue);font-family:var(--mono);font-size:10px">05</span> Normalizer writes findings to PostgreSQL</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--blue);font-family:var(--mono);font-size:10px">06</span> Dashboard shows new data on next refresh</div>
+        </div>
+        <p>Tools: Prowler, Kubescape, ScubaGear, Gitleaks, TruffleHog, kube-bench, AzureHound</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">On-demand flow (pentest tools)</span><span class="badge badge-coral">UI-triggered</span></div>
+        <div class="flow" style="flex-direction:column;align-items:flex-start;gap:6px;margin:12px 0">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--coral);font-family:var(--mono);font-size:10px">01</span> User clicks "Run kube-hunter" in dashboard UI</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--coral);font-family:var(--mono);font-size:10px">02</span> React → POST /api/trigger-scan { tool: "kube-hunter" }</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--coral);font-family:var(--mono);font-size:10px">03</span> FastAPI pushes job to Redis queue</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--coral);font-family:var(--mono);font-size:10px">04</span> Celery worker picks job, creates Kubernetes Job pod</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--coral);font-family:var(--mono);font-size:10px">05</span> Scanner pod runs, output → normalizer → PostgreSQL</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><span style="color:var(--coral);font-family:var(--mono);font-size:10px">06</span> WebSocket pushes "scan complete" → UI shows report</div>
+        </div>
+        <p>Tools: kube-hunter, Nuclei, trivy cluster scan, ScubaGear (on-demand)</p>
+      </div>
+    </div>
+
+    <div class="callout callout-green">
+      <strong>Falco is different from both</strong> — it's always-on as a DaemonSet, pushing alerts in real-time to a webhook endpoint on your FastAPI. FastAPI writes them to PostgreSQL as findings with severity=CRITICAL. The dashboard shows them instantly via WebSocket.
+    </div>
+  </section>
+
+  <!-- 5. SCHEMA -->
+  <section class="section" id="schema">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">The common findings schema — design this first</h2>
+    </div>
+    <p class="section-sub">This is the most important design decision. Every tool adapter maps to this schema. Get this right and everything else is just mapping exercise.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>PostgreSQL — findings table</span><span class="lang">SQL</span></div>
+      <pre>
+<span class="c-kw">CREATE TABLE</span> findings (
+  id            UUID           <span class="c-kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  scan_id       UUID           <span class="c-kw">REFERENCES</span> scans(id),
+
+  <span class="c-cm">-- Which tool found this</span>
+  tool          TEXT           <span class="c-kw">NOT NULL</span>,  <span class="c-cm">-- prowler | kubescape | falco | trivy | gitleaks | ...</span>
+  domain        TEXT           <span class="c-kw">NOT NULL</span>,  <span class="c-cm">-- cspm | kspm | cwpp | ciem | image | iac | secrets | sspm</span>
+
+  <span class="c-cm">-- Severity standardised across all tools</span>
+  severity      TEXT           <span class="c-kw">NOT NULL</span>,  <span class="c-cm">-- CRITICAL | HIGH | MEDIUM | LOW | INFO</span>
+
+  <span class="c-cm">-- What is affected</span>
+  resource_type TEXT,          <span class="c-cm">-- storage_account | pod | image | git_repo | ...</span>
+  resource_id   TEXT,          <span class="c-cm">-- Azure resource ID or K8s resource name</span>
+  resource_name TEXT,
+  region        TEXT,
+
+  <span class="c-cm">-- The finding itself</span>
+  check_id      TEXT,          <span class="c-cm">-- e.g. prowler check ID: azure_storage_blob_public_access_disabled</span>
+  title         TEXT           <span class="c-kw">NOT NULL</span>,
+  description   TEXT,
+  remediation   TEXT,
+  references    JSONB,         <span class="c-cm">-- links to CIS benchmark, CVE, etc.</span>
+
+  <span class="c-cm">-- Raw data from the tool (keep original for debugging)</span>
+  raw_output    JSONB,
+
+  <span class="c-cm">-- Status tracking</span>
+  status        TEXT           <span class="c-kw">DEFAULT</span> <span class="c-str">'open'</span>,  <span class="c-cm">-- open | acknowledged | suppressed | resolved</span>
+  first_seen    TIMESTAMPTZ    <span class="c-kw">DEFAULT NOW()</span>,
+  last_seen     TIMESTAMPTZ    <span class="c-kw">DEFAULT NOW()</span>,
+  resolved_at   TIMESTAMPTZ,
+
+  <span class="c-cm">-- Tags for filtering</span>
+  tags          TEXT[]         <span class="c-kw">DEFAULT</span> <span class="c-str">'{}'</span>  <span class="c-cm">-- e.g. ['cis-1.3', 'pci-dss', 'azure']</span>
+);
+
+<span class="c-kw">CREATE TABLE</span> scans (
+  id          UUID     <span class="c-kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  tool        TEXT     <span class="c-kw">NOT NULL</span>,
+  trigger     TEXT,    <span class="c-cm">-- scheduled | manual | cicd</span>
+  status      TEXT,    <span class="c-cm">-- running | completed | failed</span>
+  started_at  TIMESTAMPTZ,
+  finished_at TIMESTAMPTZ,
+  findings_count JSONB <span class="c-cm">-- { critical: 3, high: 12, medium: 45 }</span>
+);</pre>
+    </div>
+  </section>
+
+  <!-- 6. INSTALL INFRA -->
+  <section class="section" id="install-infra">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Infrastructure setup — prerequisites</h2>
+    </div>
+    <p class="section-sub">Everything runs inside your existing AKS cluster. You need one dedicated namespace and a few shared services.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>Create the security namespace and core infrastructure</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># Create dedicated namespace for the entire CNAPP stack</span>
+kubectl create namespace cnapp-security
+
+<span class="c-cm"># Create service account for scanners (needs read-only access to cluster)</span>
+kubectl create serviceaccount cnapp-scanner -n cnapp-security
+
+<span class="c-cm"># Create ClusterRole for read-only cluster access</span>
+kubectl apply -f - &lt;&lt;EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cnapp-readonly
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cnapp-readonly-binding
+subjects:
+  - kind: ServiceAccount
+    name: cnapp-scanner
+    namespace: cnapp-security
+roleRef:
+  kind: ClusterRole
+  name: cnapp-readonly
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+<span class="c-cm"># Deploy PostgreSQL (use Azure Database for PostgreSQL in prod)</span>
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install cnapp-postgres bitnami/postgresql \
+  --namespace cnapp-security \
+  --set auth.postgresPassword=changeme \
+  --set auth.database=cnapp \
+  --set primary.persistence.size=20Gi
+
+<span class="c-cm"># Deploy Redis for job queue</span>
+helm install cnapp-redis bitnami/redis \
+  --namespace cnapp-security \
+  --set auth.password=changeme \
+  --set replica.replicaCount=0  <span class="c-cm"># single node for small teams</span>
+
+<span class="c-cm"># Create secret with Azure credentials for scanners</span>
+kubectl create secret generic azure-creds \
+  --namespace cnapp-security \
+  --from-literal=AZURE_CLIENT_ID=&lt;your-client-id&gt; \
+  --from-literal=AZURE_CLIENT_SECRET=&lt;your-client-secret&gt; \
+  --from-literal=AZURE_TENANT_ID=&lt;your-tenant-id&gt; \
+  --from-literal=AZURE_SUBSCRIPTION_ID=&lt;your-subscription-id&gt;</pre>
+    </div>
+
+    <div class="callout callout-blue">
+      <strong>Azure identity for scanners:</strong> Create a dedicated App Registration in Entra ID. Assign it <code>Security Reader</code> + <code>Reader</code> roles on your subscription. Never use your own credentials. Store the client secret in Azure Key Vault and reference it via AKS managed identity / CSI driver.
+    </div>
+  </section>
+
+  <!-- 7. INSTALL CSPM -->
+  <section class="section" id="install-cspm">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2 class="section-title">Installing CSPM tools — Prowler</h2>
+    </div>
+
+    <p class="section-sub">Prowler is your primary CSPM tool. It runs as a Kubernetes CronJob, outputs JSON, and your normalizer picks it up.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>Prowler CronJob — runs every 6 hours</span><span class="lang">yaml</span></div>
+      <pre>
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: prowler-cspm
+  namespace: cnapp-security
+spec:
+  schedule: <span class="c-str">"0 */6 * * *"</span>   <span class="c-cm"># every 6 hours</span>
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: cnapp-scanner
+          restartPolicy: Never
+          initContainers:
+            - name: prowler
+              image: <span class="c-str">toniblyx/prowler:latest</span>
+              env:
+                - name: AZURE_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef: { name: azure-creds, key: AZURE_CLIENT_ID }
+                - name: AZURE_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef: { name: azure-creds, key: AZURE_CLIENT_SECRET }
+                - name: AZURE_TENANT_ID
+                  valueFrom:
+                    secretKeyRef: { name: azure-creds, key: AZURE_TENANT_ID }
+                - name: AZURE_SUBSCRIPTION_ID
+                  valueFrom:
+                    secretKeyRef: { name: azure-creds, key: AZURE_SUBSCRIPTION_ID }
+              command: [<span class="c-str">"prowler"</span>, <span class="c-str">"azure"</span>,
+                        <span class="c-str">"-M"</span>, <span class="c-str">"json"</span>,
+                        <span class="c-str">"-o"</span>, <span class="c-str">"/output/prowler-results.json"</span>]
+              volumeMounts:
+                - name: output
+                  mountPath: /output
+          containers:
+            - name: normalizer
+              image: <span class="c-str">your-registry/cnapp-normalizer:latest</span>
+              env:
+                - name: DATABASE_URL
+                  value: <span class="c-str">"postgresql://postgres:changeme@cnapp-postgres/cnapp"</span>
+                - name: TOOL
+                  value: <span class="c-str">"prowler"</span>
+                - name: INPUT_FILE
+                  value: <span class="c-str">"/output/prowler-results.json"</span>
+              volumeMounts:
+                - name: output
+                  mountPath: /output
+          volumes:
+            - name: output
+              emptyDir: {}</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Prowler normalizer — maps to common schema (Python)</span><span class="lang">python</span></div>
+      <pre>
+<span class="c-cm"># normalizers/prowler.py</span>
+<span class="c-kw">import</span> json, uuid
+<span class="c-kw">from</span> datetime <span class="c-kw">import</span> datetime, timezone
+
+SEVERITY_MAP = {
+    <span class="c-str">"critical"</span>: <span class="c-str">"CRITICAL"</span>,
+    <span class="c-str">"high"</span>:     <span class="c-str">"HIGH"</span>,
+    <span class="c-str">"medium"</span>:   <span class="c-str">"MEDIUM"</span>,
+    <span class="c-str">"low"</span>:      <span class="c-str">"LOW"</span>,
+    <span class="c-str">"informational"</span>: <span class="c-str">"INFO"</span>
+}
+
+<span class="c-kw">def</span> <span class="c-fn">normalize_prowler</span>(raw: dict, scan_id: str) -> dict:
+    <span class="c-kw">return</span> {
+        <span class="c-str">"id"</span>:            str(uuid.uuid4()),
+        <span class="c-str">"scan_id"</span>:       scan_id,
+        <span class="c-str">"tool"</span>:          <span class="c-str">"prowler"</span>,
+        <span class="c-str">"domain"</span>:        <span class="c-str">"cspm"</span>,
+        <span class="c-str">"severity"</span>:      SEVERITY_MAP.get(raw.get(<span class="c-str">"Severity"</span>, <span class="c-str">""</span>).lower(), <span class="c-str">"INFO"</span>),
+        <span class="c-str">"resource_type"</span>: raw.get(<span class="c-str">"ResourceType"</span>),
+        <span class="c-str">"resource_id"</span>:   raw.get(<span class="c-str">"ResourceId"</span>),
+        <span class="c-str">"resource_name"</span>: raw.get(<span class="c-str">"ResourceName"</span>),
+        <span class="c-str">"region"</span>:        raw.get(<span class="c-str">"Region"</span>),
+        <span class="c-str">"check_id"</span>:      raw.get(<span class="c-str">"CheckId"</span>),
+        <span class="c-str">"title"</span>:         raw.get(<span class="c-str">"CheckTitle"</span>),
+        <span class="c-str">"description"</span>:   raw.get(<span class="c-str">"Description"</span>),
+        <span class="c-str">"remediation"</span>:   raw.get(<span class="c-str">"Remediation"</span>, {}).get(<span class="c-str">"Recommendation"</span>, {}).get(<span class="c-str">"Text"</span>),
+        <span class="c-str">"status"</span>:        <span class="c-str">"open"</span>  <span class="c-kw">if</span> raw.get(<span class="c-str">"Status"</span>) == <span class="c-str">"FAIL"</span>  <span class="c-kw">else</span> <span class="c-str">"resolved"</span>,
+        <span class="c-str">"raw_output"</span>:    raw,
+        <span class="c-str">"first_seen"</span>:    datetime.now(timezone.utc).isoformat(),
+        <span class="c-str">"last_seen"</span>:     datetime.now(timezone.utc).isoformat(),
+        <span class="c-str">"tags"</span>:          [<span class="c-str">"azure"</span>, <span class="c-str">"cspm"</span>] + raw.get(<span class="c-str">"Compliance"</span>, [])
+    }</pre>
+    </div>
+  </section>
+
+  <!-- 8. INSTALL KSPM -->
+  <section class="section" id="install-kspm">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2 class="section-title">Installing KSPM tools — Kubescape + Polaris</h2>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Kubescape — install operator into AKS</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># Add Kubescape helm repo</span>
+helm repo add kubescape https://kubescape.github.io/helm-charts/
+helm repo update
+
+<span class="c-cm"># Install Kubescape operator into your cluster</span>
+<span class="c-cm"># This gives continuous scanning + optional ARMO cloud dashboard</span>
+helm upgrade --install kubescape kubescape/kubescape-operator \
+  --namespace cnapp-security \
+  --set clusterName=$(kubectl config current-context) \
+  --set capabilities.continuousScan=enable \
+  --set capabilities.relevancyEnabled=true
+
+<span class="c-cm"># OR: run as CronJob without the operator (simpler, exports JSON)</span>
+kubectl apply -f - &lt;&lt;EOF
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kubescape-scan
+  namespace: cnapp-security
+spec:
+  schedule: "0 */4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: cnapp-scanner
+          restartPolicy: Never
+          containers:
+            - name: kubescape
+              image: quay.io/kubescape/kubescape:latest
+              command:
+                - kubescape
+                - scan
+                - --format=json
+                - --output=/output/kubescape.json
+                - framework
+                - cis-aks-t1.3
+              volumeMounts:
+                - name: output
+                  mountPath: /output
+          volumes:
+            - name: output
+              emptyDir: {}
+EOF</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Polaris — deploy in-cluster dashboard</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># Polaris: lightweight pod security checking with built-in web UI</span>
+helm repo add fairwinds-stable https://charts.fairwinds.com/stable
+
+helm install polaris fairwinds-stable/polaris \
+  --namespace cnapp-security \
+  --set dashboard.enable=true \
+  --set dashboard.service.type=ClusterIP
+
+<span class="c-cm"># Access the Polaris dashboard</span>
+kubectl port-forward svc/polaris-dashboard 8080:80 -n cnapp-security
+<span class="c-cm"># Open http://localhost:8080</span>
+
+<span class="c-cm"># Run Polaris audit as JSON (for normalizer)</span>
+kubectl run polaris-audit --rm -it \
+  --image=quay.io/fairwinds/polaris:latest \
+  --restart=Never \
+  --serviceaccount=cnapp-scanner \
+  -n cnapp-security \
+  -- polaris audit --format json > /tmp/polaris-results.json</pre>
+    </div>
+  </section>
+
+  <!-- 9. INSTALL CWPP / FALCO -->
+  <section class="section" id="install-cwpp">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2 class="section-title">Installing Falco — runtime protection (most important)</h2>
+    </div>
+
+    <div class="callout callout-amber">
+      <strong>Deploy Falco first, before anything else.</strong> It's your only real-time protection. Every other tool finds problems that already exist. Falco catches active attacks as they happen.
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Falco on AKS via Helm</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># Add Falco helm repo</span>
+helm repo add falcosecurity https://falcosecurity.github.io/charts
+helm repo update
+
+<span class="c-cm"># Install Falco as DaemonSet with eBPF driver (AKS compatible)</span>
+helm install falco falcosecurity/falco \
+  --namespace cnapp-security \
+  --set driver.kind=ebpf \
+  --set falco.grpc.enabled=true \
+  --set falco.grpc_output.enabled=true \
+  --set falcosidekick.enabled=true \
+  --set falcosidekick.config.webhook.address=http://cnapp-api/webhook/falco \
+  --set falcosidekick.config.slack.webhookurl="${SLACK_WEBHOOK}" \
+  --set falcosidekick.config.slack.minimumpriority=warning
+
+<span class="c-cm"># Verify Falco is running on all nodes</span>
+kubectl get pods -n cnapp-security -l app.kubernetes.io/name=falco
+
+<span class="c-cm"># Test that Falco is working — spawn a shell in a container</span>
+kubectl run test-shell --rm -it --image=alpine -- sh
+<span class="c-cm"># You should get a Falco alert: "Terminal shell in container (user=root...)"</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>FastAPI webhook to receive Falco alerts</span><span class="lang">python</span></div>
+      <pre>
+<span class="c-cm"># api/routes/webhooks.py</span>
+<span class="c-kw">from</span> fastapi <span class="c-kw">import</span> APIRouter, BackgroundTasks
+<span class="c-kw">from</span> .normalizers.falco <span class="c-kw">import</span> normalize_falco
+<span class="c-kw">from</span> .database <span class="c-kw">import</span> insert_finding
+<span class="c-kw">from</span> .websocket <span class="c-kw">import</span> broadcast_alert
+
+router = APIRouter()
+
+@router.post(<span class="c-str">"/webhook/falco"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">receive_falco_alert</span>(payload: dict, background_tasks: BackgroundTasks):
+    finding = normalize_falco(payload)
+    background_tasks.add_task(insert_finding, finding)
+    background_tasks.add_task(broadcast_alert, finding)  <span class="c-cm"># push to WebSocket</span>
+    <span class="c-kw">return</span> {<span class="c-str">"status"</span>: <span class="c-str">"received"</span>}
+
+<span class="c-cm"># normalizers/falco.py</span>
+<span class="c-kw">def</span> <span class="c-fn">normalize_falco</span>(raw: dict) -> dict:
+    PRIORITY_MAP = {
+        <span class="c-str">"EMERGENCY"</span>: <span class="c-str">"CRITICAL"</span>, <span class="c-str">"ALERT"</span>: <span class="c-str">"CRITICAL"</span>,
+        <span class="c-str">"CRITICAL"</span>:  <span class="c-str">"CRITICAL"</span>, <span class="c-str">"ERROR"</span>:    <span class="c-str">"HIGH"</span>,
+        <span class="c-str">"WARNING"</span>:   <span class="c-str">"HIGH"</span>,     <span class="c-str">"NOTICE"</span>:   <span class="c-str">"MEDIUM"</span>,
+        <span class="c-str">"INFO"</span>:      <span class="c-str">"LOW"</span>,      <span class="c-str">"DEBUG"</span>:    <span class="c-str">"INFO"</span>
+    }
+    output_fields = raw.get(<span class="c-str">"output_fields"</span>, {})
+    <span class="c-kw">return</span> {
+        <span class="c-str">"tool"</span>:          <span class="c-str">"falco"</span>,
+        <span class="c-str">"domain"</span>:        <span class="c-str">"cwpp"</span>,
+        <span class="c-str">"severity"</span>:      PRIORITY_MAP.get(raw.get(<span class="c-str">"priority"</span>, <span class="c-str">"INFO"</span>), <span class="c-str">"INFO"</span>),
+        <span class="c-str">"resource_type"</span>: <span class="c-str">"container"</span>,
+        <span class="c-str">"resource_name"</span>: output_fields.get(<span class="c-str">"container.name"</span>),
+        <span class="c-str">"resource_id"</span>:   output_fields.get(<span class="c-str">"k8s.pod.name"</span>),
+        <span class="c-str">"title"</span>:         raw.get(<span class="c-str">"rule"</span>),
+        <span class="c-str">"description"</span>:   raw.get(<span class="c-str">"output"</span>),
+        <span class="c-str">"raw_output"</span>:    raw,
+        <span class="c-str">"tags"</span>:          [<span class="c-str">"runtime"</span>, <span class="c-str">"cwpp"</span>, <span class="c-str">"realtime"</span>]
+    }</pre>
+    </div>
+  </section>
+
+  <!-- 10. INSTALL CIEM -->
+  <section class="section" id="install-ciem">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2 class="section-title">Installing CIEM — BloodHound CE + AzureHound</h2>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Deploy BloodHound Community Edition</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># BloodHound CE runs as Docker Compose (deploy on a small VM or as K8s pods)</span>
+git clone https://github.com/SpecterOps/BloodHound.git
+cd BloodHound
+
+<span class="c-cm"># Start BloodHound CE (Neo4j + BloodHound API + UI)</span>
+docker compose -f examples/docker-compose/docker-compose.yml up -d
+
+<span class="c-cm"># BloodHound UI available at http://localhost:8080</span>
+<span class="c-cm"># Default credentials in the compose file</span>
+
+<span class="c-cm">────────────────────────────────────────────</span>
+
+<span class="c-cm"># Run AzureHound to collect Entra ID data</span>
+<span class="c-cm"># Install: go install github.com/BloodHoundAD/AzureHound@latest</span>
+
+azurehound \
+  --tenant-id    "$AZURE_TENANT_ID" \
+  --client-id    "$AZURE_CLIENT_ID" \
+  --client-secret "$AZURE_CLIENT_SECRET" \
+  list-all \
+  -o azurehound-data.json
+
+<span class="c-cm"># Upload to BloodHound CE</span>
+curl -X POST http://localhost:8080/api/v2/ingest \
+  -H "Authorization: Bearer $BHE_TOKEN" \
+  -F file=@azurehound-data.json
+
+<span class="c-cm"># Schedule AzureHound as a weekly CronJob in K8s</span>
+<span class="c-cm"># (it collects slowly, weekly is enough for CIEM)</span></pre>
+    </div>
+  </section>
+
+  <!-- 11. INSTALL IMAGE SCANNING -->
+  <section class="section" id="install-image">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <h2 class="section-title">Container image scanning — Trivy in cluster mode</h2>
+    </div>
+
+    <p class="section-sub">You already have Trivy in CI/CD. Add cluster-mode scanning to catch images already running in AKS.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>Trivy cluster scan CronJob</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># Trivy Operator — continuous cluster scanning (recommended)</span>
+helm repo add aqua https://aquasecurity.github.io/helm-charts/
+helm install trivy-operator aqua/trivy-operator \
+  --namespace cnapp-security \
+  --set trivy.ignoreUnfixed=true \
+  --set operator.scanJobTimeout=30m
+
+<span class="c-cm"># Trivy Operator creates VulnerabilityReport CRDs for every workload</span>
+kubectl get vulnerabilityreports -A
+
+<span class="c-cm"># OR: ad-hoc cluster scan outputting JSON for normalizer</span>
+trivy k8s \
+  --report summary \
+  --format json \
+  --output trivy-cluster.json \
+  cluster
+
+<span class="c-cm"># Scan ACR registry (all images)</span>
+trivy registry \
+  --format json \
+  --output trivy-registry.json \
+  your-registry.azurecr.io</pre>
+    </div>
+  </section>
+
+  <!-- 12. SECRETS / IAC -->
+  <section class="section" id="install-secrets">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <h2 class="section-title">Secrets detection + IaC scanning</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="code-block">
+          <div class="code-header"><span>Gitleaks — pre-commit + CI</span><span class="lang">bash</span></div>
+          <pre>
+<span class="c-cm"># Install pre-commit hook (run in each repo)</span>
+pip install pre-commit
+cat > .pre-commit-config.yaml &lt;&lt;EOF
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+EOF
+pre-commit install
+
+<span class="c-cm"># Azure DevOps pipeline task</span>
+- task: DockerV2@2
+  inputs:
+    command: run
+    image: zricethezav/gitleaks
+    arguments: detect --source . --report-format json
+               --report-path gitleaks-report.json</pre>
+        </div>
+      </div>
+      <div>
+        <div class="code-block">
+          <div class="code-header"><span>Checkov — IaC pipeline gate</span><span class="lang">bash</span></div>
+          <pre>
+<span class="c-cm"># Install</span>
+pip install checkov
+
+<span class="c-cm"># Scan Terraform</span>
+checkov -d ./terraform \
+  --output json \
+  --output-file checkov-results.json
+
+<span class="c-cm"># Scan Helm charts</span>
+checkov -d ./helm \
+  --framework helm \
+  --output json
+
+<span class="c-cm"># Azure DevOps pipeline</span>
+- script: |
+    pip install checkov
+    checkov -d . --output junitxml
+    --output-file checkov.xml
+  displayName: 'Checkov IaC scan'</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>TruffleHog — one-time deep history scan (run this NOW on all repos)</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># Install</span>
+docker pull trufflesecurity/trufflehog:latest
+
+<span class="c-cm"># Scan entire git history of a repo</span>
+docker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest \
+  git file:///pwd \
+  --json \
+  --only-verified \
+  > trufflehog-results.json
+
+<span class="c-cm"># Scan your Azure DevOps organization (needs PAT)</span>
+trufflehog github --org=your-org --token=$GITHUB_TOKEN --json > trufflehog-github.json</pre>
+    </div>
+  </section>
+
+  <!-- 13. PENTEST RUNNER -->
+  <section class="section" id="install-pentest">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <h2 class="section-title">Pentest runner — UI-triggered scans</h2>
+    </div>
+
+    <p class="section-sub">This is what makes your dashboard different from just a reporting tool. Users click a button, a scan runs, results appear in the UI.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>Celery worker — creates K8s Job for each on-demand scan</span><span class="lang">python</span></div>
+      <pre>
+<span class="c-cm"># workers/scanner_worker.py</span>
+<span class="c-kw">from</span> celery <span class="c-kw">import</span> Celery
+<span class="c-kw">from</span> kubernetes <span class="c-kw">import</span> client, config
+<span class="c-kw">import</span> uuid, json
+
+app = Celery(<span class="c-str">"cnapp"</span>, broker=<span class="c-str">"redis://cnapp-redis:6379/0"</span>)
+
+SCANNER_IMAGES = {
+    <span class="c-str">"kube-hunter"</span>: <span class="c-str">"aquasec/kube-hunter:latest"</span>,
+    <span class="c-str">"nuclei"</span>:      <span class="c-str">"projectdiscovery/nuclei:latest"</span>,
+    <span class="c-str">"trivy-cluster"</span>: <span class="c-str">"aquasec/trivy:latest"</span>,
+}
+
+<span class="c-kw">def</span> <span class="c-fn">build_scanner_command</span>(tool: str, params: dict) -> list:
+    <span class="c-kw">if</span> tool == <span class="c-str">"kube-hunter"</span>:
+        <span class="c-kw">return</span> [<span class="c-str">"kube-hunter"</span>, <span class="c-str">"--pod"</span>, <span class="c-str">"--report"</span>, <span class="c-str">"json"</span>]
+    <span class="c-kw">elif</span> tool == <span class="c-str">"nuclei"</span>:
+        target = params.get(<span class="c-str">"target"</span>, <span class="c-str">"https://your-app.com"</span>)
+        <span class="c-kw">return</span> [<span class="c-str">"nuclei"</span>, <span class="c-str">"-u"</span>, target, <span class="c-str">"-json"</span>, <span class="c-str">"-o"</span>, <span class="c-str">"/output/nuclei.json"</span>]
+
+@app.task
+<span class="c-kw">def</span> <span class="c-fn">run_scanner</span>(tool: str, scan_id: str, params: dict = {}):
+    config.load_incluster_config()
+    batch_v1 = client.BatchV1Api()
+
+    job_name = <span class="c-str">f"cnapp-scan-{tool}-{scan_id[:8]}"</span>
+    job = client.V1Job(
+        metadata=client.V1ObjectMeta(name=job_name, namespace=<span class="c-str">"cnapp-security"</span>),
+        spec=client.V1JobSpec(
+            ttl_seconds_after_finished=<span class="c-num">3600</span>,
+            template=client.V1PodTemplateSpec(
+                spec=client.V1PodSpec(
+                    service_account_name=<span class="c-str">"cnapp-scanner"</span>,
+                    restart_policy=<span class="c-str">"Never"</span>,
+                    containers=[client.V1Container(
+                        name=<span class="c-str">"scanner"</span>,
+                        image=SCANNER_IMAGES[tool],
+                        command=build_scanner_command(tool, params),
+                        env=[
+                            client.V1EnvVar(name=<span class="c-str">"SCAN_ID"</span>, value=scan_id),
+                            client.V1EnvVar(name=<span class="c-str">"DB_URL"</span>,
+                                value_from=client.V1EnvVarSource(
+                                    secret_key_ref=client.V1SecretKeySelector(
+                                        name=<span class="c-str">"cnapp-secrets"</span>, key=<span class="c-str">"database-url"</span>)
+                                ))
+                        ]
+                    )]
+                )
+            )
+        )
+    )
+    batch_v1.create_namespaced_job(<span class="c-str">"cnapp-security"</span>, job)
+    <span class="c-kw">return</span> {<span class="c-str">"job_name"</span>: job_name, <span class="c-str">"scan_id"</span>: scan_id}</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>FastAPI — trigger scan endpoint + WebSocket</span><span class="lang">python</span></div>
+      <pre>
+<span class="c-cm"># api/routes/scans.py</span>
+<span class="c-kw">from</span> fastapi <span class="c-kw">import</span> APIRouter, WebSocket
+<span class="c-kw">from</span> workers.scanner_worker <span class="c-kw">import</span> run_scanner
+<span class="c-kw">import</span> uuid
+
+router = APIRouter()
+connected_clients = []
+
+@router.post(<span class="c-str">"/api/trigger-scan"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">trigger_scan</span>(body: dict):
+    scan_id = str(uuid.uuid4())
+    tool    = body[<span class="c-str">"tool"</span>]   <span class="c-cm"># kube-hunter | nuclei | trivy-cluster</span>
+    params  = body.get(<span class="c-str">"params"</span>, {})
+
+    <span class="c-cm"># Push to Celery queue</span>
+    run_scanner.delay(tool, scan_id, params)
+
+    <span class="c-kw">return</span> {<span class="c-str">"scan_id"</span>: scan_id, <span class="c-str">"status"</span>: <span class="c-str">"queued"</span>}
+
+@router.websocket(<span class="c-str">"/ws/alerts"</span>)
+<span class="c-kw">async def</span> <span class="c-fn">websocket_endpoint</span>(ws: WebSocket):
+    <span class="c-kw">await</span> ws.accept()
+    connected_clients.append(ws)
+    <span class="c-kw">try</span>:
+        <span class="c-kw">while True</span>:
+            <span class="c-kw">await</span> ws.receive_text()  <span class="c-cm"># keep alive</span>
+    <span class="c-kw">finally</span>:
+        connected_clients.remove(ws)
+
+<span class="c-kw">async def</span> <span class="c-fn">broadcast_alert</span>(finding: dict):
+    <span class="c-kw">for</span> ws <span class="c-kw">in</span> connected_clients:
+        <span class="c-kw">await</span> ws.send_json(finding)</pre>
+    </div>
+  </section>
+
+  <!-- 14. SCHEDULER -->
+  <section class="section" id="scheduler">
+    <div class="section-header">
+      <span class="section-num">14</span>
+      <h2 class="section-title">Scheduler — all tools on a timetable</h2>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Tool</th><th>Schedule</th><th>Why this frequency</th><th>Type</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="mono">Falco</span></td><td>Always-on</td><td>Real-time runtime protection — must be continuous</td><td><span class="badge badge-coral">DaemonSet</span></td></tr>
+        <tr><td><span class="mono">Prowler (CSPM)</span></td><td>Every 6 hours</td><td>Azure config changes multiple times a day</td><td><span class="badge badge-blue">CronJob</span></td></tr>
+        <tr><td><span class="mono">Kubescape (KSPM)</span></td><td>Every 4 hours</td><td>K8s workloads deploy frequently</td><td><span class="badge badge-blue">CronJob</span></td></tr>
+        <tr><td><span class="mono">Trivy operator</span></td><td>Continuous</td><td>Scans new images as they deploy to AKS</td><td><span class="badge badge-teal">Operator</span></td></tr>
+        <tr><td><span class="mono">Gitleaks</span></td><td>Every commit</td><td>Pre-commit hook + CI gate</td><td><span class="badge badge-green">CI/CD</span></td></tr>
+        <tr><td><span class="mono">Checkov</span></td><td>Every PR</td><td>Catches IaC issues before they merge</td><td><span class="badge badge-green">CI/CD</span></td></tr>
+        <tr><td><span class="mono">AzureHound (CIEM)</span></td><td>Weekly</td><td>Identity relationships change slowly</td><td><span class="badge badge-blue">CronJob</span></td></tr>
+        <tr><td><span class="mono">ScubaGear (SSPM)</span></td><td>Monthly</td><td>O365 config is rarely changed</td><td><span class="badge badge-blue">CronJob</span></td></tr>
+        <tr><td><span class="mono">TruffleHog</span></td><td>One-time + monthly</span></td><td>Deep history scan — run once on all repos</td><td><span class="badge badge-amber">Manual</span></td></tr>
+        <tr><td><span class="mono">kube-hunter</span></td><td>On-demand</td><td>Active hunting — triggered from dashboard</td><td><span class="badge badge-coral">UI job</span></td></tr>
+        <tr><td><span class="mono">Nuclei</span></td><td>On-demand</td><td>App vulnerability scanning — triggered from dashboard</td><td><span class="badge badge-coral">UI job</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 15. DASHBOARD -->
+  <section class="section" id="dashboard">
+    <div class="section-header">
+      <span class="section-num">15</span>
+      <h2 class="section-title">React dashboard — what to build</h2>
+    </div>
+
+    <p class="section-sub">Five screens. Build them in this order — each is useful on its own.</p>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1.</span>
+        <div class="step-body">
+          <div class="step-title">Posture overview (home screen)</div>
+          <div class="step-desc">Risk score (0-100), findings by severity (donut chart), findings by domain (bar chart), trend over 30 days (line chart). This is what management looks at. Stack: React + Recharts.</div>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">2.</span>
+        <div class="step-body">
+          <div class="step-title">Findings table</div>
+          <div class="step-desc">All findings from all tools in one table. Filter by: domain, severity, tool, status, resource type. Search by resource name. Click a finding → detail panel with description, remediation steps, raw output. Mark as acknowledged / suppressed.</div>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">3.</span>
+        <div class="step-body">
+          <div class="step-title">Pen-test runner</div>
+          <div class="step-desc">List of available scanners (kube-hunter, Nuclei, etc.) with description. "Run now" button → POST /api/trigger-scan → job status polling → results appear as findings AND as formatted report in modal. WebSocket shows "scan complete" notification.</div>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">4.</span>
+        <div class="step-body">
+          <div class="step-title">Cluster / connection management</div>
+          <div class="step-desc">Add AKS clusters, Azure subscriptions, git repos. Configure scanner credentials. Enable/disable specific tools. Set scan schedules. This is the "add your infrastructure" screen — like Wiz's onboarding.</div>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">5.</span>
+        <div class="step-body">
+          <div class="step-title">Alerts + notification settings</div>
+          <div class="step-desc">Real-time alerts from Falco via WebSocket. Notification rules: "if severity=CRITICAL and domain=cwpp, send Slack alert immediately." Configure Slack/Teams webhooks, email. Alert history log.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Tech stack for dashboard</span><span class="lang">bash</span></div>
+      <pre>
+<span class="c-cm"># Create React + Vite project</span>
+npm create vite@latest cnapp-dashboard -- --template react-ts
+cd cnapp-dashboard
+
+<span class="c-cm"># Install core dependencies</span>
+npm install \
+  recharts \            <span class="c-cm"># charts (posture overview)</span>
+  @tanstack/react-query \  <span class="c-cm"># data fetching + caching</span>
+  @tanstack/react-table \  <span class="c-cm"># findings table with filtering/sorting</span>
+  zustand \             <span class="c-cm"># lightweight state management</span>
+  axios \               <span class="c-cm"># API calls</span>
+  react-router-dom      <span class="c-cm"># routing between screens</span>
+
+<span class="c-cm"># Build</span>
+npm run build
+
+<span class="c-cm"># Serve via nginx in K8s (Dockerfile)</span>
+FROM node:20 AS build
+WORKDIR /app
+COPY . .
+RUN npm ci && npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html</pre>
+    </div>
+  </section>
+
+  <!-- 16. ROADMAP -->
+  <section class="section" id="roadmap">
+    <div class="section-header">
+      <span class="section-num">16</span>
+      <h2 class="section-title">Implementation roadmap — 10 weeks</h2>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header" style="background:var(--blue-bg);border-bottom:1px solid var(--border)">
+        <span class="phase-num" style="color:var(--blue)">W1-2</span>
+        <span class="phase-title">Phase 1 — Foundation</span>
+        <span class="phase-time">Deploy Falco + Postgres + normalizer skeleton</span>
+      </div>
+      <div class="phase-body" style="padding-top:12px">
+        <div class="phase-task">Deploy PostgreSQL and Redis into cnapp-security namespace</div>
+        <div class="phase-task">Design and create the findings + scans schema</div>
+        <div class="phase-task"><strong>Deploy Falco as DaemonSet</strong> — this is your day-1 win (real-time protection)</div>
+        <div class="phase-task">Write FastAPI skeleton with /webhook/falco endpoint + Falco normalizer</div>
+        <div class="phase-task">Write Prowler CronJob + Prowler normalizer (highest value CSPM tool)</div>
+        <div class="phase-task">Build basic findings table in React — just a table, no charts yet</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header" style="background:var(--teal-bg);border-bottom:1px solid var(--border)">
+        <span class="phase-num" style="color:var(--teal)">W3-4</span>
+        <span class="phase-title">Phase 2 — Posture coverage</span>
+        <span class="phase-time">KSPM + Image scanning + Dashboard overview</span>
+      </div>
+      <div class="phase-body" style="padding-top:12px">
+        <div class="phase-task">Install Kubescape operator + write Kubescape normalizer</div>
+        <div class="phase-task">Install Trivy operator for continuous cluster image scanning</div>
+        <div class="phase-task">Install Polaris for pod spec checking</div>
+        <div class="phase-task">Build posture overview screen with risk score + charts</div>
+        <div class="phase-task">Add WebSocket to dashboard for real-time Falco alerts</div>
+        <div class="phase-task">Set up Slack/Teams webhook alerting via Falcosidekick</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header" style="background:var(--coral-bg);border-bottom:1px solid var(--border)">
+        <span class="phase-num" style="color:var(--coral)">W5-6</span>
+        <span class="phase-title">Phase 3 — Pentest runner</span>
+        <span class="phase-time">On-demand scanning from UI</span>
+      </div>
+      <div class="phase-body" style="padding-top:12px">
+        <div class="phase-task">Set up Celery workers connected to Redis job queue</div>
+        <div class="phase-task">Build K8s Job creator for kube-hunter and Nuclei</div>
+        <div class="phase-task">FastAPI: POST /trigger-scan + GET /scan-status endpoints</div>
+        <div class="phase-task">Build pen-test runner screen in React with job status polling</div>
+        <div class="phase-task">Write kube-hunter and Nuclei normalizers</div>
+        <div class="phase-task">Test end-to-end: click button → see results in UI within minutes</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header" style="background:var(--purple-bg);border-bottom:1px solid var(--border)">
+        <span class="phase-num" style="color:var(--purple)">W7-8</span>
+        <span class="phase-title">Phase 4 — Identity + Secrets</span>
+        <span class="phase-time">CIEM + Secrets detection</span>
+      </div>
+      <div class="phase-body" style="padding-top:12px">
+        <div class="phase-task">Deploy BloodHound CE + AzureHound weekly CronJob</div>
+        <div class="phase-task">Add Gitleaks to all repo CI/CD pipelines as pre-commit hook + pipeline gate</div>
+        <div class="phase-task">Run TruffleHog on entire git history of all repos (one-time)</div>
+        <div class="phase-task">Add Checkov to IaC pipelines (Terraform, Helm)</div>
+        <div class="phase-task">Write Gitleaks + Checkov normalizers</div>
+        <div class="phase-task">Build cluster management screen in dashboard (add subscriptions, clusters)</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header" style="background:var(--amber-bg);border-bottom:1px solid var(--border)">
+        <span class="phase-num" style="color:var(--amber)">W9-10</span>
+        <span class="phase-title">Phase 5 — SSPM + Polish</span>
+        <span class="phase-time">O365 posture + alert rules + docs</span>
+      </div>
+      <div class="phase-body" style="padding-top:12px">
+        <div class="phase-task">Set up ScubaGear monthly O365 scan + normalizer</div>
+        <div class="phase-task">Build alert rules engine (severity + domain → notification channel)</div>
+        <div class="phase-task">Add finding status management (acknowledge, suppress, assign)</div>
+        <div class="phase-task">Write internal runbook: how to respond to each finding type</div>
+        <div class="phase-task">Open-source the project: write README, architecture docs, Helm chart</div>
+        <div class="phase-task">Demo to leadership: show risk score dropping over time as you fix findings</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17. HELM CHART -->
+  <section class="section" id="helm">
+    <div class="section-header">
+      <span class="section-num">17</span>
+      <h2 class="section-title">Helm chart — full project structure</h2>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Repository + Helm chart layout</span><span class="lang">text</span></div>
+      <pre>
+cnapp/
+├── helm/                          <span class="c-cm"># Helm chart for the whole stack</span>
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/
+│       ├── namespace.yaml
+│       ├── rbac.yaml              <span class="c-cm"># ClusterRole + binding for scanners</span>
+│       ├── secrets.yaml           <span class="c-cm"># Azure creds, DB URL, Slack webhook</span>
+│       ├── postgres/
+│       ├── redis/
+│       ├── falco/                 <span class="c-cm"># Falco DaemonSet + Falcosidekick</span>
+│       ├── cronjobs/
+│       │   ├── prowler.yaml       <span class="c-cm"># every 6h</span>
+│       │   ├── kubescape.yaml     <span class="c-cm"># every 4h</span>
+│       │   ├── azurehound.yaml    <span class="c-cm"># weekly</span>
+│       │   └── scubagear.yaml     <span class="c-cm"># monthly</span>
+│       ├── api/                   <span class="c-cm"># FastAPI deployment + service</span>
+│       ├── worker/                <span class="c-cm"># Celery worker deployment</span>
+│       └── dashboard/             <span class="c-cm"># React nginx deployment + ingress</span>
+│
+├── api/                           <span class="c-cm"># FastAPI backend</span>
+│   ├── main.py
+│   ├── routes/
+│   │   ├── findings.py
+│   │   ├── scans.py
+│   │   ├── webhooks.py
+│   │   └── dashboard.py
+│   ├── normalizers/
+│   │   ├── prowler.py
+│   │   ├── kubescape.py
+│   │   ├── falco.py
+│   │   ├── trivy.py
+│   │   ├── gitleaks.py
+│   │   ├── checkov.py
+│   │   └── kube_hunter.py
+│   ├── workers/
+│   │   └── scanner_worker.py
+│   └── database.py
+│
+├── dashboard/                     <span class="c-cm"># React frontend</span>
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── Overview.tsx
+│   │   │   ├── Findings.tsx
+│   │   │   ├── PentestRunner.tsx
+│   │   │   ├── Clusters.tsx
+│   │   │   └── Alerts.tsx
+│   │   ├── components/
+│   │   └── api/
+│   └── package.json
+│
+└── README.md</pre>
+    </div>
+  </section>
+
+  <!-- 18. COSTS -->
+  <section class="section" id="costs">
+    <div class="section-header">
+      <span class="section-num">18</span>
+      <h2 class="section-title">Cost analysis — what you save vs commercial tools</h2>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Commercial (Wiz/Orca)</th><th>Your OSS CNAPP</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Platform licensing</td><td>$50,000–$200,000/yr</td><td><strong style="color:var(--green)">$0</strong></td><td>All tools are Apache 2.0 / MIT licensed</td></tr>
+        <tr><td>AKS compute (scanners)</td><td>Included</td><td>~$30–80/mo</td><td>CronJob pods use existing node capacity</td></tr>
+        <tr><td>PostgreSQL (Azure DB)</td><td>Included</td><td>~$50–150/mo</td><td>Or use managed PostgreSQL Flexible Server</td></tr>
+        <tr><td>Developer time (build)</td><td>$0 (buy, not build)</td><td>~8–10 weeks</td><td>One security engineer part-time</td></tr>
+        <tr><td>Ongoing maintenance</td><td>$0 (vendor manages)</td><td>~2–4 hrs/month</td><td>Update tool versions, add new checks</td></tr>
+        <tr><td><strong>Total year 1</strong></td><td>$50k–$200k</td><td><strong style="color:var(--green)">~$2,000</strong></td><td>Mostly compute + dev time</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-green">
+      <strong>What you give up:</strong> Vendor threat intelligence feeds, SLA-backed support, some advanced correlation features (e.g. Wiz's graph-based attack path engine). What you gain: full control, no data leaving your environment, ability to customise every check, and a security posture that grows with your team.
+    </div>
+  </section>
+
+  <hr>
+  <div style="padding:24px 0;color:var(--muted);font-family:var(--mono);font-size:11px;text-align:center">
+    Open-Source CNAPP Build Plan · Generated for internal use · Azure + AKS · 2026
+  </div>
+
+</main>
+
+<script>
+  // Highlight active nav on scroll
+  const sections = document.querySelectorAll('.section');
+  const navItems = document.querySelectorAll('.nav-item');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navItems.forEach(n => n.classList.remove('active'));
+        const active = document.querySelector(`.nav-item[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

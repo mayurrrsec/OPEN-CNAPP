@@ -1,0 +1,174 @@
+
+<style>
+.tbl { width:100%; border-collapse:collapse; font-size:12px; color:var(--color-text-primary); }
+.tbl th { background:var(--color-background-secondary); padding:8px 10px; text-align:left; font-weight:500; font-size:11px; border-bottom:1px solid var(--color-border-secondary); }
+.tbl td { padding:7px 10px; border-bottom:1px solid var(--color-border-tertiary); vertical-align:top; }
+.tbl tr:last-child td { border-bottom:none; }
+.domain { font-weight:500; font-size:11px; }
+.tool { font-weight:500; }
+.pill { display:inline-block; padding:2px 7px; border-radius:12px; font-size:10px; font-weight:500; }
+.p-yes  { background:#EAF3DE; color:#27500A; }
+.p-no   { background:#FCEBEB; color:#791F1F; }
+.p-part { background:#FAEEDA; color:#633806; }
+.p-p1   { background:#EEEDFE; color:#3C3489; }
+.p-p2   { background:#E1F5EE; color:#085041; }
+.p-p3   { background:#FAECE7; color:#712B13; }
+.p-p4   { background:#FBEAF0; color:#72243E; }
+.sect   { background:var(--color-background-secondary); }
+</style>
+<table class="tbl">
+<thead>
+<tr>
+  <th style="width:14%">Domain</th>
+  <th style="width:16%">Tool</th>
+  <th style="width:28%">What it covers for you</th>
+  <th style="width:14%">Dashboard?</th>
+  <th style="width:28%">Notes</th>
+</tr>
+</thead>
+<tbody>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#0C447C">CSPM — Azure posture</span></td></tr>
+<tr>
+  <td><span class="pill p-p1">CSPM</span></td>
+  <td><span class="tool">Prowler</span></td>
+  <td>400+ checks: VNet, Firewall, Storage, Key Vault, PostgreSQL, Redis, App GW, Entra ID, DDoS config</td>
+  <td><span class="pill p-part">HTML report only</span></td>
+  <td>CLI output to JSON/HTML/CSV. No live UI. Best tool for Azure breadth.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p1">CSPM</span></td>
+  <td><span class="tool">ScoutSuite</span></td>
+  <td>Multi-cloud, good Azure coverage. Generates self-contained HTML report per scan.</td>
+  <td><span class="pill p-part">HTML report only</span></td>
+  <td>Good for periodic audit snapshots. Not continuous.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p1">CSPM</span></td>
+  <td><span class="tool">Defender for Cloud</span> <span style="font-size:10px;color:var(--color-text-tertiary)">(you have it!)</span></td>
+  <td>Azure-native posture: secure score, recommendations across all your resources</td>
+  <td><span class="pill p-yes">Full dashboard</span></td>
+  <td>You already have it — enable all plans. Free tier is limited but useful.</td>
+</tr>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#085041">KSPM — Kubernetes posture</span></td></tr>
+<tr>
+  <td><span class="pill p-p2">KSPM</span></td>
+  <td><span class="tool">Kubescape</span></td>
+  <td>AKS RBAC, pod security, network policies, CIS K8s benchmark, NSA hardening guide</td>
+  <td><span class="pill p-part">HTML + ARMO cloud UI</span></td>
+  <td>Has a free cloud dashboard (ARMO). Best single KSPM tool for AKS.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p2">KSPM</span></td>
+  <td><span class="tool">kube-bench</span></td>
+  <td>CIS K8s Benchmark checks against your AKS node config</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>CLI only, JSON/text output. Run once after AKS setup.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p2">KSPM</span></td>
+  <td><span class="tool">Polaris</span></td>
+  <td>Pod spec checks: root containers, missing limits, missing probes, image tag :latest</td>
+  <td><span class="pill p-yes">Web dashboard</span></td>
+  <td>Deploy in-cluster. Has a built-in web UI accessible via port-forward. Lightweight.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p2">KSPM</span></td>
+  <td><span class="tool">kube-hunter</span></td>
+  <td>Active hunting for attack paths in AKS: exposed APIs, priv escalation</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>Run periodically as a pen-test, not continuous. CLI report.</td>
+</tr>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#633806">CWPP — Runtime protection</span></td></tr>
+<tr>
+  <td><span class="pill p-p3">CWPP</span></td>
+  <td><span class="tool">Falco</span></td>
+  <td>Real-time syscall monitoring in AKS pods, Kafka VMs, App Service. Alerts on shell in container, suspicious outbound, /etc writes</td>
+  <td><span class="pill p-part">Falco UI (community)</span></td>
+  <td>Deploy as DaemonSet. Most important runtime tool. Sends to webhook/Slack/Teams.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p3">CWPP</span></td>
+  <td><span class="tool">Tracee</span></td>
+  <td>eBPF-based runtime, similar to Falco. Good for AKS newer kernels.</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>Aqua open-source. Use as Falco alternative, not alongside.</td>
+</tr>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#712B13">CIEM — Identity &amp; entitlements</span></td></tr>
+<tr>
+  <td><span class="pill p-p3">CIEM</span></td>
+  <td><span class="tool">AzureHound + BloodHound</span></td>
+  <td>Maps Entra ID, Azure RBAC, service principals, managed identities, attack paths to Key Vault / subscriptions</td>
+  <td><span class="pill p-yes">BloodHound UI</span></td>
+  <td>BloodHound CE (Community Edition) is free with full graph UI. Best tool for Entra ID risk.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p3">CIEM</span></td>
+  <td><span class="tool">Stormspotter</span></td>
+  <td>Azure identity relationship graph: who can access what, lateral movement paths</td>
+  <td><span class="pill p-yes">Neo4j web UI</span></td>
+  <td>Microsoft research project. Requires Neo4j setup. More setup than BloodHound.</td>
+</tr>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#3C3489">Container image scanning</span></td></tr>
+<tr>
+  <td><span class="pill p-p1">Image sec</span></td>
+  <td><span class="tool">Trivy</span></td>
+  <td>Scan ACR images, Helm charts, K8s cluster, Dockerfiles for CVEs + misconfigs + secrets</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>CLI/JSON output. Integrate into Azure DevOps / GitHub Actions. Industry standard.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p1">Image sec</span></td>
+  <td><span class="tool">Grype + Syft</span></td>
+  <td>CVE scanning + SBOM generation for container images</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>Pair together. Syft generates SBOM, Grype scans it for CVEs.</td>
+</tr>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#27500A">IaC security (shift-left)</span></td></tr>
+<tr>
+  <td><span class="pill p-p2">IaC</span></td>
+  <td><span class="tool">Checkov</span></td>
+  <td>Scans Terraform, Bicep, ARM, Helm charts, K8s YAML, Dockerfile before deploy</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>Run in CI/CD pipeline. JSON/JUnit output. Plugin for VS Code too.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p2">IaC</span></td>
+  <td><span class="tool">KICS</span></td>
+  <td>Same as Checkov, very broad IaC support, strong Terraform + K8s YAML coverage</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>Checkmarx open-source. Good alternative or supplement to Checkov.</td>
+</tr>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#993556">Secrets detection</span></td></tr>
+<tr>
+  <td><span class="pill p-p4">Secrets</span></td>
+  <td><span class="tool">Gitleaks</span></td>
+  <td>Scans git repos + history for Azure connection strings, storage keys, Entra client secrets</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>Run as pre-commit hook + CI pipeline gate. Fast, accurate.</td>
+</tr>
+<tr>
+  <td><span class="pill p-p4">Secrets</span></td>
+  <td><span class="tool">TruffleHog</span></td>
+  <td>Deep git history scan, finds secrets committed years ago and deleted</td>
+  <td><span class="pill p-no">No dashboard</span></td>
+  <td>Slower than Gitleaks but catches more historical leaks. Run once on all repos.</td>
+</tr>
+
+<tr class="sect"><td colspan="5"><span class="domain" style="color:#72243E">SSPM — O365 posture</span></td></tr>
+<tr>
+  <td><span class="pill p-p4">SSPM</span></td>
+  <td><span class="tool">ScubaGear</span></td>
+  <td>CISA-developed. Checks O365: MFA, Teams external access, Exchange DKIM/DMARC, SharePoint sharing</td>
+  <td><span class="pill p-part">HTML report only</span></td>
+  <td>PowerShell tool by CISA (US govt). Free, authoritative O365 benchmark. Run monthly.</td>
+</tr>
+
+</tbody>
+</table>

@@ -1,0 +1,73 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans,sans-serif)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 0}
+.domain{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:10px;padding:12px 14px}
+.domain-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.domain-title{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.domain-sub{font-size:10px;color:var(--color-text-secondary);margin-left:auto}
+.tool-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.tool-row:last-child{border-bottom:none}
+.tool-name{font-size:11px;font-weight:500;color:var(--color-text-primary);min-width:110px;flex-shrink:0}
+.tool-desc{font-size:10px;color:var(--color-text-secondary);line-height:1.4}
+.badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:500;white-space:nowrap;margin-top:2px}
+.b-ci{background:#EAF3DE;color:#27500A}
+.b-rt{background:#FCEBEB;color:#791F1F}
+.b-dash{background:#EEEDFE;color:#3C3489}
+.b-cli{background:#FAEEDA;color:#633806}
+.b-have{background:#E1F5EE;color:#085041}
+.full{grid-column:1/-1}
+</style>
+<div class="grid">
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#185FA5"></div><span class="domain-title">CSPM — Cloud posture</span></div>
+    <div class="tool-row"><div><div class="tool-name">Defender for Cloud</div><span class="badge b-have">✓ you have it</span><span class="badge b-dash" style="margin-left:3px">Full dashboard</span></div><div class="tool-desc">Azure-native secure score, recommendations across all resources. Enable all plans.</div></div>
+    <div class="tool-row"><div><div class="tool-name">Prowler</div><span class="badge b-cli">400+ checks</span></div><div class="tool-desc">VNet, Firewall, Key Vault, Entra ID, Storage. CLI → JSON/HTML. Best Azure breadth.</div></div>
+    <div class="tool-row"><div><div class="tool-name">ScoutSuite</div><span class="badge b-cli">Periodic audit</span></div><div class="tool-desc">Multi-cloud, self-contained HTML report per scan. Good complement to Prowler.</div></div>
+  </div>
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#1D9E75"></div><span class="domain-title">KSPM — Kubernetes posture</span></div>
+    <div class="tool-row"><div><div class="tool-name">Kubescape</div><span class="badge b-dash">ARMO cloud UI</span></div><div class="tool-desc">AKS RBAC, pod security, CIS K8s benchmark, NSA hardening. Best single KSPM tool.</div></div>
+    <div class="tool-row"><div><div class="tool-name">Polaris</div><span class="badge b-dash">In-cluster UI</span></div><div class="tool-desc">Pod spec checks: root containers, missing limits, missing probes, :latest tags.</div></div>
+    <div class="tool-row"><div><div class="tool-name">kube-bench</div><span class="badge b-have">✓ you have it</span><span class="badge b-cli" style="margin-left:3px">Run once</span></div><div class="tool-desc">CIS K8s Benchmark against AKS node config. Already running manually.</div></div>
+  </div>
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#D85A30"></div><span class="domain-title">CWPP — Runtime protection</span></div>
+    <div class="tool-row"><div><div class="tool-name">Falco</div><span class="badge b-rt">Real-time</span></div><div class="tool-desc">DaemonSet in AKS. Syscall monitoring — shell in container, suspicious outbound, /etc writes. #1 priority.</div></div>
+    <div class="tool-row"><div><div class="tool-name">Tracee</div><span class="badge b-rt">eBPF alternative</span></div><div class="tool-desc">Aqua open-source. Use instead of Falco if on newer AKS kernel. Not both.</div></div>
+  </div>
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#D4537E"></div><span class="domain-title">CIEM — Identity & entitlements</span></div>
+    <div class="tool-row"><div><div class="tool-name">AzureHound + BloodHound CE</div><span class="badge b-dash">Graph UI</span></div><div class="tool-desc">Maps Entra ID, Azure RBAC, service principals, managed identities, attack paths to Key Vault.</div></div>
+    <div class="tool-row"><div><div class="tool-name">Stormspotter</div><span class="badge b-dash">Neo4j UI</span></div><div class="tool-desc">Azure identity relationship graph. More setup than BloodHound. Skip unless needed.</div></div>
+  </div>
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#7F77DD"></div><span class="domain-title">Container image scanning</span></div>
+    <div class="tool-row"><div><div class="tool-name">Trivy</div><span class="badge b-have">✓ you have it</span><span class="badge b-ci" style="margin-left:3px">CI/CD</span></div><div class="tool-desc">Already in your pipeline. Scans ACR, Helm charts, Dockerfiles for CVEs + misconfigs + secrets.</div></div>
+    <div class="tool-row"><div><div class="tool-name">Grype + Syft</div><span class="badge b-have">✓ you have it</span><span class="badge b-ci" style="margin-left:3px">SBOM</span></div><div class="tool-desc">Already in your pipeline. Syft generates SBOM, Grype scans for CVEs.</div></div>
+  </div>
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#639922"></div><span class="domain-title">IaC security (shift-left)</span></div>
+    <div class="tool-row"><div><div class="tool-name">Checkov</div><span class="badge b-ci">CI/CD gate</span></div><div class="tool-desc">Scans Terraform, Bicep, ARM, Helm, K8s YAML, Dockerfile before deploy.</div></div>
+    <div class="tool-row"><div><div class="tool-name">KICS</div><span class="badge b-ci">CI/CD gate</span></div><div class="tool-desc">Checkmarx OSS. Broad IaC support. Strong Terraform + K8s YAML alternative to Checkov.</div></div>
+  </div>
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#BA7517"></div><span class="domain-title">Secrets detection</span></div>
+    <div class="tool-row"><div><div class="tool-name">Gitleaks</div><span class="badge b-ci">Pre-commit + CI</span></div><div class="tool-desc">Azure connection strings, storage keys, Entra client secrets in repos. Fast, accurate.</div></div>
+    <div class="tool-row"><div><div class="tool-name">TruffleHog</div><span class="badge b-cli">Run once</span></div><div class="tool-desc">Deep git history scan — finds secrets committed years ago and deleted. Run on all repos once.</div></div>
+  </div>
+  <div class="domain">
+    <div class="domain-header"><div class="dot" style="background:#993556"></div><span class="domain-title">SSPM — O365 / SaaS posture</span></div>
+    <div class="tool-row"><div><div class="tool-name">ScubaGear</div><span class="badge b-cli">Monthly run</span></div><div class="tool-desc">CISA-developed. Checks O365: MFA, Teams external access, Exchange DKIM/DMARC, SharePoint sharing.</div></div>
+  </div>
+  <div class="domain full">
+    <div class="domain-header"><div class="dot" style="background:#E24B4A"></div><span class="domain-title">Pentesting / Active scanning (UI-triggered from your dashboard)</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">
+      <div class="tool-row" style="flex-direction:column;gap:3px"><div class="tool-name">kube-hunter</div><span class="badge b-rt">Periodic + on-demand</span><div class="tool-desc" style="margin-top:3px">Attack paths in AKS: exposed APIs, priv escalation. UI-triggered, report ingested back.</div></div>
+      <div class="tool-row" style="flex-direction:column;gap:3px;border-left:0.5px solid var(--color-border-tertiary);padding-left:8px"><div class="tool-name">Nuclei</div><span class="badge b-rt">On-demand</span><div class="tool-desc" style="margin-top:3px">Template-based vulnerability scanner for APIs, web apps, cloud infra. 10k+ templates.</div></div>
+      <div class="tool-row" style="flex-direction:column;gap:3px;border-left:0.5px solid var(--color-border-tertiary);padding-left:8px"><div class="tool-name">Trivy (cluster mode)</div><span class="badge b-ci">Scheduled</span><div class="tool-desc" style="margin-top:3px">Run trivy k8s --report summary on cluster. Different from image scanning mode.</div></div>
+    </div>
+  </div>
+</div>
