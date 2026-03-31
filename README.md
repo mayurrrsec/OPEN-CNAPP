@@ -26,3 +26,5 @@ docker compose up --build
 - Native cloud-security source ingestion (Defender/Security Hub/SCC)
 
 - CI/CD snippets: `docs/ci-cd-snippets.md`
+
+- Phase status tracker: `docs/phase-status.md`

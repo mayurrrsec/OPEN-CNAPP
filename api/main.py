@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.database.session import Base, SessionLocal, engine
 from api.plugin_engine import sync_plugins_to_db
-from api.routes import findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports
+from api.routes import findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths
 from api.websocket import manager
 from api.workers.scheduler import start_scheduler
 
@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in [findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports]:
+for r in [findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths]:
     app.include_router(r.router)
 
 

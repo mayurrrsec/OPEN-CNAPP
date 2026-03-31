@@ -14,6 +14,7 @@ def list_findings(
     severity: str | None = None,
     domain: str | None = None,
     cloud_provider: str | None = None,
+    status: str | None = None,
 ):
     q = db.query(Finding)
     if severity:
@@ -22,12 +23,18 @@ def list_findings(
         q = q.filter(Finding.domain == domain)
     if cloud_provider:
         q = q.filter(Finding.cloud_provider == cloud_provider)
+    if status:
+        q = q.filter(Finding.status == status)
     return q.order_by(Finding.created_at.desc()).limit(500).all()
 
 
 @router.post("")
 def create_finding(payload: FindingCreate, db: Session = Depends(get_db)):
-    finding = Finding(**payload.model_dump())
+    model = payload.model_dump()
+    model["fingerprint"] = Finding.compute_fingerprint(
+        model["tool"], model.get("check_id"), model.get("resource_id"), model["title"]
+    )
+    finding = Finding(**model)
     db.add(finding)
     db.commit()
     db.refresh(finding)
@@ -35,10 +42,15 @@ def create_finding(payload: FindingCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{finding_id}")
-def update_finding_status(finding_id: str, status: str, db: Session = Depends(get_db)):
+def update_finding(finding_id: str, status: str | None = None, assigned_to: str | None = None, ticket_ref: str | None = None, db: Session = Depends(get_db)):
     finding = db.query(Finding).filter(Finding.id == finding_id).first()
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
-    finding.status = status
+    if status:
+        finding.status = status
+    if assigned_to is not None:
+        finding.assigned_to = assigned_to
+    if ticket_ref is not None:
+        finding.ticket_ref = ticket_ref
     db.commit()
     return {"ok": True}

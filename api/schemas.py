@@ -29,6 +29,8 @@ class FindingCreate(BaseModel):
 class FindingOut(FindingCreate):
     id: str
     status: str
+    assigned_to: str | None = None
+    ticket_ref: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -38,6 +40,7 @@ class ScanTrigger(BaseModel):
     plugin: str
     connector: str
     source: str = "on_demand"
+    confirm_active_scan: bool = False
 
 
 class ScanOut(BaseModel):

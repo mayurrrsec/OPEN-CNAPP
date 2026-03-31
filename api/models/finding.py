@@ -1,6 +1,9 @@
+import hashlib
 import uuid
 from datetime import datetime
+
 from sqlalchemy import Column, String, DateTime, JSON, Float, Text
+
 from api.database.session import Base
 
 
@@ -34,6 +37,15 @@ class Finding(Base):
     compliance = Column(JSON, default=list)
     raw = Column(JSON, default=dict)
 
+    fingerprint = Column(String(64), index=True, nullable=True)
+    assigned_to = Column(String(200), nullable=True)
+    ticket_ref = Column(String(500), nullable=True)
+
     status = Column(String(30), default="open", index=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @staticmethod
+    def compute_fingerprint(tool: str, check_id: str | None, resource_id: str | None, title: str) -> str:
+        raw = f"{tool}|{check_id or ''}|{resource_id or ''}|{title}"
+        return hashlib.sha256(raw.encode()).hexdigest()

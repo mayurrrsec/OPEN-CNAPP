@@ -16,10 +16,17 @@ def ingest(tool: str, payload: dict, db: Session = Depends(get_db)):
 
     normalized = adapter.normalize(payload)
     created = 0
+    deduped = 0
     for f in normalized:
+        fingerprint = Finding.compute_fingerprint(f["tool"], f.get("check_id"), f.get("resource_id"), f["title"])
+        existing = db.query(Finding).filter(Finding.fingerprint == fingerprint, Finding.status != "resolved").first()
+        if existing:
+            deduped += 1
+            continue
+        f["fingerprint"] = fingerprint
         row = Finding(**f)
         db.add(row)
         created += 1
 
     db.commit()
-    return {"ingested": created, "tool": tool}
+    return {"ingested": created, "deduped": deduped, "tool": tool}

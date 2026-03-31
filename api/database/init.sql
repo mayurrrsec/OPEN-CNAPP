@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS findings (
   remediation TEXT NULL,
   compliance JSONB DEFAULT '[]'::jsonb,
   raw JSONB DEFAULT '{}'::jsonb,
+  fingerprint VARCHAR(64) NULL,
+  assigned_to VARCHAR(200) NULL,
+  ticket_ref VARCHAR(500) NULL,
   status VARCHAR(30) DEFAULT 'open',
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
