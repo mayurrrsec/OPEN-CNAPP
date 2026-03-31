@@ -3,6 +3,8 @@ from api.adapters.prowler import ProwlerAdapter
 from api.adapters.gitleaks import GitleaksAdapter
 from api.adapters.checkov import CheckovAdapter
 from api.adapters.trivy import TrivyAdapter
+from api.adapters.grype import GrypeAdapter
+from api.adapters.syft import SyftAdapter
 
 
 ADAPTERS: dict[str, type[BaseAdapter]] = {
@@ -10,6 +12,8 @@ ADAPTERS: dict[str, type[BaseAdapter]] = {
     "gitleaks": GitleaksAdapter,
     "checkov": CheckovAdapter,
     "trivy": TrivyAdapter,
+    "grype": GrypeAdapter,
+    "syft": SyftAdapter,
 }
 
 

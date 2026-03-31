@@ -24,3 +24,5 @@ docker compose up --build
 - JWT auth + RBAC
 - Advanced UI charts/attack-path visualization
 - Native cloud-security source ingestion (Defender/Security Hub/SCC)
+
+- CI/CD snippets: `docs/ci-cd-snippets.md`
