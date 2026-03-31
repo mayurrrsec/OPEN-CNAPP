@@ -93,7 +93,9 @@ Summary:
 - CI/CD snippets: `docs/ci-cd-snippets.md`
 - Deep integration notes: `docs/deep-integration.md`
 - Launch checklist: `docs/launch-checklist.md`
-codex/implement-full-opencnapp-architecture-lexq68
+- codex/implement-full-opencnapp-architecture-dh0yai
+- codex/implement-full-opencnapp-architecture-lexq68
+- main
 
 
 ## 11) Visual preview
@@ -107,5 +109,17 @@ codex/implement-full-opencnapp-architecture-lexq68
 - Agent policy: `AGENTS.md`
 - ExecPlan template: `.agent/PLANS.md`
 - Create a task-specific plan before large changes and track validation evidence while implementing.
-=======
+ codex/implement-full-opencnapp-architecture-dh0yai
+
+
+## 13) Troubleshooting
+- **`[ERROR] Missing dependency: docker`** in setup script:
+  - Use Docker mode on a Docker-enabled host, or run fallback local mode:
+    - `./scripts/setup_opencnapp.sh --local`
+- **`ModuleNotFoundError: No module named 'api'`** while running tests:
+  - Use `PYTHONPATH=. pytest -q` or `python -m unittest discover -s tests`.
+  - `pytest.ini` and `tests/conftest.py` are included to make root imports reliable.
+- If you previously generated local artifacts (`node_modules`, `dist`, `opencnapp.db`), they are now ignored via `.gitignore`.
+
 main
+ 
