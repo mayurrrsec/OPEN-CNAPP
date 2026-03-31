@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: opencnapp-api
+spec:
+  selector: { app: opencnapp-api }
+  ports:
+    - port: 8000
+      targetPort: 8000
