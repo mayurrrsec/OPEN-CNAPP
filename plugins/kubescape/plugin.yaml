@@ -1,0 +1,8 @@
+name: kubescape
+display_name: Kubescape
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/kubescape:latest
+normalizer: api.adapters.kubescape

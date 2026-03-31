@@ -1,0 +1,8 @@
+name: polaris
+display_name: Polaris
+domain: kspm
+run_mode: container
+enabled: true
+schedule: "0 */12 * * *"
+image: quay.io/fairwinds/polaris:latest
+normalizer: api.adapters.polaris.PolarisAdapter

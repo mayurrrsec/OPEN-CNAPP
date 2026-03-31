@@ -1,0 +1,8 @@
+name: prowler
+display_name: Prowler
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/prowler:latest
+normalizer: api.adapters.prowler

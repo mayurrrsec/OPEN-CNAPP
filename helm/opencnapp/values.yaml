@@ -1,0 +1,9 @@
+image:
+  api: ghcr.io/opencnapp/api:latest
+  worker: ghcr.io/opencnapp/api:latest
+  dashboard: ghcr.io/opencnapp/dashboard:latest
+
+postgres:
+  image: postgres:16
+redis:
+  image: redis:7

@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencnapp-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: opencnapp-dashboard }
+  template:
+    metadata:
+      labels: { app: opencnapp-dashboard }
+    spec:
+      containers:
+        - name: dashboard
+          image: {{ .Values.image.dashboard }}
+          ports:
+            - containerPort: 5173

@@ -1,0 +1,8 @@
+name: trufflehog
+display_name: TruffleHog
+domain: secrets
+run_mode: container
+enabled: true
+schedule: "0 */12 * * *"
+image: trufflesecurity/trufflehog:latest
+normalizer: api.adapters.trufflehog.TrufflehogAdapter

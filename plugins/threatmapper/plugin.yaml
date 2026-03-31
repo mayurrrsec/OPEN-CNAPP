@@ -1,0 +1,8 @@
+name: threatmapper
+display_name: Threatmapper
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/threatmapper:latest
+normalizer: api.adapters.threatmapper

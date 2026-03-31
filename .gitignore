@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Local DB/env
+opencnapp.db
+.env
+
+# Node
+dashboard/node_modules/
+dashboard/dist/
+dashboard/package-lock.json
+
+# IDE
+.vscode/
+.idea/
