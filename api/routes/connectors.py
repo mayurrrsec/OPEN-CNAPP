@@ -1,3 +1,5 @@
+import os
+import time
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -68,7 +70,36 @@ def test_connector(name: str):
     return {"connector": name, **result}
 
 
+def _require_token(header_token: str | None):
+    expected = os.getenv("CONNECTOR_SHARED_TOKEN", "opencnapp")
+    if header_token != expected:
+        raise HTTPException(status_code=401, detail="Invalid connector token")
+
+
+def _with_retry(fn, retries: int = 3, delay: float = 0.2):
+    last = None
+    for _ in range(retries):
+        try:
+            return fn()
+        except Exception as exc:
+            last = exc
+            time.sleep(delay)
+    raise HTTPException(status_code=502, detail=f"connector pull failed: {last}")
+
+
 @router.post("/sonarqube/pull")
-def sonarqube_pull(payload: dict):
-    # Pull-mode connector placeholder: expects pre-fetched issues payload from pipeline/integration job.
-    return {"mode": "pull", "tool": "sonarqube", "issues": len(payload.get("issues", []))}
+def sonarqube_pull(payload: dict, token: str | None = None):
+    _require_token(token)
+    return _with_retry(lambda: {"mode": "pull", "tool": "sonarqube", "issues": len(payload.get("issues", []))})
+
+
+@router.post("/zap/pull")
+def zap_pull(payload: dict, token: str | None = None):
+    _require_token(token)
+    return _with_retry(lambda: {"mode": "pull", "tool": "zap", "alerts": len(payload.get("alerts", []))})
+
+
+@router.post("/snyk/pull")
+def snyk_pull(payload: dict, token: str | None = None):
+    _require_token(token)
+    return _with_retry(lambda: {"mode": "pull", "tool": "snyk", "issues": len(payload.get("issues", []))})

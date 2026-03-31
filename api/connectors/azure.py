@@ -22,7 +22,22 @@ class AzureConnector(CloudConnector):
         return {"CLOUD_PROVIDER": "azure"}
 
     def ingest_native_findings(self) -> list[dict]:
-        # Deep integration hook: supports file-based sync to allow offline ingestion in self-hosted envs.
+        # Priority 1: direct Defender API pull
+        try:
+            from azure.identity import DefaultAzureCredential
+            from azure.mgmt.security import SecurityCenter
+
+            subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID", "")
+            if subscription_id:
+                client = SecurityCenter(credential=DefaultAzureCredential(), subscription_id=subscription_id)
+                out = []
+                for a in client.alerts.list():
+                    out.append(a.as_dict())
+                return out
+        except Exception:
+            pass
+
+        # Priority 2: offline/import file
         path = os.getenv("AZURE_DEFENDER_FINDINGS_FILE")
         if not path or not os.path.exists(path):
             return []

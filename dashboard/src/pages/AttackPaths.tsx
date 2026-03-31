@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
 
 export default function AttackPaths() {
-  const [graph, setGraph] = useState<{nodes:any[], edges:any[]}>({nodes:[], edges:[]})
-  useEffect(() => { api.get('/attack-paths').then(r => setGraph(r.data)).catch(() => setGraph({nodes:[], edges:[]})) }, [])
+  const [graph, setGraph] = useState<{nodes:any[], edges:any[], top_paths:any[]}>({nodes:[], edges:[], top_paths:[]})
+  useEffect(() => { api.get('/attack-paths').then(r => setGraph(r.data)).catch(() => setGraph({nodes:[], edges:[], top_paths:[]})) }, [])
 
   const coords = useMemo(() => {
     const out: Record<string, {x:number,y:number}> = {}
@@ -23,9 +23,10 @@ export default function AttackPaths() {
       <p>Nodes: {graph.nodes.length} | Edges: {graph.edges.length}</p>
       <svg width={520} height={440} style={{border:'1px solid #ddd'}}>
         {graph.edges.map((e, i) => {
-          const s = coords[e.source]; const t = coords[e.target];
+          const s = coords[e.source]; const t = coords[e.target]
           if (!s || !t) return null
-          return <line key={i} x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke="#94a3b8" />
+          const color = e.risk > 15 ? '#dc2626' : e.risk > 8 ? '#ea580c' : '#94a3b8'
+          return <line key={i} x1={s.x} y1={s.y} x2={t.x} y2={t.y} stroke={color} />
         })}
         {graph.nodes.map((n, i) => (
           <g key={i}>
@@ -34,6 +35,8 @@ export default function AttackPaths() {
           </g>
         ))}
       </svg>
+      <h3>Top risky paths</h3>
+      <pre>{JSON.stringify(graph.top_paths, null, 2)}</pre>
     </div>
   )
 }
