@@ -8,18 +8,19 @@ OpenCNAPP is a local-first, pluggable CNAPP platform that unifies findings from 
 docker compose up --build
 ```
 
-- API: http://localhost:8000/docs
+- API docs: http://localhost:8000/docs
 - Dashboard: http://localhost:3000
 
-## Architecture highlights
-- FastAPI backend with normalized findings schema
-- Plugin registry (`plugins/*/plugin.yaml`)
-- Cloud connector model for Azure/AWS/GCP/Kubernetes/On-prem
-- Celery + Redis scanning job queue
-- React dashboard shell with core pages
+## Implemented now
+- FastAPI skeleton with required route modules
+- Data layer + initial schema for findings/scans/plugins/connectors
+- Plugin engine contracts + auto-discovery from `plugins/*/plugin.yaml`
+- Scan orchestration wiring with Celery + APScheduler + runner task
+- React dashboard skeleton with required pages
+- Working normalizers for Prowler, Gitleaks, Checkov, Trivy ingest
 
-## Repo structure
-- `api/`: backend, adapters, connectors, workers, db models
-- `dashboard/`: React + Vite UI
-- `plugins/`: declarative plugin definitions
-- `docs/`: implementation docs and cloud setup guides
+## Next
+- Real scanner container execution and raw-output collection
+- JWT auth + RBAC
+- Advanced UI charts/attack-path visualization
+- Native cloud-security source ingestion (Defender/Security Hub/SCC)

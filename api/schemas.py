@@ -1,38 +1,49 @@
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
 
 class FindingCreate(BaseModel):
-    source: str
+    scan_id: str | None = None
     tool: str
+    source: str = "ci_ingest"
+    domain: str
+    severity: str
+    cvss_score: float | None = None
+    cve_id: str | None = None
+    cloud_provider: str | None = None
+    account_id: str | None = None
+    region: str | None = None
+    resource_type: str | None = None
+    resource_id: str | None = None
+    resource_name: str | None = None
+    namespace: str | None = None
+    check_id: str | None = None
     title: str
     description: str | None = None
-    severity: str
-    domain: str
-    cloud: str
-    resource_id: str
-    compliance: list[str] = []
     remediation: str | None = None
-    raw: dict[str, Any] = {}
-    risk_score: float = 0
+    compliance: list[str] = Field(default_factory=list)
+    raw: dict[str, Any] = Field(default_factory=dict)
+
 
 class FindingOut(FindingCreate):
-    id: int
+    id: str
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
 
 class ScanTrigger(BaseModel):
     plugin: str
     connector: str
+    source: str = "on_demand"
+
 
 class ScanOut(BaseModel):
-    id: int
+    id: str
     plugin: str
     connector: str
     status: str
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

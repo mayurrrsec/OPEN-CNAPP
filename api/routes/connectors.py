@@ -1,19 +1,68 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from api.connectors.aws import AwsConnector
+from api.connectors.azure import AzureConnector
+from api.connectors.gcp import GcpConnector
+from api.connectors.kubernetes import KubernetesConnector
+from api.connectors.onprem import OnpremConnector
+from api.crypto import encrypt
+from api.database.session import get_db
+from api.models import Connector
 
 router = APIRouter(prefix="/connectors", tags=["connectors"])
 
-CONNECTORS = [
-    {"name": "azure", "display_name": "Azure"},
-    {"name": "aws", "display_name": "AWS"},
-    {"name": "gcp", "display_name": "GCP"},
-    {"name": "kubernetes", "display_name": "Kubernetes"},
-    {"name": "onprem", "display_name": "On-prem"},
-]
+CONNECTOR_IMPLS = {
+    "azure": AzureConnector,
+    "aws": AwsConnector,
+    "gcp": GcpConnector,
+    "kubernetes": KubernetesConnector,
+    "onprem": OnpremConnector,
+}
+
+
+class ConnectorUpsert(BaseModel):
+    name: str
+    display_name: str
+    connector_type: str
+    credentials: dict = {}
+    settings: dict = {}
+
 
 @router.get("")
-def list_connectors():
-    return CONNECTORS
+def list_connectors(db: Session = Depends(get_db)):
+    return db.query(Connector).order_by(Connector.name.asc()).all()
 
-@router.post("/test")
+
+@router.post("")
+def upsert_connector(payload: ConnectorUpsert, db: Session = Depends(get_db)):
+    existing = db.query(Connector).filter(Connector.name == payload.name).first()
+    encrypted_credentials = encrypt(str(payload.credentials)) if payload.credentials else None
+    if existing:
+        existing.display_name = payload.display_name
+        existing.connector_type = payload.connector_type
+        existing.encrypted_credentials = encrypted_credentials
+        existing.settings = payload.settings
+        db.commit()
+        return existing
+
+    connector = Connector(
+        name=payload.name,
+        display_name=payload.display_name,
+        connector_type=payload.connector_type,
+        encrypted_credentials=encrypted_credentials,
+        settings=payload.settings,
+    )
+    db.add(connector)
+    db.commit()
+    db.refresh(connector)
+    return connector
+
+
+@router.post("/{name}/test")
 def test_connector(name: str):
-    return {"connector": name, "ok": True}
+    if name not in CONNECTOR_IMPLS:
+        raise HTTPException(status_code=404, detail="Connector implementation not found")
+    result = CONNECTOR_IMPLS[name]().validate()
+    return {"connector": name, **result}
