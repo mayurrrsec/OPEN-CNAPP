@@ -12,21 +12,28 @@ OpenCNAPP is an open, local-first CNAPP platform that unifies posture, vulnerabi
 - Helm chart baseline for Kubernetes deployment.
 
 ## 2) Updating an existing VM clone (you already did `git clone`)
-If your VM already has this repo cloned, use:
+If your VM already has this repo cloned, use the repo's default branch (`main`):
 
 ```bash
 cd /path/to/OPEN-CNAPP
 git fetch --all --prune
-git checkout work
-# or: git checkout <your-branch>
-git pull --rebase origin work
+git checkout main
+git pull --rebase origin main
+```
+
+If you need to update a non-main branch, switch to it first:
+
+```bash
+git branch -a
+git checkout <your-branch>
+git pull --rebase origin <your-branch>
 ```
 
 If you have local edits and want to keep them safely before updating:
 
 ```bash
 git stash push -u -m "wip-before-update"
-git pull --rebase origin work
+git pull --rebase origin main
 git stash pop
 ```
 
@@ -64,7 +71,23 @@ docker compose --profile runtime up -d
 docker compose --profile ciem up -d
 ```
 
-## 5) API capabilities
+## 5) Architecture and plan mapping
+- Architecture assets directory (repo path): `raw cnapp idea/`
+  - GitHub folder: https://github.com/mayurrrsec/OPEN-CNAPP/tree/main/raw%20cnapp%20idea
+- Spec + roadmap source:
+  - repo path: `raw cnapp idea/opencnapp_final_spec_v3.md`
+  - GitHub URL: https://github.com/mayurrrsec/OPEN-CNAPP/blob/main/raw%20cnapp%20idea/opencnapp_final_spec_v3.md
+- Final plan HTML:
+  - repo path: `raw cnapp idea/opencnapp_final_plan_v3.html`
+  - GitHub URL: https://github.com/mayurrrsec/OPEN-CNAPP/blob/main/raw%20cnapp%20idea/opencnapp_final_plan_v3.html
+- Architecture diagrams:
+  - SVG repo path: `raw cnapp idea/cnapp_architecture.svg`
+  - PNG repo path: `raw cnapp idea/opencnapp_architecture.png`
+  - PNG GitHub URL: https://github.com/mayurrrsec/OPEN-CNAPP/blob/main/raw%20cnapp%20idea/opencnapp_architecture.png
+- How to use the plan in this repo: `docs/how-to-use-architecture-plan.md`
+- Roadmap completion status: `docs/roadmap-gap-analysis.md`
+
+## 6) API capabilities
 - `/findings` CRUD-ish lifecycle (status/assignment/ticket fields)
 - `/ingest/{tool}` normalized ingest and fingerprint dedup
 - `/native-ingest/{provider}` native security source ingest (AWS/Azure/GCP)
@@ -79,14 +102,14 @@ docker compose --profile ciem up -d
 - `/auth/login` + `/auth/me`
 - `/ws/alerts` + `/ws/scan-progress`
 
-## 6) Plugin model
+## 7) Plugin model
 To add a new tool:
 1. Create `plugins/<tool>/plugin.yaml`.
 2. Implement `api/adapters/<tool>.py`.
 3. Register it in `api/adapters/registry.py`.
 4. Sync plugins (`POST /plugins/sync`) or restart API.
 
-## 7) Resource requirements and OS support
+## 8) Resource requirements and OS support
 See: `docs/feasibility-and-requirements.md`
 
 Summary:
@@ -94,7 +117,7 @@ Summary:
 - Minimum: 4 vCPU / 8GB RAM / 20GB disk.
 - Recommended team setup: 8 vCPU / 16GB RAM / 100GB SSD.
 
-## 8) CI/CD and release workflows
+## 9) CI/CD and release workflows
 - CI tests: `.github/workflows/ci.yml`
 - GHCR image publish: `.github/workflows/publish-ghcr.yml`
 - Supply-chain SBOM/attestation baseline: `.github/workflows/supply-chain.yml`
@@ -111,11 +134,23 @@ Summary:
 
 ## 10) Visual preview
 
-![OpenCNAPP architecture preview](raw cnapp idea/opencnapp_architecture.png)
+![OpenCNAPP architecture preview](raw%20cnapp%20idea/opencnapp_architecture.png)
 
-## 11) Troubleshooting
+## 12) Troubleshooting
+- **I accidentally changed `README.md` in my PR branch and want to reset it**:
+  - Restore only README from `origin/main`:
+    - `git fetch origin`
+    - `git checkout origin/main -- README.md`
+    - `git commit -m "Restore README from main"`
+- **`error: pathspec 'work' did not match any file(s) known to git`**:
+  - The branch doesn't exist locally/remotely. Use `main` (or list branches with `git branch -a` and checkout an existing one).
 - **`[ERROR] Missing dependency: docker`** in setup script:
   - Run on a Docker-enabled host for full stack, or use:
     - `./scripts/setup_opencnapp.sh --local`
+- **`./scripts/setup_opencnapp.sh: line 6: ... No such file or directory`**:
+  - You're on an older/broken revision of the script. Update your clone:
+    - `git fetch --all --prune`
+    - `git checkout main`
+    - `git pull --rebase origin main`
 - **`ModuleNotFoundError: No module named 'api'`** while running tests:
   - Use `PYTHONPATH=. pytest -q` or `python -m unittest discover -s tests`.
