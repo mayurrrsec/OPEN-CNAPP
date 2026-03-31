@@ -100,3 +100,9 @@ Summary:
 ![OpenCNAPP architecture preview](raw cnapp idea/opencnapp_architecture.png)
 
 > Runtime UI screenshot capture is expected via browser tooling in environments where browser automation is available.
+
+
+## 12) ExecPlan workflow for future runs
+- Agent policy: `AGENTS.md`
+- ExecPlan template: `.agent/PLANS.md`
+- Create a task-specific plan before large changes and track validation evidence while implementing.
