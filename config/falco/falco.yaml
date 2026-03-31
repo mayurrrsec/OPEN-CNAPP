@@ -1,0 +1,3 @@
+outputs:
+  rate: 1
+  max_burst: 1000

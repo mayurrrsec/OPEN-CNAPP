@@ -1,0 +1,8 @@
+name: checkov
+display_name: Checkov
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/checkov:latest
+normalizer: api.adapters.checkov

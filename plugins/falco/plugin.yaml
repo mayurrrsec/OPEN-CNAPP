@@ -1,0 +1,8 @@
+name: falco
+display_name: Falco
+domain: cnapp
+run_mode: container
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/falco:latest
+normalizer: api.adapters.falco

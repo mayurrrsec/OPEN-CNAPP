@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencnapp-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: opencnapp-redis }
+  template:
+    metadata:
+      labels: { app: opencnapp-redis }
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          ports:
+            - containerPort: 6379

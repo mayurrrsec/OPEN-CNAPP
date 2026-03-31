@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencnapp-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: opencnapp-worker }
+  template:
+    metadata:
+      labels: { app: opencnapp-worker }
+    spec:
+      containers:
+        - name: worker
+          image: {{ .Values.image.worker }}
+          command: ["celery", "-A", "api.workers.celery_app.celery_app", "worker", "-l", "info"]

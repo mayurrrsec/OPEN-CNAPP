@@ -1,0 +1,8 @@
+name: scubagear
+display_name: ScubaGear
+domain: sspm
+run_mode: container
+enabled: true
+schedule: "0 2 * * *"
+image: m365/scubagear:latest
+normalizer: api.adapters.scubagear.ScubagearAdapter

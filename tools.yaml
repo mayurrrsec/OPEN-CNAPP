@@ -1,0 +1,21 @@
+plugins:
+  - name: prowler
+    domain: cspm
+    image: ghcr.io/opencnapp/prowler:latest
+    normalizer: api.adapters.prowler.ProwlerAdapter
+    schedule: "0 */6 * * *"
+  - name: checkov
+    domain: iac
+    image: ghcr.io/opencnapp/checkov:latest
+    normalizer: api.adapters.checkov.CheckovAdapter
+    schedule: "0 */6 * * *"
+  - name: gitleaks
+    domain: secrets
+    image: ghcr.io/opencnapp/gitleaks:latest
+    normalizer: api.adapters.gitleaks.GitleaksAdapter
+    schedule: "0 */12 * * *"
+  - name: trivy
+    domain: image-sec
+    image: ghcr.io/opencnapp/trivy:latest
+    normalizer: api.adapters.trivy.TrivyAdapter
+    schedule: "0 */6 * * *"
