@@ -28,3 +28,5 @@ docker compose up --build
 - CI/CD snippets: `docs/ci-cd-snippets.md`
 
 - Phase status tracker: `docs/phase-status.md`
+
+- Deep integration notes: `docs/deep-integration.md`

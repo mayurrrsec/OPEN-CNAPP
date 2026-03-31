@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.database.session import Base, SessionLocal, engine
 from api.plugin_engine import sync_plugins_to_db
-from api.routes import findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths
+from api.routes import findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths, native_ingest
 from api.websocket import manager
 from api.workers.scheduler import start_scheduler
 
@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in [findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths]:
+for r in [findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths, native_ingest]:
     app.include_router(r.router)
 
 
@@ -41,6 +41,16 @@ def health():
 
 @app.websocket("/ws/alerts")
 async def ws_alerts(ws: WebSocket):
+    await manager.connect(ws)
+    try:
+        while True:
+            await ws.receive_text()
+    finally:
+        manager.disconnect(ws)
+
+
+@app.websocket("/ws/scan-progress")
+async def ws_scan_progress(ws: WebSocket):
     await manager.connect(ws)
     try:
         while True:
