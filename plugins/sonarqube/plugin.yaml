@@ -1,0 +1,8 @@
+name: sonarqube
+display_name: SonarQube
+domain: sast
+run_mode: api_ingest
+enabled: true
+schedule: "0 */6 * * *"
+image: sonarqube:latest
+normalizer: api.adapters.sonarqube.SonarqubeAdapter

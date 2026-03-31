@@ -1,0 +1,8 @@
+name: sbom
+display_name: SBOM Ingest
+domain: sbom
+run_mode: api_ingest
+enabled: true
+schedule: "0 */6 * * *"
+image: ghcr.io/opencnapp/sbom:latest
+normalizer: api.adapters.sbom.SbomAdapter

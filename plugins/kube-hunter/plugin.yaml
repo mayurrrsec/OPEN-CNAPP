@@ -1,0 +1,8 @@
+name: kubehunter
+display_name: kube-hunter
+domain: kspm
+run_mode: on_demand
+enabled: true
+schedule: "0 0 * * 0"
+image: aquasec/kube-hunter:latest
+normalizer: api.adapters.kubehunter.KubehunterAdapter

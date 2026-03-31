@@ -1,0 +1,8 @@
+name: wazuh
+display_name: Wazuh
+domain: cwpp
+run_mode: api_ingest
+enabled: true
+schedule: "0 */6 * * *"
+image: wazuh/wazuh:latest
+normalizer: api.adapters.wazuh.WazuhAdapter

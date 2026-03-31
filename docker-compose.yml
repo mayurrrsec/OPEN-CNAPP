@@ -25,7 +25,7 @@ services:
       SECRET_KEY: change-me
     ports: ["8000:8000"]
     depends_on: [postgres, redis]
-    volumes: ["./:/app"]
+    volumes: ["./:/app", "/var/run/docker.sock:/var/run/docker.sock"]
 
   worker:
     build:
@@ -37,7 +37,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: change-me
     depends_on: [postgres, redis]
-    volumes: ["./:/app"]
+    volumes: ["./:/app", "/var/run/docker.sock:/var/run/docker.sock"]
 
   dashboard:
     image: node:20
@@ -48,6 +48,34 @@ services:
     ports: ["3000:5173"]
     volumes: ["./:/app"]
     depends_on: [api]
+
+  falco:
+    profiles: ["runtime"]
+    image: falcosecurity/falco-no-driver:latest
+    privileged: true
+    pid: host
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - ./config/falco/falco.yaml:/etc/falco/falco.yaml
+    command: ["/usr/bin/falco", "-o", "http_output.enabled=true", "-o", "http_output.url=http://falcosidekick:2801/"]
+
+  falcosidekick:
+    profiles: ["runtime"]
+    image: falcosecurity/falcosidekick:latest
+    environment:
+      WEBHOOK_ADDRESS: http://api:8000/webhook/falco
+    depends_on: [api]
+
+  bloodhound:
+    profiles: ["ciem"]
+    image: ghcr.io/specterops/bloodhound:latest
+    ports: ["8080:8080"]
+
+  azurehound:
+    profiles: ["ciem"]
+    image: ghcr.io/bloodhoundad/azurehound:latest
+    command: ["--help"]
 
 volumes:
   pgdata:

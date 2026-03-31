@@ -66,3 +66,9 @@ def test_connector(name: str):
         raise HTTPException(status_code=404, detail="Connector implementation not found")
     result = CONNECTOR_IMPLS[name]().validate()
     return {"connector": name, **result}
+
+
+@router.post("/sonarqube/pull")
+def sonarqube_pull(payload: dict):
+    # Pull-mode connector placeholder: expects pre-fetched issues payload from pipeline/integration job.
+    return {"mode": "pull", "tool": "sonarqube", "issues": len(payload.get("issues", []))}

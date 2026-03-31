@@ -1,0 +1,8 @@
+name: zap
+display_name: OWASP ZAP
+domain: dast
+run_mode: api_ingest
+enabled: true
+schedule: "0 */6 * * *"
+image: owasp/zap2docker-stable
+normalizer: api.adapters.zap.ZapAdapter

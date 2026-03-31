@@ -3,6 +3,7 @@ import unittest
 from api.adapters.trivy import TrivyAdapter
 from api.adapters.gitleaks import GitleaksAdapter
 from api.adapters.checkov import CheckovAdapter
+from api.adapters.sbom import SbomAdapter
 
 
 class NormalizerTests(unittest.TestCase):
@@ -23,6 +24,12 @@ class NormalizerTests(unittest.TestCase):
         out = CheckovAdapter().normalize(payload)
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["tool"], "checkov")
+
+    def test_sbom_cyclonedx(self):
+        payload = {"components": [{"name": "openssl", "version": "3.0.0", "purl": "pkg:generic/openssl@3.0.0"}]}
+        out = SbomAdapter().normalize(payload)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["domain"], "sbom")
 
 
 if __name__ == '__main__':
