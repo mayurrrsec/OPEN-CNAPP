@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: opencnapp-postgres
+spec:
+  serviceName: opencnapp-postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: opencnapp-postgres }
+  template:
+    metadata:
+      labels: { app: opencnapp-postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          env:
+            - name: POSTGRES_DB
+              value: opencnapp
+            - name: POSTGRES_USER
+              value: opencnapp
+            - name: POSTGRES_PASSWORD
+              value: opencnapp

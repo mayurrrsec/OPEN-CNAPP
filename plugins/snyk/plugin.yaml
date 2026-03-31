@@ -1,0 +1,8 @@
+name: snyk
+display_name: Snyk
+domain: sca
+run_mode: api_ingest
+enabled: true
+schedule: "0 */6 * * *"
+image: snyk/snyk:docker
+normalizer: api.adapters.snyk.SnykAdapter

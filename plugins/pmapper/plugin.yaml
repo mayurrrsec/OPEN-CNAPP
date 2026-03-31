@@ -1,0 +1,8 @@
+name: pmapper
+display_name: PMapper
+domain: ciem
+run_mode: container
+enabled: true
+schedule: "0 3 * * *"
+image: ghcr.io/nccgroup/pmapper:latest
+normalizer: api.adapters.pmapper.PmapperAdapter

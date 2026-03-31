@@ -1,0 +1,8 @@
+name: kubebench
+display_name: kube-bench
+domain: kspm
+run_mode: container
+enabled: true
+schedule: "0 */12 * * *"
+image: aquasec/kube-bench:latest
+normalizer: api.adapters.kubebench.KubebenchAdapter
