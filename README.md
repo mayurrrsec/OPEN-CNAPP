@@ -93,6 +93,7 @@ Summary:
 - CI/CD snippets: `docs/ci-cd-snippets.md`
 - Deep integration notes: `docs/deep-integration.md`
 - Launch checklist: `docs/launch-checklist.md`
+codex/implement-full-opencnapp-architecture-lexq68
 
 
 ## 11) Visual preview
@@ -106,3 +107,5 @@ Summary:
 - Agent policy: `AGENTS.md`
 - ExecPlan template: `.agent/PLANS.md`
 - Create a task-specific plan before large changes and track validation evidence while implementing.
+=======
+main
