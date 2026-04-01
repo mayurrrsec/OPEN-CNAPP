@@ -22,3 +22,15 @@ def heatmap(db: Session = Depends(get_db)):
         for fw in finding.compliance or []:
             counts[str(fw).upper()] += 1
     return [{"framework": fw, "findings": counts.get(fw.upper(), 0)} for fw in FRAMEWORKS]
+
+
+@router.get('/summary')
+def compliance_summary(db: Session = Depends(get_db)):
+    rows = heatmap(db)
+    mapped = sum(item['findings'] for item in rows)
+    top_gaps = sorted(rows, key=lambda x: x['findings'], reverse=True)[:3]
+    return {
+        'heatmap': rows,
+        'top_gaps': top_gaps,
+        'total_mapped_findings': mapped,
+    }

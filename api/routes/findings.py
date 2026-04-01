@@ -15,6 +15,7 @@ def list_findings(
     domain: str | None = None,
     cloud_provider: str | None = None,
     status: str | None = None,
+    source: str | None = None,
 ):
     q = db.query(Finding)
     if severity:
@@ -25,6 +26,8 @@ def list_findings(
         q = q.filter(Finding.cloud_provider == cloud_provider)
     if status:
         q = q.filter(Finding.status == status)
+    if source:
+        q = q.filter(Finding.source == source)
     return q.order_by(Finding.created_at.desc()).limit(500).all()
 
 

@@ -124,9 +124,9 @@ Expected outcomes:
   - `docker compose up -d --build`
 
 ## 8. Deliverables checklist
-- [ ] Code changes
+- [x] Code changes
 - [x] Docs updated
-- [ ] Tests/checks executed
+- [x] Tests/checks executed
 - [ ] Operational notes added
 
 ## 9. Evidence log (fill during execution)
@@ -137,3 +137,23 @@ Expected outcomes:
 - Command: `sed -n '1,220p' docs/execplans/dashboard-v1-execplan.md`
 - Result: pass
 - Notes: Verified all required template sections are populated.
+
+- Command: `npm --prefix dashboard ci`
+- Result: warn
+- Notes: Failed because `dashboard/package-lock.json` is missing in repo; used `npm --prefix dashboard install` as fallback.
+
+- Command: `npm --prefix dashboard install`
+- Result: pass
+- Notes: Dependencies installed/up-to-date successfully.
+
+- Command: `npm --prefix dashboard run build`
+- Result: pass
+- Notes: Frontend compiled successfully; Vite reported chunk-size warning only.
+
+- Command: `python -m compileall api dashboard/src`
+- Result: pass
+- Notes: Python sources compiled successfully.
+
+- Command: `docker compose config`
+- Result: warn
+- Notes: `docker` CLI unavailable in this execution environment.
