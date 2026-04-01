@@ -15,6 +15,9 @@ def summary(db: Session = Depends(get_db)):
     total = db.query(func.count(Finding.id)).scalar() or 0
     open_ = db.query(func.count(Finding.id)).filter(Finding.status == "open").scalar() or 0
     critical = db.query(func.count(Finding.id)).filter(Finding.severity == "CRITICAL").scalar() or 0
+    high = db.query(func.count(Finding.id)).filter(Finding.severity == "HIGH").scalar() or 0
+    medium = db.query(func.count(Finding.id)).filter(Finding.severity == "MEDIUM").scalar() or 0
+    low = db.query(func.count(Finding.id)).filter(Finding.severity == "LOW").scalar() or 0
 
     severity_rows = (
         db.query(Finding.severity, func.count(Finding.id))
@@ -30,6 +33,13 @@ def summary(db: Session = Depends(get_db)):
     )
     domain_breakdown = [{"name": d or "unknown", "value": c} for d, c in domain_rows]
 
+    cloud_rows = (
+        db.query(Finding.cloud_provider, func.count(Finding.id))
+        .group_by(Finding.cloud_provider)
+        .all()
+    )
+    cloud_breakdown = [{"name": (c or "unknown").lower(), "value": n} for c, n in cloud_rows]
+
     now = datetime.utcnow()
     trend = []
     for i in range(6, -1, -1):
@@ -38,13 +48,26 @@ def summary(db: Session = Depends(get_db)):
         count = db.query(func.count(Finding.id)).filter(Finding.created_at >= day_start, Finding.created_at < day_end).scalar() or 0
         trend.append({"day": day_start.strftime("%Y-%m-%d"), "findings": count})
 
-    score = max(0, 100 - (critical * 2 + open_ // 10))
+    score = max(0, 100 - (critical * 3 + high * 2 + (open_ // 10)))
+
+    top_critical = (
+        db.query(Finding)
+        .filter(Finding.severity.in_(["CRITICAL", "HIGH"]))
+        .order_by(Finding.created_at.desc())
+        .limit(10)
+        .all()
+    )
     return {
         "total_findings": total,
         "open_findings": open_,
         "critical": critical,
+        "high": high,
+        "medium": medium,
+        "low": low,
         "secure_score": score,
         "severity_breakdown": severity_breakdown,
         "domain_breakdown": domain_breakdown,
+        "cloud_breakdown": cloud_breakdown,
         "trend": trend,
+        "top_findings": top_critical,
     }
