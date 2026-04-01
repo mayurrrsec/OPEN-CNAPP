@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from api.database.session import get_db
@@ -15,17 +16,62 @@ def list_findings(
     domain: str | None = None,
     cloud_provider: str | None = None,
     status: str | None = None,
+    tool: str | None = None,
+    q: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort: str = "created_at",
+    order: str = "desc",
 ):
-    q = db.query(Finding)
+    limit = max(1, min(int(limit or 50), 200))
+    offset = max(0, int(offset or 0))
+
+    query = db.query(Finding)
     if severity:
-        q = q.filter(Finding.severity == severity.upper())
+        query = query.filter(Finding.severity == severity.upper())
     if domain:
-        q = q.filter(Finding.domain == domain)
+        query = query.filter(Finding.domain == domain)
     if cloud_provider:
-        q = q.filter(Finding.cloud_provider == cloud_provider)
+        query = query.filter(Finding.cloud_provider == cloud_provider)
     if status:
-        q = q.filter(Finding.status == status)
-    return q.order_by(Finding.created_at.desc()).limit(500).all()
+        query = query.filter(Finding.status == status)
+    if tool:
+        query = query.filter(Finding.tool == tool)
+    if q:
+        like = f"%{q.strip()}%"
+        query = query.filter(
+            or_(
+                Finding.title.ilike(like),
+                Finding.resource_id.ilike(like),
+                Finding.resource_name.ilike(like),
+                Finding.check_id.ilike(like),
+            )
+        )
+
+    total = query.with_entities(func.count(Finding.id)).scalar() or 0
+
+    sort_map = {
+        "created_at": Finding.created_at,
+        "severity": Finding.severity,
+        "domain": Finding.domain,
+        "tool": Finding.tool,
+        "status": Finding.status,
+        "cloud_provider": Finding.cloud_provider,
+    }
+    sort_col = sort_map.get(sort, Finding.created_at)
+    order = (order or "desc").lower()
+    query = query.order_by(sort_col.asc() if order == "asc" else sort_col.desc())
+
+    items = query.offset(offset).limit(limit).all()
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
+
+
+@router.get("/{finding_id}")
+def get_finding(finding_id: str, db: Session = Depends(get_db)):
+    finding = db.query(Finding).filter(Finding.id == finding_id).first()
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    return finding
 
 
 @router.post("")
