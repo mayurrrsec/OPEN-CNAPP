@@ -24,7 +24,7 @@ export function AttackPathSummaryCard({
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Edges in graph: <strong>{summary.edge_count}</strong> (severity-weighted tiers).
+        <strong>{summary.edge_count}</strong> relationships analyzed in the current path graph.
       </p>
       <Button variant="outline" size="sm" className="w-full gap-2" asChild>
         <Link to="/attack-paths">

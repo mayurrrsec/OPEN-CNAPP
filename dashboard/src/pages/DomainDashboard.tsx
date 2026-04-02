@@ -58,9 +58,8 @@ export default function DomainDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          All widgets below are filtered to <code className="rounded bg-muted px-1">domain={key}</code> via{' '}
-          <code className="rounded bg-muted px-1">GET /dashboard/summary?domain=...</code>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          Posture and findings for this security domain. Switch tabs above to compare CSPM, KSPM, CWPP, and CIEM.
         </p>
       </div>
 
@@ -105,7 +104,9 @@ export default function DomainDashboard() {
             {(data.domain_breakdown?.length ?? 0) > 1 ? (
               <DomainBar data={data.domain_breakdown} />
             ) : (
-              <p className="text-sm text-muted-foreground">Single domain bucket — use unified dashboard for cross-domain view.</p>
+              <p className="text-sm text-muted-foreground">
+                Not enough sub-domain data to chart yet. Open the unified dashboard for a full cross-domain view.
+              </p>
             )}
           </CardContent>
         </Card>

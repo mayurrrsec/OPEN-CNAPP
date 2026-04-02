@@ -24,7 +24,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://opencnapp:opencnapp@postgres:5432/opencnapp
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: change-me-in-production
-      OPENCNAPP_ADMIN_EMAIL: admin@localhost
+      OPENCNAPP_ADMIN_EMAIL: admin@example.com
       OPENCNAPP_ADMIN_PASSWORD: changeme
       OPENCNAPP_DASHBOARD_URL: http://localhost:3000
       OPENCNAPP_API_PUBLIC_URL: http://localhost:8000
@@ -55,6 +55,8 @@ services:
       # Browser calls host-mapped ports (not container hostnames)
       VITE_API_URL: http://localhost:8000
       VITE_WS_URL: ws://localhost:8000
+      VITE_DEV_CLIENT_PORT: "3000"
+      CHOKIDAR_USEPOLLING: "1"
     ports: ["3000:5173"]
     volumes: ["./:/app"]
     depends_on: [api]

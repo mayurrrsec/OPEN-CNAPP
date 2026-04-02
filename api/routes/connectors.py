@@ -10,6 +10,7 @@ from api.connectors.azure import AzureConnector
 from api.connectors.gcp import GcpConnector
 from api.connectors.kubernetes import KubernetesConnector
 from api.connectors.onprem import OnpremConnector
+from api.connectors.registry import RegistryConnector
 from api.crypto import encrypt
 from api.database.session import get_db
 from api.models import Connector
@@ -22,6 +23,7 @@ CONNECTOR_IMPLS = {
     "gcp": GcpConnector,
     "kubernetes": KubernetesConnector,
     "onprem": OnpremConnector,
+    "registry": RegistryConnector,
 }
 
 
@@ -33,9 +35,111 @@ class ConnectorUpsert(BaseModel):
     settings: dict = {}
 
 
+class ConnectorTestPayload(BaseModel):
+    """Test credentials/settings without persisting (Phase 2)."""
+
+    connector_type: str
+    credentials: dict = {}
+    settings: dict = {}
+
+
+class EnabledPatch(BaseModel):
+    enabled: bool
+
+
+class ConnectorPatch(BaseModel):
+    """Partial update; omit fields to leave unchanged."""
+
+    display_name: str | None = None
+    settings: dict | None = None
+    enabled: bool | None = None
+    credentials: dict | None = None
+
+
+def _connector_public(r: Connector) -> dict:
+    return {
+        "id": r.id,
+        "name": r.name,
+        "display_name": r.display_name,
+        "connector_type": r.connector_type,
+        "enabled": r.enabled,
+        "settings": r.settings or {},
+        "created_at": r.created_at.isoformat() if r.created_at else None,
+        "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+    }
+
+
 @router.get("")
 def list_connectors(db: Session = Depends(get_db)):
-    return db.query(Connector).order_by(Connector.name.asc()).all()
+    rows = db.query(Connector).order_by(Connector.name.asc()).all()
+    return [_connector_public(r) for r in rows]
+
+
+@router.get("/{name}")
+def get_connector(name: str, db: Session = Depends(get_db)):
+    row = db.query(Connector).filter(Connector.name == name).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Connector not found")
+    return _connector_public(row)
+
+
+@router.delete("/{name}")
+def delete_connector(name: str, db: Session = Depends(get_db)):
+    row = db.query(Connector).filter(Connector.name == name).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Connector not found")
+    db.delete(row)
+    db.commit()
+    return {"deleted": True, "name": name}
+
+
+@router.patch("/{name}/enabled")
+def patch_connector_enabled(name: str, payload: EnabledPatch, db: Session = Depends(get_db)):
+    row = db.query(Connector).filter(Connector.name == name).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Connector not found")
+    row.enabled = payload.enabled
+    db.commit()
+    db.refresh(row)
+    return _connector_public(row)
+
+
+@router.patch("/{name}")
+def patch_connector(name: str, payload: ConnectorPatch, db: Session = Depends(get_db)):
+    row = db.query(Connector).filter(Connector.name == name).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Connector not found")
+    if payload.display_name is not None:
+        row.display_name = payload.display_name
+    if payload.settings is not None:
+        row.settings = payload.settings
+    if payload.enabled is not None:
+        row.enabled = payload.enabled
+    if payload.credentials is not None and payload.credentials:
+        row.encrypted_credentials = encrypt(str(payload.credentials))
+    db.commit()
+    db.refresh(row)
+    return _connector_public(row)
+
+
+@router.post("/test")
+def test_connector_payload(payload: ConnectorTestPayload):
+    """Validate connector type and return a stub resource count (real SDK checks can be added per provider)."""
+    ct = (payload.connector_type or "").lower().strip()
+    if ct not in CONNECTOR_IMPLS:
+        raise HTTPException(status_code=404, detail="Connector implementation not found")
+    impl = CONNECTOR_IMPLS[ct]()
+    result = impl.validate()
+    resource_count = 0
+    try:
+        resources = impl.list_resources()
+        resource_count = len(resources or [])
+    except Exception:
+        resource_count = 0
+    out = {**result, "connector_type": ct, "resource_count": resource_count}
+    if "message" not in out and "ok" in out:
+        out["message"] = "ok" if out.get("ok") else "validation failed"
+    return out
 
 
 @router.post("")
@@ -48,7 +152,8 @@ def upsert_connector(payload: ConnectorUpsert, db: Session = Depends(get_db)):
         existing.encrypted_credentials = encrypted_credentials
         existing.settings = payload.settings
         db.commit()
-        return existing
+        db.refresh(existing)
+        return _connector_public(existing)
 
     connector = Connector(
         name=payload.name,
@@ -60,7 +165,7 @@ def upsert_connector(payload: ConnectorUpsert, db: Session = Depends(get_db)):
     db.add(connector)
     db.commit()
     db.refresh(connector)
-    return connector
+    return _connector_public(connector)
 
 
 @router.post("/{name}/test")

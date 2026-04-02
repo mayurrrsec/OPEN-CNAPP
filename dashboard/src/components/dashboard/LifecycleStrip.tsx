@@ -5,7 +5,11 @@ const ORDER = ['open', 'assigned', 'accepted_risk', 'false_positive', 'fixed', '
 export function LifecycleStrip({ lifecycle }: { lifecycle: Record<string, number> }) {
   const entries = ORDER.filter((k) => (lifecycle[k] ?? 0) > 0).map((k) => ({ k, v: lifecycle[k] ?? 0 }))
   if (entries.length === 0) {
-    return <p className="text-sm text-muted-foreground">No lifecycle data.</p>
+    return (
+      <p className="text-sm text-muted-foreground">
+        No status distribution yet — findings will appear here as they move through triage.
+      </p>
+    )
   }
   const total = entries.reduce((a, b) => a + b.v, 0)
   return (

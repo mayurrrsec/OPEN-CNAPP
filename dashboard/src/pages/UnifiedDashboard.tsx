@@ -110,8 +110,8 @@ export default function UnifiedDashboard() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Posture overview</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Risk score, trends, and top issues across CSPM, KSPM, CWPP, and CIEM (roadmap widget grid v1).
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Risk score, severity trends, and prioritized issues across your cloud security posture.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -133,7 +133,7 @@ export default function UnifiedDashboard() {
         </div>
       </div>
 
-      {/* Row 1 — stats + gauge (roadmap: stats strip + risk gauge) */}
+      {/* Stats + risk gauge */}
       <div className="grid gap-4 lg:grid-cols-6">
         <div className="lg:col-span-2">
           <Card className="h-full">
@@ -185,7 +185,7 @@ export default function UnifiedDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Remediation / lifecycle</CardTitle>
-            <CardDescription>Open → fixed distribution (from finding status).</CardDescription>
+            <CardDescription>How findings move through triage by status.</CardDescription>
           </CardHeader>
           <CardContent>
             <LifecycleStrip lifecycle={summary.lifecycle_by_status ?? {}} />
@@ -194,7 +194,7 @@ export default function UnifiedDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Attack path summary</CardTitle>
-            <CardDescription>Impact tiers from graph edges (same model as Attack Paths page).</CardDescription>
+            <CardDescription>Estimated impact tiers from your attack-path analysis.</CardDescription>
           </CardHeader>
           <CardContent>
             <AttackPathSummaryCard summary={ap} />
@@ -253,7 +253,7 @@ export default function UnifiedDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Findings by cloud</CardTitle>
-            <CardDescription>Counts by provider with severity columns (C/H/M/L+I).</CardDescription>
+            <CardDescription>Totals by cloud provider with critical through informational counts.</CardDescription>
           </CardHeader>
           <CardContent>
             <FindingsByCloudTable rows={summary.findings_by_cloud ?? []} />

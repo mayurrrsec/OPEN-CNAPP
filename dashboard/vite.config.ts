@@ -4,6 +4,18 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  // Browser hits :3000 while Vite listens on :5173 in Docker — HMR WebSocket must use the mapped port.
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    ...(process.env.VITE_DEV_CLIENT_PORT
+      ? { hmr: { clientPort: Number(process.env.VITE_DEV_CLIENT_PORT) } }
+      : {}),
+    watch: {
+      usePolling: process.env.CHOKIDAR_USEPOLLING === '1',
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

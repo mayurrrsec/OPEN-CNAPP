@@ -19,6 +19,12 @@ Foundation (Phase 1–2): Tailwind + design tokens, TanStack Query, Zustand them
 
 Follow-on: command palette, Findings table + sheet, attack story endpoint + detail route, compliance control grid, Vite `manualChunks`, PostCSS/Tailwind wiring, `.cursor/` gitignored.
 
+### Feature branches / recent work (check your branch)
+- **Auth & admin** — Login/session, protected API routes, user settings flows (as on `feat/auth-sso-admin-users` or similar).
+- **Connectors + inventory (Phase 2 slice)** — Connector CRUD + enable/disable, `POST /connectors/test` (payload-based validation), **Add Cloud / Add Cluster / Add Registry** wizards in the dashboard, **Inventory** tabs (assets from findings aggregation). Details: **`docs/IMPLEMENTATION_STATUS.md`**.
+
+**Process:** Prefer completing **one domain at a time** (e.g. CSPM, KSPM, registry scanning) before starting the next; see `docs/IMPLEMENTATION_STATUS.md` → “How we work from here”.
+
 ## 2) Updating an existing VM clone (you already did `git clone`)
 If your VM already has this repo cloned, use the repo's default branch (`main`):
 
@@ -113,7 +119,8 @@ docker compose --profile ciem up -d
 - `/native-ingest/{provider}` native security source ingest (AWS/Azure/GCP)
 - `/scans` trigger/list scans (active-scan authorization gate)
 - `/plugins` sync/list/enable/configure
-- `/connectors` upsert/test + CI pull endpoints (sonarqube/zap/snyk)
+- `/connectors` list/get/upsert/delete/patch + `POST /connectors/test` (validate credentials without saving) + `POST /connectors/{name}/test` + CI pull endpoints (sonarqube/zap/snyk)
+- `/inventory/assets` aggregated asset rows from findings (until a dedicated asset table exists)
 - `/dashboard/summary` posture KPIs, trends, severity/domain breakdown, top findings (JSON-safe)
 - `/attack-paths` graph payload (nodes, edges, `top_paths` with `path_id`)
 - `/attack-paths/story/{path_id}` narrative + risk for a single edge
@@ -146,8 +153,12 @@ Summary:
 ## 10) Roadmap (still to build)
 See `docs/roadmap-gap-analysis.md` and `docs/execplans/opencnapp-v3-dashboard-and-platform.md`. Highlights: deeper **asset inventory**, global search wired to APIs, richer **attack-path** correlation, full **compliance control library** (pass/fail per control), **SSO**, and production-hardening of Compose/Kubernetes.
 
+**What is actually implemented today** (vs plan intent) is tracked in **`docs/IMPLEMENTATION_STATUS.md`**, including known gaps such as real cloud SDK tests in `POST /connectors/test`, full org/Terraform onboarding UX, and remaining empty-state polish across all pages.
+
 ## 11) Docs index
 - Contributor guide: `docs/CONTRIBUTING.md`
+- **Implementation status (what exists now):** `docs/IMPLEMENTATION_STATUS.md`
+- Developer/agent quick context (paths + commands): `scripts/DEV_CONTEXT.md`
 - Plugin authoring: `docs/adding-a-plugin.md`
 - Connector authoring: `docs/adding-a-connector.md`
 - CI/CD snippets: `docs/ci-cd-snippets.md`
@@ -161,6 +172,7 @@ See `docs/roadmap-gap-analysis.md` and `docs/execplans/opencnapp-v3-dashboard-an
 ![OpenCNAPP architecture preview](raw%20cnapp%20idea/opencnapp_architecture.png)
 
 ## 13) Troubleshooting
+- **Wrong directory / wrong clone in Cursor** — From any folder inside the repo, run `git rev-parse --show-toplevel` and `cd` there. On Windows: `pwsh -File scripts/dev-context.ps1` prints `REPO_ROOT` and common commands. See `scripts/DEV_CONTEXT.md`.
 - **I accidentally changed `README.md` in my PR branch and want to reset it**:
   - Restore only README from `origin/main`:
     - `git fetch origin`
