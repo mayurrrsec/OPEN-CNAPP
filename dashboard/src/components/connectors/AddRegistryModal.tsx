@@ -30,6 +30,11 @@ export type AddRegistryModalProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSaved: () => void
+  initial?: {
+    name: string
+    display_name: string
+    settings: Record<string, unknown>
+  } | null
 }
 
 function slugify(raw: string) {
@@ -40,7 +45,7 @@ function slugify(raw: string) {
     .replace(/[^a-z0-9_-]/g, '')
 }
 
-export function AddRegistryModal({ open, onOpenChange, onSaved }: AddRegistryModalProps) {
+export function AddRegistryModal({ open, onOpenChange, onSaved, initial }: AddRegistryModalProps) {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -54,7 +59,18 @@ export function AddRegistryModal({ open, onOpenChange, onSaved }: AddRegistryMod
   })
 
   useEffect(() => {
-    if (open) {
+    if (!open) return
+    if (initial) {
+      const k = (initial.settings?.registry_kind as z.infer<typeof schema>['registry_kind']) || 'generic'
+      form.reset({
+        registry_kind: k,
+        display_name: initial.display_name,
+        connector_id: initial.name,
+        registry_url: String(initial.settings?.registry_url || 'https://'),
+        username: '',
+        password: '',
+      })
+    } else {
       form.reset({
         registry_kind: 'generic',
         display_name: '',
@@ -64,7 +80,7 @@ export function AddRegistryModal({ open, onOpenChange, onSaved }: AddRegistryMod
         password: '',
       })
     }
-  }, [open, form.reset])
+  }, [open, initial?.name, form.reset])
 
   const save = form.handleSubmit(async (values) => {
     await api.post('/connectors', {
@@ -79,6 +95,7 @@ export function AddRegistryModal({ open, onOpenChange, onSaved }: AddRegistryMod
       settings: {
         wizard: 'add_registry',
         registry_kind: values.registry_kind,
+        registry_url: values.registry_url.trim(),
       },
     })
     onSaved()
@@ -89,7 +106,7 @@ export function AddRegistryModal({ open, onOpenChange, onSaved }: AddRegistryMod
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add container registry</DialogTitle>
+          <DialogTitle>{initial ? 'Edit container registry' : 'Add container registry'}</DialogTitle>
           <DialogDescription>
             Store read-only credentials for image scanning. Provider-specific IAM roles are recommended for ECR/GAR in
             production.
@@ -119,7 +136,7 @@ export function AddRegistryModal({ open, onOpenChange, onSaved }: AddRegistryMod
               {...form.register('display_name')}
               onChange={(e) => {
                 form.setValue('display_name', e.target.value)
-                if (!form.getValues('connector_id')) {
+                if (!initial && !form.getValues('connector_id')) {
                   form.setValue('connector_id', slugify(e.target.value))
                 }
               }}
@@ -127,7 +144,7 @@ export function AddRegistryModal({ open, onOpenChange, onSaved }: AddRegistryMod
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Connector ID</label>
-            <Input {...form.register('connector_id')} className="font-mono text-sm" />
+            <Input {...form.register('connector_id')} className="font-mono text-sm" disabled={!!initial} />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Registry URL</label>

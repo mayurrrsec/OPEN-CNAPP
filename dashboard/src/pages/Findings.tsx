@@ -9,7 +9,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import { useQuery } from '@tanstack/react-query'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,7 @@ import { SeverityBadge } from '@/components/ui/SeverityBadge'
 import { FindingDetailSheet } from '@/components/findings/FindingDetailSheet'
 import { fetchFindingById, fetchFindingsList, type FindingRow } from '@/api/findings'
 import { cn } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 const PAGE_SIZE = 25
 
@@ -87,6 +88,17 @@ export default function Findings() {
   const items = data?.items ?? []
   const total = data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize))
+  const hasFilters = !!(severity || domain || cloud || status || tool || q)
+
+  const clearFilters = () => {
+    setSeverity('')
+    setDomain('')
+    setCloud('')
+    setStatus('')
+    setTool('')
+    setQ('')
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }
 
   const openDetail = useCallback(async (id: string) => {
     try {
@@ -312,8 +324,19 @@ export default function Findings() {
                   </tr>
                 ) : table.getRowModel().rows.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-3 py-8 text-center text-muted-foreground">
-                      No results. Try widening filters or ingest findings.
+                    <td colSpan={columns.length} className="px-3 py-6">
+                      <EmptyState
+                        icon={Search}
+                        title={hasFilters ? 'No findings match your filters' : 'No findings yet'}
+                        description={
+                          hasFilters
+                            ? 'Try adjusting filters or broadening your search.'
+                            : 'Ingest scan results or connect a cloud account to populate findings.'
+                        }
+                        action={
+                          hasFilters ? { label: 'Clear filters', onClick: clearFilters } : undefined
+                        }
+                      />
                     </td>
                   </tr>
                 ) : (

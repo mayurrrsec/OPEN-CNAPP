@@ -10,7 +10,14 @@ class OnpremConnector(CloudConnector):
     supported_plugins = ["wazuh", "falco", "nuclei", "nmap"]
 
     def validate(self):
-        return {"ok": True}
+        return {"ok": True, "message": "On-premises connector validated"}
+
+    def test_credentials(self, credentials: dict | None, settings: dict | None) -> dict:
+        return {
+            "ok": True,
+            "message": "No remote API check for VM/on-prem; install agents on hosts as documented.",
+            "resource_count": 0,
+        }
 
     def get_scan_env(self):
         return {"CLOUD_PROVIDER": "onprem"}

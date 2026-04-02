@@ -3,10 +3,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.bootstrap import ensure_bootstrap_admin
+from api.bootstrap import ensure_bootstrap_admin, ensure_default_workspace
 from api.database.session import Base, SessionLocal, engine
 from api.plugin_engine import sync_plugins_to_db
 from api.routes import (
+    agent_tokens,
     findings,
     scans,
     ingest,
@@ -34,6 +35,7 @@ async def lifespan(_: FastAPI):
     db = SessionLocal()
     try:
         ensure_bootstrap_admin(db)
+        ensure_default_workspace(db)
         sync_plugins_to_db(db)
     finally:
         db.close()
@@ -50,6 +52,7 @@ app.add_middleware(
 )
 
 for r in [
+    agent_tokens,
     findings,
     scans,
     ingest,
