@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ExternalLink, Search } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { api } from '@/api/client'
+import { FindingsByCategoryChart } from '@/components/inventory/FindingsByCategoryChart'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NoGraphData } from '@/components/ui/NoGraphData'
 import { SeverityToggle, severityQueryParam, SEVERITY_KEYS } from '@/components/inventory/SeverityToggle'
 import { cn } from '@/lib/utils'
 
@@ -66,8 +78,46 @@ export function ClusterMisconfigurationTab({ clusterId }: { clusterId: string })
   }
   if (!data) return null
 
+  const trend = data.insights.trend ?? []
+  const hasTrend = trend.some((t) => t.count > 0)
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Insights</h4>
+        <Link
+          to={`/findings?cluster_id=${encodeURIComponent(clusterId)}`}
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          View all
+          <ExternalLink className="h-3 w-3" aria-hidden />
+        </Link>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="mb-2 text-sm font-medium">Findings by asset type</p>
+          <FindingsByCategoryChart data={data.insights.by_asset_category} />
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="mb-2 text-sm font-medium">K8s findings trend</p>
+          {hasTrend ? (
+            <div className="h-[200px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trend}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <NoGraphData />
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SeverityToggle value={severity} onChange={setSeverity} />
         <div className="relative max-w-md flex-1">
@@ -81,16 +131,16 @@ export function ClusterMisconfigurationTab({ clusterId }: { clusterId: string })
         </div>
       </div>
 
-      {data.insights.by_asset_category.length > 0 ? (
-        <div className="rounded-md border border-border bg-muted/20 p-3 text-xs">
-          <span className="font-semibold text-muted-foreground">By resource type: </span>
-          {data.insights.by_asset_category.slice(0, 8).map((c) => (
-            <span key={c.category} className="mr-2 inline-block">
-              {c.category} ({c.count})
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cluster findings</h4>
+        <Link
+          to={`/findings?cluster_id=${encodeURIComponent(clusterId)}`}
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          View all
+          <ExternalLink className="h-3 w-3" aria-hidden />
+        </Link>
+      </div>
 
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full min-w-[640px] text-sm">

@@ -12,13 +12,7 @@ import {
   Shield,
   ShieldAlert,
 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { api } from '@/api/client'
@@ -79,29 +73,30 @@ export function ClusterDetailPanel({
     refetchInterval: 30_000,
   })
 
+  // Preserve tab when closing/reopening the panel; reset only when switching to another cluster.
   useEffect(() => {
-    if (open && cluster) setTab('overview')
-  }, [open, cluster?.id])
+    setTab('overview')
+  }, [cluster?.id])
 
   if (!cluster) return null
 
   const headerStatus = liveStatus?.connection_status ?? cluster.connection_status
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent variant="right" showClose className="flex h-full max-h-screen flex-col gap-0 overflow-hidden p-0">
-        <DialogHeader className="shrink-0 space-y-3 border-b border-border px-6 py-4 text-left">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex w-full max-w-none flex-col gap-0 overflow-hidden p-0 sm:w-[min(1200px,96vw)]">
+        <SheetHeader className="shrink-0 space-y-3 border-b border-border px-6 py-4 text-left">
           <div className="flex items-start justify-between gap-4 pr-8">
             <div className="flex min-w-0 items-center gap-3">
               <Hexagon className="h-8 w-8 shrink-0 text-blue-600" aria-hidden />
               <div className="min-w-0">
-                <DialogTitle className="truncate text-xl">{cluster.display_name}</DialogTitle>
-                <DialogDescription className="font-mono text-xs">{cluster.name}</DialogDescription>
+                <SheetTitle className="truncate text-xl">{cluster.display_name}</SheetTitle>
+                <SheetDescription className="font-mono text-xs">{cluster.name}</SheetDescription>
               </div>
             </div>
             {statusBadge(headerStatus)}
           </div>
-        </DialogHeader>
+        </SheetHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
           <TabsList className="h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-border bg-muted/30 p-0 px-2">
@@ -149,7 +144,7 @@ export function ClusterDetailPanel({
             </TabsContent>
           </div>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

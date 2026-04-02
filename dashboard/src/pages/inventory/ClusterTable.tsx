@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import {
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
   type ColumnDef,
+  type VisibilityState,
 } from '@tanstack/react-table'
-import { AlertTriangle, Hexagon, MoreHorizontal } from 'lucide-react'
+import { AlertTriangle, Columns3, Hexagon, MoreHorizontal } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,6 +22,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -87,6 +90,22 @@ function statusDot(status: string) {
   return 'bg-red-500'
 }
 
+const COLUMN_LABELS: Record<string, string> = {
+  select: 'Select',
+  name: 'Name',
+  cloud: 'Cloud',
+  alerts: 'Alerts',
+  findings: 'Findings',
+  onboarded: 'Onboarded',
+  last_synced: 'Last synced',
+  nodes: 'Nodes',
+  workloads: 'Workloads',
+  namespaces: 'Namespaces',
+  active_policies: 'Policies',
+  tags: 'Tags',
+  actions: 'Actions',
+}
+
 export function ClusterTable({
   rows,
   onRowOpen,
@@ -97,9 +116,41 @@ export function ClusterTable({
   onDelete: (row: ClusterInventoryRow) => void
 }) {
   const [onboardingFor, setOnboardingFor] = useState<ClusterInventoryRow | null>(null)
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = useState({})
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
 
   const columns = useMemo<ColumnDef<ClusterInventoryRow>[]>(
     () => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-border"
+            aria-label="Select all"
+            checked={table.getIsAllPageRowsSelected()}
+            ref={(el) => {
+              if (el) el.indeterminate = table.getIsSomePageRowsSelected()
+            }}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-border"
+            aria-label="Select row"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 36,
+      },
       {
         id: 'name',
         header: 'Name',
@@ -107,7 +158,10 @@ export function ClusterTable({
           const r = row.original
           return (
             <div className="flex items-center gap-2">
-              <span className={cn('h-2 w-2 shrink-0 rounded-full', statusDot(r.connection_status))} title={r.connection_status} />
+              <span
+                className={cn('h-2 w-2 shrink-0 rounded-full', statusDot(r.connection_status))}
+                title={r.connection_status}
+              />
               <Hexagon className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
               <span className="font-medium">{r.display_name}</span>
             </div>
@@ -145,11 +199,11 @@ export function ClusterTable({
         cell: ({ row }) => <FindingPills f={row.original.findings} />,
       },
       { id: 'onboarded', header: 'Onboarded', cell: ({ row }) => fmtDt(row.original.onboarded_at) },
-      { id: 'last_synced', header: 'Last Synced', cell: ({ row }) => fmtDt(row.original.last_synced_at) },
+      { id: 'last_synced', header: 'Last synced', cell: ({ row }) => fmtDt(row.original.last_synced_at) },
       { id: 'nodes', header: 'Nodes', cell: ({ row }) => row.original.nodes },
       { id: 'workloads', header: 'Workloads', cell: ({ row }) => row.original.workloads },
       { id: 'namespaces', header: 'Namespaces', cell: ({ row }) => row.original.namespaces },
-      { id: 'active_policies', header: 'Active Policies', cell: ({ row }) => row.original.active_policies },
+      { id: 'active_policies', header: 'Active policies', cell: ({ row }) => row.original.active_policies },
       {
         id: 'tags',
         header: 'Tags',
@@ -180,19 +234,83 @@ export function ClusterTable({
             </DropdownMenu>
           )
         },
+        enableHiding: false,
       },
     ],
-    [onDelete, setOnboardingFor]
+    [onDelete]
   )
 
   const table = useReactTable({
     data: rows,
     columns,
+    state: { columnVisibility, rowSelection, pagination },
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    enableRowSelection: true,
+    getRowId: (row) => row.id,
   })
+
+  const pageCount = table.getPageCount()
+  const pageIndex = table.getState().pagination.pageIndex
+  const pageSize = table.getState().pagination.pageSize
 
   return (
     <>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-xs text-muted-foreground">
+          {Object.keys(rowSelection).length > 0 ? `${Object.keys(rowSelection).length} selected · ` : null}
+          {rows.length} cluster{rows.length === 1 ? '' : 's'}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="h-8 gap-1">
+                <Columns3 className="h-3.5 w-3.5" />
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="text-xs">Toggle columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {table.getAllLeafColumns().map((col) => {
+                if (!col.getCanHide()) return null
+                const id = col.id
+                return (
+                  <DropdownMenuItem
+                    key={id}
+                    className="text-xs"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      col.toggleVisibility(!col.getIsVisible())
+                    }}
+                  >
+                    <span className="mr-2">{col.getIsVisible() ? '☑' : '☐'}</span>
+                    {COLUMN_LABELS[id] ?? id}
+                  </DropdownMenuItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <label className="flex items-center gap-1 text-xs text-muted-foreground">
+            Rows/page
+            <select
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+              value={pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+            >
+              {[10, 25, 50].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
+
       <div className="overflow-x-auto rounded-md border border-border">
         <table className="w-full min-w-[960px] text-sm">
           <thead className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
@@ -212,7 +330,7 @@ export function ClusterTable({
                 key={row.id}
                 className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
                 onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('button,[role="menuitem"]')) return
+                  if ((e.target as HTMLElement).closest('button,input,[role="menuitem"],select')) return
                   onRowOpen(row.original)
                 }}
               >
@@ -227,11 +345,63 @@ export function ClusterTable({
         </table>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
         <span>
-          1–{rows.length} of {rows.length}
+          {rows.length === 0
+            ? '0–0 of 0'
+            : `${pageIndex * pageSize + 1}–${Math.min((pageIndex + 1) * pageSize, rows.length)} of ${rows.length}`}
         </span>
-        <span>Rows per page: 10</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span>
+            Page {pageIndex + 1} of {Math.max(1, pageCount)}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-2"
+              disabled={!table.getCanPreviousPage()}
+              onClick={() => table.setPageIndex(0)}
+              aria-label="First page"
+            >
+              |&lt;
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-2"
+              disabled={!table.getCanPreviousPage()}
+              onClick={() => table.previousPage()}
+              aria-label="Previous page"
+            >
+              &lt;
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-2"
+              disabled={!table.getCanNextPage()}
+              onClick={() => table.nextPage()}
+              aria-label="Next page"
+            >
+              &gt;
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-2"
+              disabled={!table.getCanNextPage()}
+              onClick={() => table.setPageIndex(pageCount - 1)}
+              aria-label="Last page"
+            >
+              &gt;|
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Dialog open={!!onboardingFor} onOpenChange={(o) => !o && setOnboardingFor(null)}>

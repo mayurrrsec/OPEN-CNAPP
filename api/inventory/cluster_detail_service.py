@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from api.inventory.helpers import cluster_label, findings_for_connector, misconfiguration_query
 from api.models import Connector, Finding
+from api.models.k8s_cluster import K8sCluster
 
 SEVERITY_ORDER = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
 
@@ -107,11 +108,8 @@ def findings_trend_for_connector(db: Session, connector: Connector, days: int = 
     return out
 
 
-def cluster_info_from_findings(db: Session, connector: Connector) -> dict[str, Any]:
-    settings = connector.settings or {}
-    raw_tags = settings.get("tags")
-    tags = raw_tags if isinstance(raw_tags, list) else []
-
+def _inventory_counts_from_findings(db: Session, connector: Connector) -> dict[str, int]:
+    """Nodes / workloads / namespace counts derived only from findings (used by sync + fallback)."""
     fq = findings_for_connector(db, connector)
     ns_set: set[str] = set()
     node_like = 0
@@ -125,6 +123,27 @@ def cluster_info_from_findings(db: Session, connector: Connector) -> dict[str, A
             node_like += 1
         if rt in wt:
             wl_like += 1
+    return {
+        "nodes": node_like,
+        "workloads": wl_like,
+        "namespaces": len(ns_set),
+    }
+
+
+def cluster_info_from_findings(db: Session, connector: Connector) -> dict[str, Any]:
+    settings = connector.settings or {}
+    raw_tags = settings.get("tags")
+    tags = raw_tags if isinstance(raw_tags, list) else []
+
+    kc = db.query(K8sCluster).filter(K8sCluster.connector_id == connector.id).first()
+    if kc and kc.synced_at is not None:
+        inv = {
+            "nodes": int(kc.nodes_count or 0),
+            "workloads": int(kc.workloads_count or 0),
+            "namespaces": int(kc.namespaces_count or 0),
+        }
+    else:
+        inv = _inventory_counts_from_findings(db, connector)
 
     mq = misconfiguration_query(db, connector)
     policy_n = (
@@ -137,9 +156,9 @@ def cluster_info_from_findings(db: Session, connector: Connector) -> dict[str, A
     )
 
     return {
-        "nodes": node_like,
-        "workloads": wl_like,
-        "namespaces": len(ns_set),
+        "nodes": inv["nodes"],
+        "workloads": inv["workloads"],
+        "namespaces": inv["namespaces"],
         "active_policies": int(policy_n or 0),
         "tags": tags,
     }
@@ -279,7 +298,59 @@ def paginated_policies_by_check(
                 refs[cid] = [{"key": k, "value": v} for k, v in list(comp.items())[:8]]
         for i in items:
             i["framework_refs"] = refs.get(i["check_id"], [])
+    _enrich_policy_items_accuknox(db, connector, items)
     return int(total or 0), items
+
+
+def _enrich_policy_items_accuknox(db: Session, connector: Connector, items: list[dict[str, Any]]) -> None:
+    """Add AccuKnox-style policy row fields from findings + raw JSON."""
+    for i in items:
+        cid = i["check_id"]
+        i["name"] = str(i.get("title") or cid)[:200]
+        i["category"] = "hardening"
+        sb = i.get("severity_breakdown") or {}
+        i["alerts"] = int(sb.get("CRITICAL", 0) + sb.get("HIGH", 0))
+        i["selector_labels"] = None
+        i["tags"] = []
+        ns_rows = (
+            misconfiguration_query(db, connector)
+            .filter(Finding.check_id == cid)
+            .with_entities(Finding.namespace)
+            .distinct()
+            .all()
+        )
+        ns = sorted({n[0] for n in ns_rows if n[0]})
+        if ns:
+            shown = ns[:5]
+            i["namespaces_display"] = ", ".join(shown)
+            if len(ns) > 5:
+                i["namespaces_display"] += f" (+{len(ns) - 5} more)"
+        else:
+            i["namespaces_display"] = None
+        sample = (
+            misconfiguration_query(db, connector)
+            .filter(Finding.check_id == cid)
+            .first()
+        )
+        if sample:
+            raw = sample.raw if isinstance(sample.raw, dict) else {}
+            sel = raw.get("selector") or raw.get("labels") or raw.get("matchLabels")
+            if sel is not None:
+                i["selector_labels"] = sel if isinstance(sel, str) else str(sel)[:160]
+            if isinstance(raw.get("category"), str):
+                i["category"] = raw["category"]
+        refs = i.get("framework_refs") or []
+        tags: list[str] = []
+        for x in refs:
+            if isinstance(x, str):
+                tags.append(x)
+            elif isinstance(x, dict):
+                for k in ("name", "key", "framework", "controlID"):
+                    if x.get(k):
+                        tags.append(str(x[k]))
+                        break
+        i["tags"] = tags[:12]
+        i["status"] = "failed" if i.get("failed_resources", 0) else "passed"
 
 
 def paginated_cloud_asset_groups(
@@ -538,16 +609,22 @@ def app_behaviour_insights(db: Session, connector: Connector) -> dict[str, Any]:
 
 
 def kiem_insights(db: Session, connector: Connector) -> dict[str, Any]:
-    fq = kiem_query(db, connector)
+    base = kiem_query(db, connector)
     by_cat = (
-        fq.with_entities(Finding.resource_type, func.count(Finding.id))
+        base.with_entities(Finding.resource_type, func.count(Finding.id))
         .group_by(Finding.resource_type)
         .order_by(desc(func.count(Finding.id)))
         .limit(12)
         .all()
     )
-    n = fq.count()
-    risk_score = min(100, n * 3)
+    # Plan §4.8: weighted severities → score = 100 - min(weighted_sum, 100)
+    weights = {"CRITICAL": 10.0, "HIGH": 5.0, "MEDIUM": 2.0, "LOW": 0.5, "INFO": 0.1}
+    total_w = 0.0
+    sev_q = kiem_query(db, connector)
+    for sev, cnt in sev_q.with_entities(Finding.severity, func.count(Finding.id)).group_by(Finding.severity).all():
+        w = weights.get((sev or "MEDIUM").upper(), 0.5)
+        total_w += w * int(cnt or 0)
+    risk_score = int(max(0, min(100, 100 - min(total_w, 100.0))))
     return {
         "risk_score": risk_score,
         "by_asset_type": [{"type": r[0] or "unknown", "count": int(r[1] or 0)} for r in by_cat],

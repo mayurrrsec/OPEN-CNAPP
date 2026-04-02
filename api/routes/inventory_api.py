@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Depends
+from collections import defaultdict
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.auth import get_current_user
 from api.database.session import get_db
-from api.inventory.cluster_detail_service import connection_status_from_findings
+from api.inventory.asset_categories import category_for_resource_type
+from api.inventory.cluster_detail_service import cluster_info_from_findings, connection_status_from_findings
 from api.inventory.helpers import cluster_label, domain_bucket, findings_for_connector
+from api.inventory.namespaces_workloads import list_namespaces_inventory, list_workloads_inventory
 from api.models import Connector, Finding
 
 router = APIRouter(prefix="/inventory", tags=["inventory"], dependencies=[Depends(get_current_user)])
@@ -19,6 +23,7 @@ def inventory_assets(
     db: Session = Depends(get_db),
     limit: int = 500,
     cloud_provider: str | None = None,
+    group_by: str | None = Query(None, description="Optional: 'category' to group assets by heuristic category"),
 ):
     """Aggregated asset rows from findings (depth until a dedicated asset table exists)."""
     limit = max(1, min(int(limit or 500), 2000))
@@ -43,20 +48,54 @@ def inventory_assets(
     if cloud_provider:
         q = q.filter(Finding.cloud_provider == cloud_provider)
     rows = q.order_by(func.count(Finding.id).desc()).limit(limit).all()
-    return {
-        "total_rows": len(rows),
-        "assets": [
-            {
-                "cloud_provider": r.cloud_provider,
-                "account_id": r.account_id,
-                "resource_type": r.resource_type,
-                "resource_id": r.resource_id,
-                "resource_name": r.resource_name,
-                "finding_count": int(r.finding_count or 0),
-                "max_severity": r.max_severity,
+
+    asset_rows = [
+        {
+            "cloud_provider": r.cloud_provider,
+            "account_id": r.account_id,
+            "resource_type": r.resource_type,
+            "resource_id": r.resource_id,
+            "resource_name": r.resource_name,
+            "finding_count": int(r.finding_count or 0),
+            "max_severity": r.max_severity,
+            "category": category_for_resource_type(r.resource_type),
+        }
+        for r in rows
+    ]
+
+    if group_by and str(group_by).lower() == "category":
+        groups: dict[str, dict] = defaultdict(
+            lambda: {
+                "key": "",
+                "label": "",
+                "asset_count": 0,
+                "total_findings": 0,
+                "severity_breakdown": {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "INFO": 0},
+                "assets": [],
             }
-            for r in rows
-        ],
+        )
+        for a in asset_rows:
+            cat = a["category"]
+            g = groups[cat]
+            g["key"] = cat
+            g["label"] = cat
+            g["asset_count"] += 1
+            g["total_findings"] += a["finding_count"]
+            sev = (a.get("max_severity") or "MEDIUM").upper()
+            if sev in g["severity_breakdown"]:
+                g["severity_breakdown"][sev] += a["finding_count"]
+            g["assets"].append({k: v for k, v in a.items() if k != "category"})
+        ranked = sorted(groups.values(), key=lambda x: -x["total_findings"])
+        return {
+            "group_by": "category",
+            "total_groups": len(ranked),
+            "total_assets": len(asset_rows),
+            "groups": ranked,
+        }
+
+    return {
+        "total_rows": len(asset_rows),
+        "assets": asset_rows,
     }
 
 
@@ -105,6 +144,7 @@ def list_k8s_inventory_clusters(db: Session = Depends(get_db)):
                 domain_counts[b] += int(cnt or 0)
         settings = c.settings or {}
         cn = cluster_label(settings, c.name)
+        info = cluster_info_from_findings(db, c)
         items.append(
             {
                 "id": c.id,
@@ -117,11 +157,11 @@ def list_k8s_inventory_clusters(db: Session = Depends(get_db)):
                 "findings": domain_counts,
                 "onboarded_at": c.created_at.isoformat() if c.created_at else None,
                 "last_synced_at": None,
-                "nodes": 0,
-                "workloads": 0,
-                "namespaces": 0,
-                "active_policies": 0,
-                "tags": [],
+                "nodes": info["nodes"],
+                "workloads": info["workloads"],
+                "namespaces": info["namespaces"],
+                "active_policies": info["active_policies"],
+                "tags": info.get("tags") or [],
             }
         )
     return {"items": items, "total": len(items)}
@@ -131,11 +171,12 @@ def list_k8s_inventory_clusters(db: Session = Depends(get_db)):
 def list_inventory_namespaces(
     db: Session = Depends(get_db),
     cluster_id: str | None = None,
+    search: str = "",
     page: int = 1,
     limit: int = 25,
 ):
-    """Namespace inventory (populated when K8s inventory sync exists)."""
-    return {"total": 0, "page": max(1, page), "items": []}
+    """Namespace inventory derived from findings (until dedicated sync). Requires cluster_id."""
+    return list_namespaces_inventory(db, cluster_id=cluster_id, search=search, page=page, limit=limit)
 
 
 @router.get("/workloads")
@@ -144,11 +185,20 @@ def list_inventory_workloads(
     cluster_id: str | None = None,
     namespace: str | None = None,
     kind: str | None = None,
+    search: str = "",
     page: int = 1,
     limit: int = 25,
 ):
-    """Workload inventory (pods, deployments, …)."""
-    return {"total": 0, "page": max(1, page), "items": []}
+    """Workload inventory derived from grouped findings. Requires cluster_id."""
+    return list_workloads_inventory(
+        db,
+        cluster_id=cluster_id,
+        namespace=namespace,
+        kind=kind,
+        search=search,
+        page=page,
+        limit=limit,
+    )
 
 
 @router.get("/images")
@@ -181,3 +231,27 @@ def list_inventory_images(
             for f in rows
         ],
     }
+
+
+@router.post("/sync-k8s-tables")
+def post_sync_k8s_tables(db: Session = Depends(get_db)):
+    """Upsert k8s_clusters and k8s_nodes from current findings (no separate agent)."""
+    from api.inventory.k8s_sync import sync_k8s_inventory_tables
+
+    return sync_k8s_inventory_tables(db)
+
+
+@router.get("/k8s-nodes")
+def get_k8s_nodes(
+    db: Session = Depends(get_db),
+    cluster_id: str = Query(..., description="Kubernetes connector id"),
+    limit: int = 500,
+):
+    """List materialized node names after sync (empty until POST /sync-k8s-tables)."""
+    from api.inventory.k8s_sync import list_nodes_for_connector
+
+    c = db.query(Connector).filter(Connector.id == cluster_id).first()
+    if not c or (c.connector_type or "").lower() not in _K8S_TYPES:
+        return {"total": 0, "items": []}
+    items = list_nodes_for_connector(db, cluster_id, limit=limit)
+    return {"total": len(items), "items": items}
