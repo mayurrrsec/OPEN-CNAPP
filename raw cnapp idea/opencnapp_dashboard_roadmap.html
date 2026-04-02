@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenCNAPP Dashboard — Gap Analysis & Roadmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f8fa;--surface:#fff;--surface2:#f1f3f6;--border:#e2e5ea;--border2:#cdd0d8;
+  --text:#111827;--muted:#6b7280;--dim:#9ca3af;
+  --blue:#2563eb;--blue-lt:#eff6ff;--blue-md:#bfdbfe;
+  --red:#dc2626;--red-lt:#fef2f2;--red-md:#fecaca;
+  --green:#16a34a;--green-lt:#f0fdf4;--green-md:#bbf7d0;
+  --amber:#d97706;--amber-lt:#fffbeb;--amber-md:#fde68a;
+  --purple:#7c3aed;--purple-lt:#f5f3ff;--purple-md:#ddd6fe;
+  --teal:#0d9488;--teal-lt:#f0fdfa;--teal-md:#99f6e4;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.65}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:256px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;overflow-y:auto;z-index:100;padding-bottom:40px}
+.main{margin-left:256px;flex:1;padding:36px 44px;max-width:1100px}
+.sb-brand{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.sb-tag{font-family:var(--mono);font-size:9px;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+.sb-name{font-size:14px;font-weight:600}
+.sb-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.sb-sec{padding:12px 18px 3px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim)}
+.sb-item{display:flex;align-items:center;gap:8px;padding:7px 18px;font-size:12px;color:var(--muted);text-decoration:none;transition:all 0.12s;border-left:2px solid transparent}
+.sb-item:hover{color:var(--text);background:var(--surface2)}
+.sb-item.active{color:var(--blue);background:var(--blue-lt);border-left-color:var(--blue)}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.hero{background:var(--text);border-radius:12px;padding:36px 40px;margin-bottom:36px;color:#fff}
+.hero-badge{font-family:var(--mono);font-size:9px;color:#6ee7b7;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.hero-title{font-size:24px;font-weight:700;line-height:1.25;margin-bottom:8px}
+.hero-desc{font-size:13px;color:#9ca3af;max-width:580px;line-height:1.6}
+.hero-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.hero-pill{padding:3px 10px;border-radius:12px;font-size:10px;font-family:var(--mono);border:1px solid #374151;color:#9ca3af}
+.section{margin-bottom:52px;scroll-margin-top:20px}
+h2{font-size:17px;font-weight:600;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+h3{font-size:13px;font-weight:600;margin-bottom:9px;margin-top:18px;color:var(--text)}
+p{margin-bottom:10px;color:var(--muted);font-size:13px}
+.sn{width:26px;height:26px;border-radius:6px;font-family:var(--mono);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+pre{background:#0d1117;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:11.5px;line-height:1.7;color:#a0b4d0;margin:12px 0}
+code{font-family:var(--mono);font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px;color:var(--red)}
+.callout{border-radius:8px;padding:14px 16px;margin:14px 0;border-left:3px solid}
+.c-ok{background:var(--green-lt);border-color:var(--green)}
+.c-warn{background:var(--amber-lt);border-color:var(--amber)}
+.c-info{background:var(--blue-lt);border-color:var(--blue)}
+.c-red{background:var(--red-lt);border-color:var(--red)}
+.c-purple{background:var(--purple-lt);border-color:var(--purple)}
+.ct{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.c-ok .ct{color:var(--green)}.c-warn .ct{color:var(--amber)}.c-info .ct{color:var(--blue)}.c-red .ct{color:var(--red)}.c-purple .ct{color:var(--purple)}
+.callout p{margin:0;font-size:12px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+th{background:var(--surface2);padding:8px 12px;text-align:left;font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);border-bottom:1px solid var(--border2)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:hover td{background:var(--surface2)}
+.pill{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;font-family:var(--mono)}
+.p-red{background:var(--red-lt);color:var(--red)}
+.p-amber{background:var(--amber-lt);color:var(--amber)}
+.p-green{background:var(--green-lt);color:var(--green)}
+.p-blue{background:var(--blue-lt);color:var(--blue)}
+.p-purple{background:var(--purple-lt);color:var(--purple)}
+.p-gray{background:var(--surface2);color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.card-t{font-size:12px;font-weight:600;margin-bottom:4px}
+.card-d{font-size:11px;color:var(--muted);line-height:1.5}
+.gap-table{}
+.gap-table .gap-row{display:grid;grid-template-columns:200px 1fr 120px 100px;gap:0;border-bottom:1px solid var(--border);align-items:stretch}
+.gap-table .gap-header{background:var(--surface2);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);display:grid;grid-template-columns:200px 1fr 120px 100px}
+.gap-table .gap-header div,.gap-table .gap-row div{padding:10px 12px;font-size:12px}
+.gap-row:hover{background:var(--surface2)}
+.gap-area{font-weight:500;font-size:12px;border-right:1px solid var(--border)}
+.gap-current{color:var(--muted);border-right:1px solid var(--border)}
+.gap-needed{border-right:1px solid var(--border)}
+.gap-effort{text-align:center}
+.phase-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.phase-header{padding:16px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border)}
+.phase-num{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.phase-title{font-size:14px;font-weight:600}
+.phase-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.phase-body{padding:16px 20px}
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.task-row:last-child{border-bottom:none}
+.task-check{width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:2px}
+.task-title{font-size:13px;font-weight:500;margin-bottom:2px}
+.task-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.task-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.widget-showcase{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.widget-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.widget-card-header{padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600}
+.widget-card-body{padding:12px;font-size:11px;color:var(--muted);line-height:1.5}
+.before-after{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.ba-card{border-radius:8px;padding:14px 16px;border:1px solid}
+.ba-before{background:var(--red-lt);border-color:var(--red-md)}
+.ba-after{background:var(--green-lt);border-color:var(--green-md)}
+.ba-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.ba-before .ba-label{color:var(--red)}
+.ba-after .ba-label{color:var(--green)}
+.ba-content{font-size:12px;line-height:1.6}
+.screen-spec{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin:12px 0}
+.ss-title{font-size:13px;font-weight:600;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ss-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ss-item{font-size:11px;color:var(--muted);padding:5px 0;display:flex;align-items:flex-start;gap:6px}
+.ss-item-dot{width:4px;height:4px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px}
+.priority-badge{font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:10px;font-weight:500}
+.p1{background:#fef2f2;color:#991b1b}
+.p2{background:#fffbeb;color:#92400e}
+.p3{background:#eff6ff;color:#1e40af}
+.p4{background:#f0fdf4;color:#166534}
+.divider{height:1px;background:var(--border);margin:28px 0}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-tag">Gap Analysis · Roadmap</div>
+    <div class="sb-name">OpenCNAPP Dashboard</div>
+    <div class="sb-sub">v3 → industry-standard</div>
+  </div>
+  <div class="sb-sec">Analysis</div>
+  <a class="sb-item" href="#s01"><span class="sb-dot"></span>01 · What you have now</a>
+  <a class="sb-item" href="#s02"><span class="sb-dot"></span>02 · What industry looks like</a>
+  <a class="sb-item" href="#s03"><span class="sb-dot"></span>03 · Full gap table</a>
+  <div class="sb-sec">Design spec</div>
+  <a class="sb-item" href="#s04"><span class="sb-dot"></span>04 · Design system overhaul</a>
+  <a class="sb-item" href="#s05"><span class="sb-dot"></span>05 · Every screen specified</a>
+  <a class="sb-item" href="#s06"><span class="sb-dot"></span>06 · Widget catalogue (30+)</a>
+  <a class="sb-item" href="#s07"><span class="sb-dot"></span>07 · Onboarding flows</a>
+  <div class="sb-sec">Roadmap</div>
+  <a class="sb-item" href="#s08"><span class="sb-dot"></span>08 · Phase-by-phase plan</a>
+  <a class="sb-item" href="#s09"><span class="sb-dot"></span>09 · API changes needed</a>
+  <a class="sb-item" href="#s10"><span class="sb-dot"></span>10 · Tech choices</a>
+  <a class="sb-item" href="#s11"><span class="sb-dot"></span>11 · Agent handoff spec</a>
+</nav>
+
+<main class="main">
+
+<div class="hero">
+  <div class="hero-badge">OpenCNAPP · Dashboard Roadmap</div>
+  <div class="hero-title">From "it works" to<br>industry-standard CNAPP UI</div>
+  <div class="hero-desc">Your codebase is already solid — the backend, adapters, and plugin system are real. The problem is purely the frontend: it looks like a developer prototype, not a security product. This plan fixes that systematically.</div>
+  <div class="hero-pills">
+    <span class="hero-pill">Wiz/Orca-grade UI</span>
+    <span class="hero-pill">30+ dashboard widgets</span>
+    <span class="hero-pill">cluster onboarding</span>
+    <span class="hero-pill">attack path graph</span>
+    <span class="hero-pill">compliance heatmap</span>
+    <span class="hero-pill">real-time alerts</span>
+    <span class="hero-pill">light theme</span>
+    <span class="hero-pill">5 phases · 10 weeks</span>
+  </div>
+</div>
+
+<!-- S01 -->
+<div class="section" id="s01">
+  <h2><span class="sn" style="background:var(--red-lt);color:var(--red)">01</span> What you have now — honest assessment</h2>
+
+  <div class="callout c-red">
+    <div class="ct">The core problem</div>
+    <p>The dark theme, bullet-list plugin manager, plain-text pentest runner, and empty charts make it look like a CLI tool with a web skin. Users can't tell what's happening, what to do next, or how bad their security posture is. The reference products (AccuKnox, Wiz, Orca) solve this with visual hierarchy, rich widgets, and clear user flows.</p>
+  </div>
+
+  <div class="before-after">
+    <div class="ba-card ba-before">
+      <div class="ba-label">Current state</div>
+      <div class="ba-content">
+        Overview: 4 stat cards, empty donut, empty bar, flat trend line<br>
+        Findings: table with filters — functional but bare<br>
+        Pentest: two text inputs + Run button + "null / []" output<br>
+        Plugin Manager: bullet list + toggle buttons — no cards, no status, no last-run<br>
+        Compliance: 5 framework count cards + a note about what's coming<br>
+        Attack Paths: placeholder<br>
+        Connectors: unknown state from screenshots<br>
+        Theme: dark-only, no light option<br>
+        No cluster onboarding flow<br>
+        No asset inventory<br>
+        No real-time alert stream visible
+      </div>
+    </div>
+    <div class="ba-card ba-after">
+      <div class="ba-label">Target state (industry standard)</div>
+      <div class="ba-content">
+        Overview: risk score gauge, trend charts, severity donut, domain bar, top findings table, cloud breakdown, recent scans<br>
+        Findings: rich table + drawer detail + lifecycle actions + bulk ops<br>
+        Pentest: tool cards, recent jobs table, live progress, results viewer<br>
+        Plugin Manager: cards with status badges, schedule display, last run, finding count<br>
+        Compliance: control heatmap (CIS/NIST/PCI/SOC2/ISO27001), drilldown, PDF export<br>
+        Attack Paths: D3 force graph, node detail panel, filter by severity<br>
+        Connectors: wizard-style onboarding with test connection, status, resource counts<br>
+        Cluster onboarding wizard<br>
+        Asset inventory page<br>
+        Real-time alert feed (WebSocket)
+      </div>
+    </div>
+  </div>
+
+  <h3>Effort reality check</h3>
+  <p>The backend is largely done — adapters, normalizers, ingest endpoints are all in place. This is a <strong>frontend-heavy project</strong>. Estimated: 8–10 weeks of focused frontend work by one developer, or 4–5 weeks with two.</p>
+</div>
+
+<!-- S02 -->
+<div class="section" id="s02">
+  <h2><span class="sn" style="background:var(--blue-lt);color:var(--blue)">02</span> What industry-standard looks like</h2>
+
+  <p>Based on AccuKnox CNAPP dashboard, Orca Security, and Wiz — here are the non-negotiable elements that define a professional CNAPP UI:</p>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-t">Risk score / secure score</div>
+      <div class="card-d">A 0–100 number with a visual gauge. The single most important number on the platform. Drives the whole conversation.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Multi-cloud header bar</div>
+      <div class="card-d">Add Cloud · Add Cluster · Add Registry buttons in the top right. Users immediately see how to onboard resources.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Findings by cloud provider</div>
+      <div class="card-d">Table or bar per cloud (AWS, Azure, GCP) showing total findings with C/H/M/L severity pills. Essential for multi-cloud teams.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Customizable widgets</div>
+      <div class="card-d">Users can add/remove widgets from a catalogue of 30+. AccuKnox has 117 widgets across CSPM, KSPM, Runtime, Assets, Tickets domains.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Namespace-level K8s view</div>
+      <div class="card-d">K8s clusters → namespaces → workloads. Severity per namespace. Alerts per pod. This is the #1 K8s-specific feature users expect.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Compliance framework heatmap</div>
+      <div class="card-d">Control domains × pass/fail/partial. Color-coded grid. Click any cell → drilldown to specific findings. Not just counts.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Attack path visualization</div>
+      <div class="card-d">Graph where nodes are resources, edges are risk relationships. Critical paths highlighted in red. Wiz calls this Security Graph.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Real-time alert feed</div>
+      <div class="card-d">Falco/runtime events streaming in live. Severity color-coded. Click to expand. Filter by cluster/namespace/severity.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Image risk assessment</div>
+      <div class="card-d">Container images by vulnerability count. Critical images flagged. Links to registry scan queue. Essential for container-heavy teams.</div>
+    </div>
+  </div>
+
+  <div class="callout c-info">
+    <div class="ct">Light theme is mandatory</div>
+    <p>AccuKnox, Wiz, and Orca all default to light theme with dark mode available. Enterprise security teams work in well-lit offices and often screen-share dashboards in presentations. A dark-only dashboard reads as a "developer tool" not a "security product." Switch your default to light theme and offer a toggle.</p>
+  </div>
+</div>
+
+<!-- S03 -->
+<div class="section" id="s03">
+  <h2><span class="sn" style="background:var(--amber-lt);color:var(--amber)">03</span> Full gap table</h2>
+
+  <div class="gap-table">
+    <div class="gap-header">
+      <div>Area</div>
+      <div>Current state</div>
+      <div>What's needed</div>
+      <div>Priority</div>
+    </div>
+
+    <div class="gap-row">
+      <div class="gap-area">Theme / design system</div>
+      <div class="gap-current">Dark-only, basic CSS, no component library consistency</div>
+      <div class="gap-needed">Light default + dark toggle, consistent design tokens, proper typography scale</div>
+      <div class="gap-effort"><span class="priority-badge p1">P0</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Cluster onboarding wizard</div>
+      <div class="gap-current">Missing entirely</div>
+      <div class="gap-needed">Multi-step wizard: Name → Cloud type → Credential form → Test → Agent install instructions</div>
+      <div class="gap-effort"><span class="priority-badge p1">P0</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Cloud connector wizard</div>
+      <div class="gap-current">Unknown/minimal from screenshots</div>
+      <div class="gap-needed">Add Cloud wizard: choose Azure/AWS/GCP → credential form → test connection → show resource count</div>
+      <div class="gap-effort"><span class="priority-badge p1">P0</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Risk score / secure score</div>
+      <div class="gap-current">Shows "Secure score: 100 Good" as text badge</div>
+      <div class="gap-needed">Large gauge/donut visualization, trend over time, breakdown by domain</div>
+      <div class="gap-effort"><span class="priority-badge p1">P0</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Overview page widgets</div>
+      <div class="gap-current">4 stat cards, 1 bar, 1 line chart (both empty)</div>
+      <div class="gap-needed">12+ widgets: findings by cloud, namespace alerts, top pods, image risk, remediation tracker, compliance summary</div>
+      <div class="gap-effort"><span class="priority-badge p1">P0</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Multi-cloud header</div>
+      <div class="gap-current">No cloud icons or quick-add buttons visible</div>
+      <div class="gap-needed">"Add Cloud · Add Cluster · Add Registry" CTA buttons in topbar with cloud provider icons</div>
+      <div class="gap-effort"><span class="priority-badge p1">P0</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Plugin Manager</div>
+      <div class="gap-current">Bullet list + toggle buttons — bare text</div>
+      <div class="gap-needed">Cards with domain badge, status indicator, last run time, finding count, schedule, enable/disable toggle</div>
+      <div class="gap-effort"><span class="priority-badge p2">P1</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Pentest Runner</div>
+      <div class="gap-current">Two text inputs + Run button + "null / []" raw output</div>
+      <div class="gap-needed">Tool cards with descriptions, target input with validation, auth gate checkbox, live progress, formatted results table</div>
+      <div class="gap-effort"><span class="priority-badge p2">P1</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Compliance heatmap</div>
+      <div class="gap-current">5 framework count cards ("CIS: 0 mapped findings")</div>
+      <div class="gap-needed">Visual heatmap grid (control domains × pass/fail), per-control drilldown, export PDF, benchmark selector</div>
+      <div class="gap-effort"><span class="priority-badge p2">P1</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Attack Paths</div>
+      <div class="gap-current">Placeholder or basic SVG</div>
+      <div class="gap-needed">D3 force graph, node types (resource/identity/vuln), click to inspect, filter by severity, toxic combo highlight</div>
+      <div class="gap-effort"><span class="priority-badge p2">P1</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Findings explorer</div>
+      <div class="gap-current">Functional table with filters — good baseline</div>
+      <div class="gap-needed">Side drawer detail view, bulk actions, assign, ticket creation, accepted risk, export CSV/JSON</div>
+      <div class="gap-effort"><span class="priority-badge p2">P1</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Asset inventory</div>
+      <div class="gap-current">Missing entirely</div>
+      <div class="gap-needed">Resources table: clouds + clusters + namespaces + workloads + images with finding counts per resource</div>
+      <div class="gap-effort"><span class="priority-badge p3">P2</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Real-time alert feed</div>
+      <div class="gap-current">Alerts page exists but unclear if WebSocket stream works</div>
+      <div class="gap-needed">Live stream, severity color-coding, cluster/namespace filter, expand to see full alert detail, mute rules</div>
+      <div class="gap-effort"><span class="priority-badge p3">P2</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Widget customization</div>
+      <div class="gap-current">Fixed page layouts</div>
+      <div class="gap-needed">Add/remove/reorder widgets per page. Widget catalogue with categories (CSPM, KSPM, Runtime, Assets)</div>
+      <div class="gap-effort"><span class="priority-badge p3">P2</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Image / registry view</div>
+      <div class="gap-current">Missing</div>
+      <div class="gap-needed">Image list with vulnerability counts by severity, scan queue status, registry onboarding</div>
+      <div class="gap-effort"><span class="priority-badge p4">P3</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">K8s namespace view</div>
+      <div class="gap-current">Missing</div>
+      <div class="gap-needed">Cluster → namespace → pod hierarchy, severity per namespace, top 5 pods with internet exposure</div>
+      <div class="gap-effort"><span class="priority-badge p4">P3</span></div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-area">Ticketing integrations</div>
+      <div class="gap-current">Missing</div>
+      <div class="gap-needed">Create Jira/GitHub ticket from finding. Track ticket status in findings table. Bidirectional sync.</div>
+      <div class="gap-effort"><span class="priority-badge p4">P3</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- S04 -->
+<div class="section" id="s04">
+  <h2><span class="sn" style="background:var(--purple-lt);color:var(--purple)">04</span> Design system overhaul</h2>
+
+  <div class="callout c-warn">
+    <div class="ct">Do this first — before any new features</div>
+    <p>Build a proper CSS design token system and component library first. Every new screen you build without this will need to be rebuilt later. One week on design system = saves 3 weeks of inconsistent rework.</p>
+  </div>
+
+  <h3>Color system</h3>
+  <p>Switch default to light theme. Keep dark as an option. Define semantic tokens:</p>
+  <pre>/* Design tokens */
+--severity-critical: #dc2626;
+--severity-high:     #ea580c;
+--severity-medium:   #d97706;
+--severity-low:      #16a34a;
+--severity-info:     #2563eb;
+
+--domain-cspm:    #2563eb;
+--domain-kspm:    #0d9488;
+--domain-cwpp:    #d97706;
+--domain-ciem:    #dc2626;
+--domain-imagesec:#7c3aed;
+--domain-iac:     #16a34a;
+--domain-secrets: #ea580c;
+--domain-pentest: #6b7280;
+
+--cloud-azure:  #0078d4;
+--cloud-aws:    #f90;
+--cloud-gcp:    #4285f4;
+--cloud-k8s:    #326ce5;
+--cloud-onprem: #6b7280;</pre>
+
+  <h3>Typography scale</h3>
+  <pre>--text-xs:   11px / 1.5  /* badges, meta labels */
+--text-sm:   13px / 1.6  /* table cells, card body */
+--text-base: 14px / 1.65 /* body text */
+--text-lg:   16px / 1.5  /* card titles */
+--text-xl:   20px / 1.3  /* page headings */
+--text-2xl:  24px / 1.2  /* metric numbers */
+--text-4xl:  36px / 1.1  /* risk score number */</pre>
+
+  <h3>Core component library needed</h3>
+  <div class="grid3">
+    <div class="card"><div class="card-t">StatCard</div><div class="card-d">Number + label + trend + severity color. Used everywhere on Overview.</div></div>
+    <div class="card"><div class="card-t">SeverityBadge</div><div class="card-d">Critical/High/Medium/Low/Info pill with consistent colors.</div></div>
+    <div class="card"><div class="card-t">CloudBadge</div><div class="card-d">Azure/AWS/GCP/K8s icon + name. Consistent cloud identifiers.</div></div>
+    <div class="card"><div class="card-t">PluginCard</div><div class="card-d">Domain badge, tool name, status dot, last run, finding count, schedule, toggle.</div></div>
+    <div class="card"><div class="card-t">FindingRow</div><div class="card-d">Severity + domain + cloud + resource + title + status + age in one row.</div></div>
+    <div class="card"><div class="card-t">DrawerPanel</div><div class="card-d">Slide-in from right for finding detail, cluster detail, widget config.</div></div>
+    <div class="card"><div class="card-t">WizardStepper</div><div class="card-d">Step 1 → 2 → 3 → Done. Used for cloud/cluster onboarding.</div></div>
+    <div class="card"><div class="card-t">WidgetContainer</div><div class="card-d">Drag-handle, title, loading state, error state, empty state, overflow menu.</div></div>
+    <div class="card"><div class="card-t">ComplianceCell</div><div class="card-d">Pass/Fail/Partial colored cell for heatmap grid. Click to drill down.</div></div>
+  </div>
+
+  <h3>Recommended tech additions</h3>
+  <table>
+    <tr><th>Need</th><th>Library</th><th>Why</th></tr>
+    <tr><td>Design system / components</td><td>shadcn/ui (Tailwind-based)</td><td>Composable, headless, matches industry look. Much faster than writing from scratch.</td></tr>
+    <tr><td>Charts</td><td>Recharts (already have it)</td><td>Keep it. Add ResponsiveContainer properly on every chart.</td></tr>
+    <tr><td>Attack graph</td><td>D3.js v7 force simulation</td><td>Required for the security graph. No substitutes at this level of flexibility.</td></tr>
+    <tr><td>Icons</td><td>Lucide React</td><td>Consistent, tree-shakeable, matches modern UI conventions.</td></tr>
+    <tr><td>Data tables</td><td>TanStack Table v8</td><td>Server-side pagination, sorting, filtering, virtualization for large finding sets.</td></tr>
+    <tr><td>Form management</td><td>React Hook Form + Zod</td><td>For credential forms, connector wizards, alert rule configuration.</td></tr>
+    <tr><td>State management</td><td>Zustand or Jotai</td><td>Lightweight. For global filters, active cloud selection, theme preference.</td></tr>
+  </table>
+</div>
+
+<!-- S05 -->
+<div class="section" id="s05">
+  <h2><span class="sn" style="background:var(--teal-lt);color:var(--teal)">05</span> Every screen specified</h2>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Overview / Posture Dashboard
+      <span class="priority-badge p1">P0 — build first</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Risk score gauge (0–100) with label (Good/Fair/Poor)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Topbar: Add Cloud · Add Cluster · Add Registry buttons</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Stat row: Total findings · Critical · High · Clouds detected</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Findings by domain (bar chart, horizontal)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Severity donut (C/H/M/L/I breakdown)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>30-day findings trend (area chart)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Findings by cloud provider (table with severity pills)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Top 10 critical findings list (link to Findings page)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Recent scans (last 5 with tool + status + finding count)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Compliance summary (CIS/NIST/PCI pass % bars)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Image risk assessment widget (images by severity)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Namespace severity summary (K8s users only)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Date range selector (last 7d / 30d / 90d / custom)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Add/remove widgets button → widget catalogue modal</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Inventory / Assets
+      <span class="priority-badge p1">P0 — users need this to onboard</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Tabs: Clouds · Clusters · Namespaces · Workloads · Images</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Clouds tab: list of configured cloud accounts with status</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Clusters tab: name · cloud · nodes · namespaces · last synced · findings</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>"Onboard Cluster" primary button top right</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Namespaces tab: cluster → namespace hierarchy with severity counts</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Workloads tab: pods/deployments with alert count and status</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Images tab: container images with CVE counts by severity</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Click any row → detail drawer with findings for that resource</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Findings Explorer
+      <span class="priority-badge p2">P1 — already has good baseline</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Sticky filter bar: Severity · Domain · Tool · Cloud · Status · Search</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Active filter pills with × to remove</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Result count + export CSV/JSON button</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Sortable columns with visual indicators</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Row checkbox for bulk actions (assign / accept risk / mark fixed)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Click row → side drawer: title · description · remediation · compliance tags · raw JSON tab</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Lifecycle buttons in drawer: Open → Assigned → Accepted → Fixed</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Assignee dropdown + ticket URL field in drawer</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Sources field (Prowler + Defender for Cloud if deduplicated)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Server-side pagination, 25/50/100 per page selector</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Compliance
+      <span class="priority-badge p2">P1 — currently just counts</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Framework selector: CIS-Azure · CIS-AWS · CIS-K8s · NIST · PCI-DSS · SOC2 · ISO27001</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Overall pass % ring chart</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Control domain heatmap grid (domain × pass/fail/partial)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Color: green=pass, red=fail, amber=partial, gray=not tested</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Click heatmap cell → drilldown table of findings for that control</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Control detail: requirement text · current state · remediation</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Export PDF compliance report button</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Cloud account filter (which account to assess)</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Plugin Manager
+      <span class="priority-badge p2">P1 — currently a bullet list</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Card grid (3 columns) — one card per plugin</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Card shows: domain badge · tool name · description · status dot (active/idle/error)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Card footer: last run time · findings count · schedule label</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Enable/disable toggle per card</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>"Run now" button triggers on-demand scan with progress modal</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Click card → configure drawer: schedule · credentials · options</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Filter by domain (CSPM / KSPM / CWPP / CIEM / CI-CD)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>"CI-only" badge on tools configured for webhook ingest</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Pentest Runner
+      <span class="priority-badge p2">P1 — currently shows raw null/[]</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Tool selection cards: Nuclei · Nmap · SSLyze · Nikto · kube-hunter · CloudFox</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Target input with validation (URL / IP / CIDR / K8s endpoint)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Options: templates/intensity selector per tool</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Authorization checkbox (required — "I authorize scanning this target")</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Live progress bar + log stream while scan runs</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Results: formatted findings table (not raw JSON)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Recent scans table: tool · target · date · finding count · status</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Click historical scan → view its results again</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Attack Paths
+      <span class="priority-badge p2">P1 — currently placeholder</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>D3 force-directed graph — full width canvas</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Node types: VM · Container · Storage · Identity · K8s Pod · Network</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Node color = worst severity of findings on that resource</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Edge thickness = relationship strength / risk level</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Toxic combo highlight: red glow on nodes with 2+ risk factors</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Click node → right panel: resource name · cloud · findings list</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Filter controls: severity min · cloud · domain · resource type</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Zoom / pan / reset controls</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Legend: node types + color meanings</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Connectors
+      <span class="priority-badge p1">P0 — needed to onboard anything</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Cards per configured connector with status (active/error/pending)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>"Add Cloud" modal: choose Azure/AWS/GCP → credential form → test → save</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>"Add Cluster" wizard: name → cloud → install agent → verify</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>"Add Registry" form: type (ACR/ECR/Docker Hub) → credentials → test</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Each connector card shows: cloud icon · account name · resource count · last sync · status dot</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Native security ingest toggles (Defender for Cloud · Security Hub)</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Delete connector confirmation dialog</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Re-test connection button per card</div>
+    </div>
+  </div>
+
+  <div class="screen-spec">
+    <div class="ss-title">
+      Alerts
+      <span class="priority-badge p3">P2</span>
+    </div>
+    <div class="ss-grid">
+      <div class="ss-item"><div class="ss-item-dot"></div>Live WebSocket feed — new alerts appear at top in real-time</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Each alert: timestamp · severity pill · cluster · namespace · message · action type</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Click to expand: full Falco alert JSON · policy name · pod name</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Filter: severity · cluster · namespace · time range</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Alert rules tab: create/edit/delete routing rules</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Notification channels: Slack webhook · Teams webhook · Email · PagerDuty</div>
+      <div class="ss-item"><div class="ss-item-dot"></div>Mute rules: suppress specific alert types with expiry</div>
+    </div>
+  </div>
+</div>
+
+<!-- S06 -->
+<div class="section" id="s06">
+  <h2><span class="sn" style="background:var(--green-lt);color:var(--green)">06</span> Widget catalogue — 30+ widgets for Overview</h2>
+
+  <p>AccuKnox has 117 widgets across 6 categories. For v1, implement at least 20 core widgets. Users add/remove from a modal catalogue.</p>
+
+  <div class="widget-showcase">
+    <div class="widget-card">
+      <div class="widget-card-header">Cloud Findings — CSPM category</div>
+      <div class="widget-card-body">Total findings by cloud provider. Big number + trend arrow. Click → filter Findings to that cloud. Essential — this is the first widget on every CSPM dashboard.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Findings by Cloud Provider — CSPM</div>
+      <div class="widget-card-body">Table: AWS 0/C 0/H 0/M 0/L. Azure. GCP. OCI. Each row clickable. Shows C/H/M/L severity breakdown per cloud inline. Copied from AccuKnox exactly — industry standard.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Cloud Findings Trend — CSPM</div>
+      <div class="widget-card-body">Line chart: new findings per day for last 7/30/90 days. Area fill below line. Should show separate series for Critical vs High vs total.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Severity Distribution — all domains</div>
+      <div class="widget-card-body">Donut chart: CRITICAL / HIGH / MEDIUM / LOW / INFO with counts. Color coded: red/orange/amber/green/blue. Click slice → filter Findings.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Top 10 Critical Findings — all domains</div>
+      <div class="widget-card-body">Table: severity pill · domain · cloud · resource · title. Most recently seen criticals. Click → Finding detail drawer. This is the "things to fix right now" widget.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Risk Score Gauge — all domains</div>
+      <div class="widget-card-body">Large arc gauge 0–100. Red zone 0-40, amber 40-70, green 70-100. Score label centered. Below: "compared to last week ↑3". The #1 executive widget.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Image Risk Assessment — IMAGE domain</div>
+      <div class="widget-card-body">Total images scanned. Bar showing images with Critical/High/Medium vulnerabilities. Click → jump to Images tab in Inventory. Shows last scan time.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Namespace Severity Summary — KSPM</div>
+      <div class="widget-card-body">Stacked bar chart: one bar per namespace, colored segments for severity levels. Cluster selector dropdown. Click namespace → filtered Findings view.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Compliance Summary — Compliance domain</div>
+      <div class="widget-card-body">5 framework progress bars: CIS 73% / NIST 61% / PCI 88% / SOC2 79% / ISO27001 84%. Green bar fill. Click → Compliance page with that framework pre-selected.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Runtime Policies Assessment — CWPP</div>
+      <div class="widget-card-body">Total K8s policies: Discovered N / Active N / Pending N / Inactive N. Donut chart. Links to policy management screen.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Top 5 Pods Internet Exposed — KSPM</div>
+      <div class="widget-card-body">List of pods with ingress/egress exposed to internet. Pod name · namespace · cluster · exposure type. Immediate action needed items.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Remediation Tracker — all domains</div>
+      <div class="widget-card-body">Finding lifecycle funnel: Open → Assigned → In Review → Fixed. Counts at each stage. Shows SLA breaches highlighted in red.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Compliance Alerts — Compliance domain</div>
+      <div class="widget-card-body">Bar chart: alert count per framework (NIST, MITRE, PCI-DSS, CIS). Color per framework. Click bar → filtered compliance findings. From AccuKnox CWPP dashboard.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Recent Scan History — all domains</div>
+      <div class="widget-card-body">Last 5 scans: tool name · cloud · status (success/failed/running) · duration · new findings. Refresh button. Shows scan health at a glance.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">Secrets Detected — Secrets domain</div>
+      <div class="widget-card-body">Count of leaked secrets by type: API keys / DB passwords / cloud credentials / certificates. Last scan date. Trend vs previous week.</div>
+    </div>
+    <div class="widget-card">
+      <div class="widget-card-header">IaC Misconfigs — IaC domain</div>
+      <div class="widget-card-body">Misconfigs found in last IaC scan. Broken down by Terraform / Helm / K8s YAML / Bicep. Trend line. Link to filtered Findings.</div>
+    </div>
+  </div>
+
+  <p style="margin-top:12px">Additional widgets for v2: Top 10 Cloud Accounts with Most Findings · New vs Recurring Findings · SBOM Dependencies Overview · Pentest Coverage Map · Identity Risk Heatmap · Network Exposure Map.</p>
+</div>
+
+<!-- S07 -->
+<div class="section" id="s07">
+  <h2><span class="sn" style="background:var(--amber-lt);color:var(--amber)">07</span> Onboarding flows — critical missing piece</h2>
+
+  <div class="callout c-red">
+    <div class="ct">Why this matters most</div>
+    <p>Your dashboard currently shows "No findings yet" with no clear call to action. A new user has no idea how to add their cloud account, connect a cluster, or trigger their first scan. This is the #1 UX problem causing the product to feel like a prototype.</p>
+  </div>
+
+  <h3>Cloud onboarding wizard (4 steps)</h3>
+  <pre>Step 1: Choose cloud provider
+  [Azure] [AWS] [GCP] [On-prem]
+
+Step 2: Enter credentials (form changes per cloud)
+  Azure: Subscription ID · Tenant ID · Client ID · Client Secret
+  AWS:   Access Key ID · Secret Access Key  (or IAM Role ARN)
+  GCP:   Upload service account JSON
+
+Step 3: Test connection
+  [Testing...] → [✓ Connected — 47 resources found]
+  or [✗ Auth failed — check credentials]
+
+Step 4: Choose first scan
+  [Run Prowler now (CSPM)] [Schedule for tonight] [Skip for now]</pre>
+
+  <h3>Cluster onboarding wizard (3 steps)</h3>
+  <pre>Step 1: Name your cluster + choose cloud
+  Cluster name: [aks-prod-eastus]
+  Cloud: [Azure AKS ▼]
+
+Step 2: Install agent
+  Run this command on your cluster:
+  kubectl apply -f https://opencnapp.local/api/agent/install/{token}
+
+Step 3: Verify
+  [Checking connection...] → [✓ Cluster connected — 12 nodes, 47 pods]</pre>
+
+  <h3>First-run experience</h3>
+  <p>When the database is empty, show a full-page onboarding prompt instead of "No findings yet." Three clear paths: "Connect a cloud account" · "Connect a Kubernetes cluster" · "Ingest from CI/CD pipeline." Each path has a single CTA button leading to the wizard.</p>
+</div>
+
+<!-- S08 -->
+<div class="section" id="s08">
+  <h2><span class="sn" style="background:var(--blue-lt);color:var(--blue)">08</span> Phase-by-phase roadmap</h2>
+
+  <div class="phase-block">
+    <div class="phase-header">
+      <div class="phase-num" style="background:var(--red-lt);color:var(--red)">1</div>
+      <div>
+        <div class="phase-title">Phase 1 — Design system + light theme + empty state fix</div>
+        <div class="phase-sub">Weeks 1–2 · Foundation that makes everything else easier</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="task-row">
+        <div class="task-check" style="background:var(--red-lt);color:var(--red)">!</div>
+        <div>
+          <div class="task-title">Switch to light theme default + implement dark toggle</div>
+          <div class="task-desc">Add CSS custom properties for all colors. `ThemeContext` in React. Toggle in top-right of nav. Critical for professional appearance.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--red-lt);color:var(--red)">!</div>
+        <div>
+          <div class="task-title">Install shadcn/ui + configure Tailwind CSS</div>
+          <div class="task-desc">Replace current CSS with Tailwind utility classes. Install shadcn/ui components (Button, Card, Dialog, Select, Input, Badge, Tabs). This is the component foundation.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--red-lt);color:var(--red)">!</div>
+        <div>
+          <div class="task-title">Build SeverityBadge, CloudBadge, DomainBadge components</div>
+          <div class="task-desc">These appear everywhere. Consistent colors from design tokens. Used in tables, cards, charts throughout the app.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--red-lt);color:var(--red)">!</div>
+        <div>
+          <div class="task-title">Rebuild sidebar navigation</div>
+          <div class="task-desc">Add icons (Lucide React) to all nav items. Add multi-cloud header bar with "Add Cloud · Add Cluster · Add Registry" buttons. Profile menu. Notification bell.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--red-lt);color:var(--red)">!</div>
+        <div>
+          <div class="task-title">First-run empty state (when DB has no data)</div>
+          <div class="task-desc">Full-page onboarding prompt with 3 clear paths. No more "No findings yet" dead-end. This is the single most impactful UX change.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-header">
+      <div class="phase-num" style="background:var(--amber-lt);color:var(--amber)">2</div>
+      <div>
+        <div class="phase-title">Phase 2 — Connectors + Inventory (onboarding flows)</div>
+        <div class="phase-sub">Weeks 2–3 · Users can actually add their clouds and clusters</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="task-row">
+        <div class="task-check" style="background:var(--amber-lt);color:var(--amber)">2</div>
+        <div>
+          <div class="task-title">Cloud connector wizard (Add Cloud modal)</div>
+          <div class="task-desc">Provider selector → dynamic credential form → test connection → save. Shows resource count on success. Per-connector status card in Connectors page.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--amber-lt);color:var(--amber)">2</div>
+        <div>
+          <div class="task-title">Cluster onboarding wizard (Add Cluster)</div>
+          <div class="task-desc">Name → cloud → agent install command (with copy button) → verify connection. Shows node/pod count on success.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--amber-lt);color:var(--amber)">2</div>
+        <div>
+          <div class="task-title">Inventory page (Assets tab)</div>
+          <div class="task-desc">Clouds · Clusters · Namespaces · Workloads · Images tabs. Like AccuKnox's Inventory Assets → Clusters screen. Onboard Cluster button prominent top right.</div>
+          <div class="task-tags"><span class="priority-badge p1">P0</span></div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--amber-lt);color:var(--amber)">2</div>
+        <div>
+          <div class="task-title">Registry onboarding (Add Registry)</div>
+          <div class="task-desc">ACR / ECR / Docker Hub / GCR form. Credentials → test → save. Shows images count and last scan time.</div>
+          <div class="task-tags"><span class="priority-badge p2">P1</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-header">
+      <div class="phase-num" style="background:var(--blue-lt);color:var(--blue)">3</div>
+      <div>
+        <div class="phase-title">Phase 3 — Overview dashboard overhaul (30+ widgets)</div>
+        <div class="phase-sub">Weeks 3–5 · The "wow" moment when users first log in</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="task-row">
+        <div class="task-check" style="background:var(--blue-lt);color:var(--blue)">3</div>
+        <div>
+          <div class="task-title">Risk score gauge widget</div>
+          <div class="task-desc">Large arc gauge 0–100 using Recharts RadialBar or custom D3 arc. Score in center. Color zones (red/amber/green). Week-over-week trend delta.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--blue-lt);color:var(--blue)">3</div>
+        <div>
+          <div class="task-title">Findings by Cloud Provider widget</div>
+          <div class="task-desc">Table exactly like AccuKnox/Orca: provider icon · name · total findings · C · H · M · L severity counts as inline colored pills. Click row → filtered Findings page.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--blue-lt);color:var(--blue)">3</div>
+        <div>
+          <div class="task-title">Compliance summary progress bars</div>
+          <div class="task-desc">One progress bar per framework showing pass %. Links to Compliance page. Shows which frameworks have data.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--blue-lt);color:var(--blue)">3</div>
+        <div>
+          <div class="task-title">Image risk assessment widget</div>
+          <div class="task-desc">Count of images by vulnerability severity. Bar chart or stacked bar. Last scan timestamp. Link to Images tab.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--blue-lt);color:var(--blue)">3</div>
+        <div>
+          <div class="task-title">Widget catalogue modal (add/remove widgets)</div>
+          <div class="task-desc">Modal with widget list by category. Checkboxes to add. Drag handles to reorder on dashboard. Saved to localStorage initially, Postgres later.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--blue-lt);color:var(--blue)">3</div>
+        <div>
+          <div class="task-title">Date range selector (global dashboard filter)</div>
+          <div class="task-desc">Last 2 days / 7 days / 30 days / custom date picker. Updates all widgets. Shown top right of Overview page exactly like AccuKnox.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-header">
+      <div class="phase-num" style="background:var(--purple-lt);color:var(--purple)">4</div>
+      <div>
+        <div class="phase-title">Phase 4 — Plugin Manager + Pentest Runner + Findings polish</div>
+        <div class="phase-sub">Weeks 5–7 · Fix the pages that currently look like prototypes</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="task-row">
+        <div class="task-check" style="background:var(--purple-lt);color:var(--purple)">4</div>
+        <div>
+          <div class="task-title">Plugin Manager → card grid</div>
+          <div class="task-desc">Replace bullet list with 3-column card grid. Each card: domain badge · name · status dot · last run · finding count · schedule · toggle · Run Now button.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--purple-lt);color:var(--purple)">4</div>
+        <div>
+          <div class="task-title">Pentest Runner → professional UI</div>
+          <div class="task-desc">Tool selection cards. Target form with type detection. Auth gate checkbox. Live WebSocket log stream during scan. Formatted results table (not raw JSON). Recent jobs history.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--purple-lt);color:var(--purple)">4</div>
+        <div>
+          <div class="task-title">Findings Explorer → side drawer + bulk actions</div>
+          <div class="task-desc">Click row → slide-in drawer with full finding detail (description, remediation, compliance tags, raw JSON tab). Bulk select → assign / accept risk / mark fixed. Export button.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--purple-lt);color:var(--purple)">4</div>
+        <div>
+          <div class="task-title">Compliance → visual heatmap</div>
+          <div class="task-desc">Replace count cards with control domain heatmap grid. Green/red/amber cells. Click cell → drilldown findings. Framework selector. PDF export button.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-header">
+      <div class="phase-num" style="background:var(--teal-lt);color:var(--teal)">5</div>
+      <div>
+        <div class="phase-title">Phase 5 — Attack Paths + Alerts + K8s namespace view</div>
+        <div class="phase-sub">Weeks 7–10 · Advanced features that complete the CNAPP picture</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="task-row">
+        <div class="task-check" style="background:var(--teal-lt);color:var(--teal)">5</div>
+        <div>
+          <div class="task-title">D3 force graph for Attack Paths</div>
+          <div class="task-desc">Full-width interactive graph. Nodes colored by worst finding severity. Click node → right panel with resource detail and findings list. Zoom/pan. Filter controls.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--teal-lt);color:var(--teal)">5</div>
+        <div>
+          <div class="task-title">Real-time Alerts feed</div>
+          <div class="task-desc">WebSocket stream (already exists in backend). Severity color-coded rows. Expand to see full Falco alert. Cluster/namespace filter. Mute rules.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--teal-lt);color:var(--teal)">5</div>
+        <div>
+          <div class="task-title">K8s namespace / workload view in Inventory</div>
+          <div class="task-desc">Cluster → namespaces list with severity counts. Namespace → workloads (pods/deployments) with alert counts. Top 5 pods with internet exposure widget.</div>
+        </div>
+      </div>
+      <div class="task-row">
+        <div class="task-check" style="background:var(--teal-lt);color:var(--teal)">5</div>
+        <div>
+          <div class="task-title">Notification rules configuration</div>
+          <div class="task-desc">Alert routing rules UI. Add Slack/Teams/Email webhook. Rule conditions (severity threshold, domain, cloud). Test notification button.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S09 -->
+<div class="section" id="s09">
+  <h2><span class="sn" style="background:var(--red-lt);color:var(--red)">09</span> API changes needed to support the UI</h2>
+
+  <table>
+    <tr><th>New endpoint</th><th>What it returns</th><th>Phase</th></tr>
+    <tr><td><code>GET /dashboard/risk-score</code></td><td>Calculated 0–100 score + breakdown by domain + week-over-week delta</td><td>3</td></tr>
+    <tr><td><code>GET /dashboard/findings-by-cloud</code></td><td>Per-cloud totals with C/H/M/L counts</td><td>3</td></tr>
+    <tr><td><code>GET /dashboard/trend?days=30</code></td><td>Daily finding counts for the trend chart (already exists, check it works)</td><td>1</td></tr>
+    <tr><td><code>GET /dashboard/compliance-summary</code></td><td>Per-framework pass % calculated from compliance_tags on findings</td><td>4</td></tr>
+    <tr><td><code>GET /compliance/heatmap?framework=cis-azure</code></td><td>Grid of control domains × pass count / fail count / partial count</td><td>4</td></tr>
+    <tr><td><code>POST /connectors/test</code></td><td>Test cloud credentials without saving. Returns success/error + resource count</td><td>2</td></tr>
+    <tr><td><code>GET /inventory/clusters</code></td><td>List of K8s clusters with node/namespace/pod counts and last sync time</td><td>2</td></tr>
+    <tr><td><code>GET /inventory/images</code></td><td>Container images with CVE counts by severity</td><td>3</td></tr>
+    <tr><td><code>GET /attack-paths/graph</code></td><td>Nodes + edges for D3 graph. Nodes = unique resources. Edges = finding relationships.</td><td>5</td></tr>
+    <tr><td><code>GET /findings?format=export&type=csv</code></td><td>CSV export of filtered findings</td><td>4</td></tr>
+    <tr><td><code>PATCH /findings/bulk</code></td><td>Bulk status update (assign/accept/fix) for a list of finding IDs</td><td>4</td></tr>
+  </table>
+</div>
+
+<!-- S10 -->
+<div class="section" id="s10">
+  <h2><span class="sn" style="background:var(--purple-lt);color:var(--purple)">10</span> Technology choices</h2>
+
+  <table>
+    <tr><th>What</th><th>Current</th><th>Recommended change</th><th>Why</th></tr>
+    <tr><td>UI framework</td><td>Plain React + CSS</td><td>React + Tailwind CSS + shadcn/ui</td><td>10x faster component development. Professional look out of the box.</td></tr>
+    <tr><td>Component library</td><td>Custom components</td><td>shadcn/ui</td><td>Accessible, composable, looks exactly like modern SaaS products.</td></tr>
+    <tr><td>Icons</td><td>Unknown</td><td>Lucide React</td><td>1000+ consistent icons, tree-shakeable, matches shadcn aesthetic.</td></tr>
+    <tr><td>Data tables</td><td>Custom table</td><td>TanStack Table v8</td><td>Server-side pagination/sorting/filtering built in. Virtualisation for large datasets.</td></tr>
+    <tr><td>Charts</td><td>Recharts (good)</td><td>Keep Recharts + add D3 for graph</td><td>Recharts covers 95% of needs. D3 only for attack path graph.</td></tr>
+    <tr><td>State</td><td>Component state</td><td>Add Zustand for global (theme, active cloud, date range)</td><td>Lightweight. No boilerplate. Perfect for cross-page state.</td></tr>
+    <tr><td>Forms</td><td>Uncontrolled</td><td>React Hook Form + Zod</td><td>Required for complex credential forms with validation.</td></tr>
+    <tr><td>Theme</td><td>Dark only</td><td>CSS custom properties + class toggle</td><td>Light default. No extra library needed. Just CSS variables.</td></tr>
+  </table>
+</div>
+
+<!-- S11 -->
+<div class="section" id="s11">
+  <h2><span class="sn" style="background:var(--teal-lt);color:var(--teal)">11</span> Agent handoff spec — what to give Cursor / Codex</h2>
+
+  <div class="callout c-purple">
+    <div class="ct">The problem with the previous agent output</div>
+    <p>Cursor/Codex built a functional prototype but without a strong design spec. The agents defaulted to the simplest possible implementation of each screen. The solution is to give the next agent extremely specific UI specs with references to AccuKnox screenshots, explicit component names, and pixel-level detail.</p>
+  </div>
+
+  <h3>What to include in the next agent prompt</h3>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">Reference screenshots</div>
+      <div class="card-d">Attach the AccuKnox screenshots (images 10–12 in this conversation) as visual references. Say "Match this visual quality and layout."</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Design token file</div>
+      <div class="card-d">Give the agent a complete <code>tokens.css</code> file with all severity colors, cloud colors, domain colors, and spacing. Agents follow token files precisely.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Component names</div>
+      <div class="card-d">Name every component explicitly: SeverityBadge, CloudBadge, PluginCard, FindingRow, DrawerPanel, WizardStepper, ComplianceHeatmap, RiskGauge.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">One page per task</div>
+      <div class="card-d">Don't ask for all pages at once. One agent run = one page. "Build the Overview page with these exact widgets: [list]." Quality is far higher this way.</div>
+    </div>
+    <div class="card">
+      <div class="card-t">shadcn/ui explicitly</div>
+      <div class="card-d">Tell the agent to use shadcn/ui components by name. "Use shadcn Card, Dialog, Select, Badge, Tabs, Button. Use Lucide React for icons."</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Explicit API endpoints</div>
+      <div class="card-d">Give each page spec its exact API calls: "Fetch <code>GET /dashboard/summary</code> and display the result.severity_counts in a SeverityDonut chart."</div>
+    </div>
+  </div>
+
+  <h3>Template prompt for next agent run</h3>
+  <pre>Build the [PAGE NAME] page for OpenCNAPP (React + TypeScript + Tailwind + shadcn/ui).
+
+Visual reference: match the AccuKnox CNAPP dashboard quality shown in [screenshots].
+Component library: shadcn/ui for all UI primitives. Icons: Lucide React.
+Charts: Recharts with ResponsiveContainer on every chart.
+Theme: light theme default (CSS custom properties).
+
+This page must include:
+1. [Widget 1 name] — fetches [API endpoint], renders as [chart type]
+2. [Widget 2 name] — ...
+
+Design tokens to use:
+  --severity-critical: #dc2626
+  --severity-high: #ea580c
+  [... full token list]
+
+API contract:
+  GET /api/dashboard/summary → { total, critical, high, medium, low, by_cloud: [...] }
+
+Do NOT use raw JSON dumps as output. All data must be rendered in proper UI components.
+Do NOT output null or [] as visible text.
+Empty state: show [specific empty state design] when no data exists.</pre>
+
+  <div class="callout c-ok">
+    <div class="ct">Estimated timeline to industry-standard quality</div>
+    <p>With the right spec passed to Cursor/Codex: Phase 1–2 (2 weeks), Phase 3 (2 weeks), Phase 4 (2 weeks), Phase 5 (2 weeks) = 8 weeks total. Without a proper spec: indefinite — you'll keep getting prototype-quality output. The spec in this document is what makes the difference.</p>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const secs = document.querySelectorAll('.section');
+const items = document.querySelectorAll('.sb-item');
+const obs = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if(e.isIntersecting){
+      items.forEach(i=>i.classList.remove('active'));
+      const a = document.querySelector(`.sb-item[href="#${e.target.id}"]`);
+      if(a) a.classList.add('active');
+    }
+  });
+},{threshold:0.2});
+secs.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
