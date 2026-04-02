@@ -36,7 +36,7 @@ const DialogContent = React.forwardRef<
         variant === 'center' &&
           'left-[50%] top-[50%] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] sm:rounded-lg',
         variant === 'right' &&
-          'inset-y-0 right-0 flex h-full max-h-screen w-full max-w-xl flex-col overflow-y-auto rounded-none border-l sm:max-w-xl',
+          'inset-y-0 right-0 flex h-full max-h-screen w-full max-w-none flex-col overflow-hidden rounded-none border-l sm:w-[min(1200px,96vw)]',
         className
       )}
       {...props}

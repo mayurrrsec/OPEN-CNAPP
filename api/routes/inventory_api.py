@@ -4,9 +4,14 @@ from sqlalchemy.orm import Session
 
 from api.auth import get_current_user
 from api.database.session import get_db
-from api.models import Finding
+from api.inventory.cluster_detail_service import connection_status_from_findings
+from api.inventory.helpers import cluster_label, domain_bucket, findings_for_connector
+from api.models import Connector, Finding
 
 router = APIRouter(prefix="/inventory", tags=["inventory"], dependencies=[Depends(get_current_user)])
+
+_CLOUD_TYPES = ("aws", "azure", "gcp")
+_K8S_TYPES = ("kubernetes", "onprem")
 
 
 @router.get("/assets")
@@ -51,5 +56,128 @@ def inventory_assets(
                 "max_severity": r.max_severity,
             }
             for r in rows
+        ],
+    }
+
+
+@router.get("/clouds")
+def list_cloud_accounts(db: Session = Depends(get_db)):
+    """Configured CSPM cloud connectors."""
+    rows = (
+        db.query(Connector)
+        .filter(Connector.connector_type.in_(_CLOUD_TYPES))
+        .order_by(Connector.created_at.desc())
+        .all()
+    )
+    return {
+        "items": [
+            {
+                "id": c.id,
+                "name": c.name,
+                "display_name": c.display_name,
+                "connector_type": c.connector_type,
+                "enabled": c.enabled,
+                "status": "active" if c.enabled else "disabled",
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+            }
+            for c in rows
+        ],
+        "total": len(rows),
+    }
+
+
+@router.get("/clusters")
+def list_k8s_inventory_clusters(db: Session = Depends(get_db)):
+    """Kubernetes / on-prem cluster connectors for Inventory table."""
+    rows = (
+        db.query(Connector)
+        .filter(Connector.connector_type.in_(_K8S_TYPES))
+        .order_by(Connector.created_at.desc())
+        .all()
+    )
+    items = []
+    for c in rows:
+        fq = findings_for_connector(db, c)
+        domain_counts = {"cis": 0, "kspm": 0, "img": 0, "sec": 0}
+        for domain, cnt in fq.with_entities(Finding.domain, func.count(Finding.id)).group_by(Finding.domain).all():
+            b = domain_bucket(domain)
+            if b in domain_counts:
+                domain_counts[b] += int(cnt or 0)
+        settings = c.settings or {}
+        cn = cluster_label(settings, c.name)
+        items.append(
+            {
+                "id": c.id,
+                "name": c.name,
+                "display_name": c.display_name,
+                "cluster_name": cn,
+                "cloud_type": settings.get("cloud_type") or settings.get("target") or "generic",
+                "connection_status": connection_status_from_findings(db, c),
+                "alerts_count": 0,
+                "findings": domain_counts,
+                "onboarded_at": c.created_at.isoformat() if c.created_at else None,
+                "last_synced_at": None,
+                "nodes": 0,
+                "workloads": 0,
+                "namespaces": 0,
+                "active_policies": 0,
+                "tags": [],
+            }
+        )
+    return {"items": items, "total": len(items)}
+
+
+@router.get("/namespaces")
+def list_inventory_namespaces(
+    db: Session = Depends(get_db),
+    cluster_id: str | None = None,
+    page: int = 1,
+    limit: int = 25,
+):
+    """Namespace inventory (populated when K8s inventory sync exists)."""
+    return {"total": 0, "page": max(1, page), "items": []}
+
+
+@router.get("/workloads")
+def list_inventory_workloads(
+    db: Session = Depends(get_db),
+    cluster_id: str | None = None,
+    namespace: str | None = None,
+    kind: str | None = None,
+    page: int = 1,
+    limit: int = 25,
+):
+    """Workload inventory (pods, deployments, …)."""
+    return {"total": 0, "page": max(1, page), "items": []}
+
+
+@router.get("/images")
+def list_inventory_images(
+    db: Session = Depends(get_db),
+    cluster_id: str | None = None,
+    limit: int = 100,
+):
+    """Container image rows derived from CVE/image findings."""
+    limit = max(1, min(int(limit or 100), 500))
+    if cluster_id:
+        c = db.query(Connector).filter(Connector.id == cluster_id).first()
+        if not c:
+            return {"total": 0, "items": []}
+        q = findings_for_connector(db, c).filter(Finding.cve_id.isnot(None))
+    else:
+        q = db.query(Finding).filter(Finding.cve_id.isnot(None))
+    rows = q.order_by(Finding.updated_at.desc()).limit(limit).all()
+    return {
+        "total": len(rows),
+        "items": [
+            {
+                "id": f.id,
+                "image": (f.resource_name or f.resource_id or ""),
+                "cve_id": f.cve_id,
+                "severity": f.severity,
+                "title": f.title,
+                "last_seen": f.updated_at.isoformat() if f.updated_at else None,
+            }
+            for f in rows
         ],
     }

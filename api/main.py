@@ -7,6 +7,7 @@ from api.bootstrap import ensure_bootstrap_admin, ensure_default_workspace
 from api.database.session import Base, SessionLocal, engine
 from api.plugin_engine import sync_plugins_to_db
 from api.routes import (
+    cluster_detail,
     agent_tokens,
     findings,
     scans,
@@ -52,6 +53,7 @@ app.add_middleware(
 )
 
 for r in [
+    cluster_detail,
     agent_tokens,
     findings,
     scans,
