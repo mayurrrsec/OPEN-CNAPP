@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { api } from '../api/client'
 import * as d3 from 'd3'
 
 export default function AttackPaths() {
-  const [graph, setGraph] = useState<{ nodes: any[], edges: any[], top_paths: any[] }>({ nodes: [], edges: [], top_paths: [] })
+  const [graph, setGraph] = useState<{
+    nodes: unknown[]
+    edges: unknown[]
+    top_paths: { path_id?: string; source: string; target: string; risk: number }[]
+  }>({ nodes: [], edges: [], top_paths: [] })
   const [selected, setSelected] = useState<any | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
 
@@ -167,15 +173,26 @@ export default function AttackPaths() {
             <tr>
               <th>Source</th>
               <th>Target</th>
-              <th>Risk</th>
+              <th>Risk / story</th>
             </tr>
           </thead>
           <tbody>
-            {(graph.top_paths || []).slice(0, 20).map((p: any, idx: number) => (
-              <tr key={idx}>
-                <td style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(p.source)}</td>
-                <td style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(p.target)}</td>
-                <td>{p.risk}</td>
+            {(graph.top_paths || []).slice(0, 20).map((p, idx) => (
+              <tr key={p.path_id ?? idx}>
+                <td style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {String(p.source)}
+                </td>
+                <td style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {String(p.target)}
+                </td>
+                <td className="whitespace-nowrap">
+                  <span className="mr-3">{Number(p.risk).toFixed(1)}</span>
+                  {p.path_id ? (
+                    <Button variant="link" className="h-auto p-0 text-sm" asChild>
+                      <Link to={`/attack-paths/${encodeURIComponent(p.path_id)}`}>Attack story</Link>
+                    </Button>
+                  ) : null}
+                </td>
               </tr>
             ))}
             {(!graph.top_paths || graph.top_paths.length === 0) && (

@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light default (Orca-like: light canvas, dark sidebar rail) */
+:root {
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 215 16% 47%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --sidebar: 222 47% 11%;
+  --sidebar-foreground: 210 20% 90%;
+  --radius: 0.5rem;
+}
+
+[data-theme='dark'] {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 9%;
+  --card-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --ring: 221 83% 53%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 222 47% 11%;
+  --destructive: 0 63% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --sidebar: 222 47% 5%;
+  --sidebar-foreground: 210 20% 90%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-background text-foreground font-sans min-h-screen;
+  }
+}
+
+/* Legacy chart / table helpers used by existing pages until migrated */
+.sev {
+  @apply font-semibold;
+}
+.sev.CRITICAL {
+  color: var(--severity-critical);
+}
+.sev.HIGH {
+  color: var(--severity-high);
+}
+.sev.MEDIUM {
+  color: var(--severity-medium);
+}
+.sev.LOW {
+  color: #2563eb;
+}
+.sev.INFO {
+  color: #64748b;
+}
+
+@layer components {
+  .page-title {
+    @apply text-2xl font-bold tracking-tight text-foreground;
+  }
+  .page-subtitle {
+    @apply mt-1 text-sm text-muted-foreground;
+  }
+
+  .card {
+    @apply rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm;
+  }
+  .card h3 {
+    @apply mb-2 text-sm font-semibold text-muted-foreground;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs text-muted-foreground;
+  }
+
+  .filters {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .filters input,
+  .filters select {
+    @apply h-9 min-w-[140px] flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm;
+  }
+  .filters button {
+    @apply inline-flex h-9 shrink-0 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90;
+  }
+
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+  .table th {
+    @apply border-b border-border px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+  }
+  .table td {
+    @apply border-b border-border/60 px-2 py-2 align-top text-foreground;
+  }
+
+  .btn-secondary {
+    @apply inline-flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm hover:bg-muted;
+  }
+
+  .metric-label {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .row {
+    @apply flex flex-wrap gap-6;
+  }
+
+  .graph-wrap {
+    @apply relative h-[520px] w-full overflow-hidden rounded-lg border border-border bg-muted/20;
+  }
+
+  .drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    justify-content: flex-end;
+    background: rgba(0, 0, 0, 0.45);
+  }
+  .drawer {
+    height: 100%;
+    width: min(560px, 92vw);
+    overflow: auto;
+    border-left: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    padding: 16px;
+  }
+}

@@ -57,6 +57,16 @@ def summary(db: Session = Depends(get_db)):
         .limit(10)
         .all()
     )
+
+    def _finding_summary(f: Finding) -> dict:
+        return {
+            "id": f.id,
+            "severity": f.severity,
+            "domain": f.domain,
+            "cloud_provider": f.cloud_provider,
+            "title": f.title,
+        }
+
     return {
         "total_findings": total,
         "open_findings": open_,
@@ -69,5 +79,5 @@ def summary(db: Session = Depends(get_db)):
         "domain_breakdown": domain_breakdown,
         "cloud_breakdown": cloud_breakdown,
         "trend": trend,
-        "top_findings": top_critical,
+        "top_findings": [_finding_summary(f) for f in top_critical],
     }

@@ -1,260 +1,360 @@
-import { useEffect, useMemo, useState } from 'react'
-import { api } from '../api/client'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+  type PaginationState,
+  type SortingState,
+} from '@tanstack/react-table'
+import { useQuery } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { SeverityBadge } from '@/components/ui/SeverityBadge'
+import { FindingDetailSheet } from '@/components/findings/FindingDetailSheet'
+import { fetchFindingById, fetchFindingsList, type FindingRow } from '@/api/findings'
+import { cn } from '@/lib/utils'
 
-type Finding = {
-  id: string
-  tool: string
-  severity: string
-  domain: string
-  cloud_provider?: string | null
-  status: string
-  title: string
-  resource_id?: string | null
-  resource_name?: string | null
-  check_id?: string | null
-  remediation?: string | null
-  description?: string | null
-  created_at?: string
-  raw?: any
-  compliance?: string[]
-  assigned_to?: string | null
-  ticket_ref?: string | null
-}
+const PAGE_SIZE = 25
+
+const SORT_FIELDS = new Set(['created_at', 'severity', 'domain', 'tool', 'status', 'cloud_provider'])
 
 export default function Findings() {
-  const [items, setItems] = useState<Finding[]>([])
-  const [total, setTotal] = useState(0)
-
   const [severity, setSeverity] = useState('')
   const [domain, setDomain] = useState('')
   const [cloud, setCloud] = useState('')
   const [status, setStatus] = useState('')
   const [tool, setTool] = useState('')
-  const [query, setQuery] = useState('')
+  const [q, setQ] = useState('')
 
-  const [sort, setSort] = useState<'created_at' | 'severity' | 'domain' | 'tool' | 'status' | 'cloud_provider'>('created_at')
-  const [order, setOrder] = useState<'desc' | 'asc'>('desc')
-  const [page, setPage] = useState(0)
-  const limit = 25
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: PAGE_SIZE })
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'created_at', desc: true }])
 
-  const [selected, setSelected] = useState<Finding | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [assignTo, setAssignTo] = useState('')
-  const [ticketRef, setTicketRef] = useState('')
-  const [newStatus, setNewStatus] = useState('')
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [detail, setDetail] = useState<FindingRow | null>(null)
 
-  const load = () => {
-    api.get('/findings', {
-      params: {
-        severity: severity || undefined,
-        domain: domain || undefined,
-        cloud_provider: cloud || undefined,
-        status: status || undefined,
-        tool: tool || undefined,
-        q: query || undefined,
-        limit,
-        offset: page * limit,
-        sort,
-        order,
-      }
-    })
-      .then(r => {
-        setItems(r.data.items || [])
-        setTotal(r.data.total || 0)
-      })
-      .catch(() => { setItems([]); setTotal(0) })
-  }
+  const sortField = sorting[0]?.id ?? 'created_at'
+  const sortOrder = sorting[0]?.desc ? 'desc' : 'asc'
+  const apiSort = SORT_FIELDS.has(sortField) ? sortField : 'created_at'
 
-  useEffect(() => { load() }, [severity, domain, cloud, status, tool, query, page, sort, order])
+  const queryParams = useMemo(
+    () => ({
+      severity: severity || undefined,
+      domain: domain || undefined,
+      cloud_provider: cloud || undefined,
+      status: status || undefined,
+      tool: tool || undefined,
+      q: q || undefined,
+      limit: pagination.pageSize,
+      offset: pagination.pageIndex * pagination.pageSize,
+      sort: apiSort,
+      order: sortOrder as 'asc' | 'desc',
+    }),
+    [
+      severity,
+      domain,
+      cloud,
+      status,
+      tool,
+      q,
+      pagination.pageIndex,
+      pagination.pageSize,
+      apiSort,
+      sortOrder,
+    ]
+  )
 
-  const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total])
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['findings', queryParams],
+    queryFn: () => fetchFindingsList(queryParams),
+  })
 
-  const openDrawer = async (id: string) => {
+  const items = data?.items ?? []
+  const total = data?.total ?? 0
+  const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize))
+
+  const openDetail = useCallback(async (id: string) => {
     try {
-      const res = await api.get(`/findings/${id}`)
-      setSelected(res.data)
-      setAssignTo(res.data.assigned_to || '')
-      setTicketRef(res.data.ticket_ref || '')
-      setNewStatus(res.data.status || '')
+      const row = await fetchFindingById(id)
+      setDetail(row)
+      setSheetOpen(true)
     } catch {
-      // ignore
+      setDetail(null)
     }
-  }
+  }, [])
 
-  const saveLifecycle = async () => {
-    if (!selected) return
-    setSaving(true)
-    try {
-      await api.patch(`/findings/${selected.id}`, null, {
-        params: {
-          status: newStatus || undefined,
-          assigned_to: assignTo,
-          ticket_ref: ticketRef,
-        }
-      })
-      await openDrawer(selected.id)
-      load()
-    } finally {
-      setSaving(false)
-    }
-  }
+  const columns = useMemo<ColumnDef<FindingRow>[]>(
+    () => [
+      {
+        accessorKey: 'severity',
+        header: 'Severity',
+        enableSorting: true,
+        cell: ({ row }) => <SeverityBadge severity={row.original.severity} />,
+      },
+      {
+        accessorKey: 'domain',
+        header: 'Domain',
+        enableSorting: true,
+      },
+      {
+        accessorKey: 'tool',
+        header: 'Tool',
+        enableSorting: true,
+      },
+      {
+        accessorKey: 'cloud_provider',
+        header: 'Cloud',
+        enableSorting: true,
+        cell: ({ getValue }) => (getValue() as string | null | undefined) ?? '—',
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        enableSorting: true,
+      },
+      {
+        accessorKey: 'title',
+        header: 'Title',
+        enableSorting: false,
+        cell: ({ getValue }) => (
+          <span className="line-clamp-2 max-w-md">{String(getValue() ?? '')}</span>
+        ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created',
+        enableSorting: true,
+        cell: ({ getValue }) => {
+          const v = getValue() as string | undefined
+          if (!v) return '—'
+          try {
+            return new Date(v).toLocaleString()
+          } catch {
+            return v
+          }
+        },
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <Button type="button" variant="outline" size="sm" onClick={() => void openDetail(row.original.id)}>
+            View
+          </Button>
+        ),
+      },
+    ],
+    [openDetail]
+  )
+
+  const table = useReactTable({
+    data: items,
+    columns,
+    pageCount,
+    state: { pagination, sorting },
+    manualPagination: true,
+    manualSorting: true,
+    onPaginationChange: setPagination,
+    onSortingChange: (updater) => {
+      setSorting(updater)
+      setPagination((p) => ({ ...p, pageIndex: 0 }))
+    },
+    getCoreRowModel: getCoreRowModel(),
+  })
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="page-title">Findings Explorer</h1>
-          <p className="page-subtitle">Filter, triage, assign, and track findings to closure.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Findings Explorer</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Filter, triage, assign, and track findings to closure.
+          </p>
         </div>
-        <div className="pill">Total: <strong>{total}</strong></div>
-      </div>
-
-      <div className="card" style={{ marginTop: 12 }}>
-        <div className="filters">
-          <select value={severity} onChange={(e) => { setPage(0); setSeverity(e.target.value) }}>
-            <option value=''>Severity: All</option>
-            <option value='CRITICAL'>CRITICAL</option>
-            <option value='HIGH'>HIGH</option>
-            <option value='MEDIUM'>MEDIUM</option>
-            <option value='LOW'>LOW</option>
-            <option value='INFO'>INFO</option>
-          </select>
-          <input value={domain} onChange={(e) => { setPage(0); setDomain(e.target.value) }} placeholder='Domain (cspm, kspm, iac...)' />
-          <input value={tool} onChange={(e) => { setPage(0); setTool(e.target.value) }} placeholder='Tool (prowler, trivy...)' />
-          <input value={cloud} onChange={(e) => { setPage(0); setCloud(e.target.value) }} placeholder='Cloud (azure, aws...)' />
-          <select value={status} onChange={(e) => { setPage(0); setStatus(e.target.value) }}>
-            <option value=''>Status: All</option>
-            <option value='open'>open</option>
-            <option value='assigned'>assigned</option>
-            <option value='accepted_risk'>accepted_risk</option>
-            <option value='false_positive'>false_positive</option>
-            <option value='fixed'>fixed</option>
-            <option value='reopened'>reopened</option>
-          </select>
-          <input value={query} onChange={(e) => { setPage(0); setQuery(e.target.value) }} placeholder='Search title/resource/check...' style={{ minWidth: 280, flex: 1 }} />
-          <select value={sort} onChange={(e) => setSort(e.target.value as any)}>
-            <option value='created_at'>Sort: Created</option>
-            <option value='severity'>Sort: Severity</option>
-            <option value='domain'>Sort: Domain</option>
-            <option value='tool'>Sort: Tool</option>
-            <option value='status'>Sort: Status</option>
-            <option value='cloud_provider'>Sort: Cloud</option>
-          </select>
-          <select value={order} onChange={(e) => setOrder(e.target.value as any)}>
-            <option value='desc'>Order: Desc</option>
-            <option value='asc'>Order: Asc</option>
-          </select>
-          <button onClick={() => load()}>Refresh</button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
+            Total: <strong className="ml-1 text-foreground">{total}</strong>
+          </span>
+          <Button type="button" variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
+            <RefreshCw className={cn('mr-1 h-4 w-4', isFetching && 'animate-spin')} />
+            Refresh
+          </Button>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 12 }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Severity</th>
-              <th>Domain</th>
-              <th>Tool</th>
-              <th>Cloud</th>
-              <th>Status</th>
-              <th>Title</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((f) => (
-              <tr key={f.id}>
-                <td><span className={`sev ${String(f.severity || '').toUpperCase()}`}>{String(f.severity || '-').toUpperCase()}</span></td>
-                <td>{f.domain}</td>
-                <td>{f.tool}</td>
-                <td>{f.cloud_provider || '-'}</td>
-                <td>{f.status}</td>
-                <td style={{ maxWidth: 520, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.title}</td>
-                <td><button className="btn-secondary" onClick={() => openDrawer(f.id)}>View</button></td>
-              </tr>
-            ))}
-            {items.length === 0 && (
-              <tr><td colSpan={7} style={{ color: 'var(--muted)' }}>No results. Try widening filters or ingest findings.</td></tr>
-            )}
-          </tbody>
-        </table>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, gap: 10, flexWrap: 'wrap' }}>
-          <div className="pill">Page <strong>{page + 1}</strong> / <strong>{pageCount}</strong></div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn-secondary" disabled={page <= 0} onClick={() => setPage(p => Math.max(0, p - 1))}>Prev</button>
-            <button className="btn-secondary" disabled={(page + 1) >= pageCount} onClick={() => setPage(p => p + 1)}>Next</button>
+      <Card>
+        <CardContent className="p-4 pt-6">
+          <div className="flex flex-wrap items-end gap-2">
+            <select
+              value={severity}
+              onChange={(e) => {
+                setPagination((p) => ({ ...p, pageIndex: 0 }))
+                setSeverity(e.target.value)
+              }}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="">Severity: All</option>
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+              <option value="INFO">INFO</option>
+            </select>
+            <Input
+              value={domain}
+              onChange={(e) => {
+                setPagination((p) => ({ ...p, pageIndex: 0 }))
+                setDomain(e.target.value)
+              }}
+              placeholder="Domain (cspm, kspm…)"
+              className="h-9 max-w-[160px]"
+            />
+            <Input
+              value={tool}
+              onChange={(e) => {
+                setPagination((p) => ({ ...p, pageIndex: 0 }))
+                setTool(e.target.value)
+              }}
+              placeholder="Tool"
+              className="h-9 max-w-[140px]"
+            />
+            <Input
+              value={cloud}
+              onChange={(e) => {
+                setPagination((p) => ({ ...p, pageIndex: 0 }))
+                setCloud(e.target.value)
+              }}
+              placeholder="Cloud"
+              className="h-9 max-w-[120px]"
+            />
+            <select
+              value={status}
+              onChange={(e) => {
+                setPagination((p) => ({ ...p, pageIndex: 0 }))
+                setStatus(e.target.value)
+              }}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="">Status: All</option>
+              <option value="open">open</option>
+              <option value="assigned">assigned</option>
+              <option value="accepted_risk">accepted_risk</option>
+              <option value="false_positive">false_positive</option>
+              <option value="fixed">fixed</option>
+              <option value="reopened">reopened</option>
+            </select>
+            <Input
+              value={q}
+              onChange={(e) => {
+                setPagination((p) => ({ ...p, pageIndex: 0 }))
+                setQ(e.target.value)
+              }}
+              placeholder="Search title / resource / check…"
+              className="h-9 min-w-[200px] flex-1"
+            />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {selected && (
-        <div className="drawer-backdrop" onClick={() => setSelected(null)}>
-          <div className="drawer" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <div>
-                <div className="pill">ID: <strong>{selected.id}</strong></div>
-              </div>
-              <button className="btn-secondary" onClick={() => setSelected(null)}>Close</button>
-            </div>
-            <h2 style={{ marginTop: 10 }}>{selected.title}</h2>
-            <div className="row">
-              <div><div className="metric-label">Severity</div><div className={`sev ${String(selected.severity || '').toUpperCase()}`}>{String(selected.severity || '').toUpperCase()}</div></div>
-              <div><div className="metric-label">Domain</div><div>{selected.domain}</div></div>
-              <div><div className="metric-label">Tool</div><div>{selected.tool}</div></div>
-              <div><div className="metric-label">Cloud</div><div>{selected.cloud_provider || '-'}</div></div>
-              <div><div className="metric-label">Status</div><div>{selected.status}</div></div>
-            </div>
-
-            <div className="card" style={{ marginTop: 12 }}>
-              <h3>Lifecycle</h3>
-              <div className="filters">
-                <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-                  <option value='open'>open</option>
-                  <option value='assigned'>assigned</option>
-                  <option value='accepted_risk'>accepted_risk</option>
-                  <option value='false_positive'>false_positive</option>
-                  <option value='fixed'>fixed</option>
-                  <option value='reopened'>reopened</option>
-                </select>
-                <input value={assignTo} onChange={(e) => setAssignTo(e.target.value)} placeholder='Assignee' />
-                <input value={ticketRef} onChange={(e) => setTicketRef(e.target.value)} placeholder='Ticket URL / ref' style={{ minWidth: 220, flex: 1 }} />
-                <button onClick={saveLifecycle} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
-              </div>
-            </div>
-
-            {(selected.resource_id || selected.resource_name || selected.check_id) && (
-              <div className="card" style={{ marginTop: 12 }}>
-                <h3>Context</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <div><div className="metric-label">Resource ID</div><div style={{ wordBreak: 'break-word' }}>{selected.resource_id || '-'}</div></div>
-                  <div><div className="metric-label">Resource name</div><div style={{ wordBreak: 'break-word' }}>{selected.resource_name || '-'}</div></div>
-                  <div><div className="metric-label">Check ID</div><div style={{ wordBreak: 'break-word' }}>{selected.check_id || '-'}</div></div>
-                  <div><div className="metric-label">Compliance</div><div style={{ wordBreak: 'break-word' }}>{(selected.compliance || []).join(', ') || '-'}</div></div>
-                </div>
-              </div>
-            )}
-
-            {(selected.description || selected.remediation) && (
-              <div className="card" style={{ marginTop: 12 }}>
-                <h3>Details</h3>
-                {selected.description && <div style={{ color: 'var(--muted)', whiteSpace: 'pre-wrap' }}>{selected.description}</div>}
-                {selected.remediation && (
-                  <div style={{ marginTop: 10 }}>
-                    <div className="metric-label">Remediation</div>
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{selected.remediation}</div>
-                  </div>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                {table.getHeaderGroups().map((hg) => (
+                  <tr key={hg.id} className="border-b border-border">
+                    {hg.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                      >
+                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 hover:text-foreground"
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {{
+                              asc: ' ↑',
+                              desc: ' ↓',
+                            }[header.column.getIsSorted() as string] ?? ''}
+                          </button>
+                        ) : (
+                          flexRender(header.column.columnDef.header, header.getContext())
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={columns.length} className="px-3 py-8 text-center text-muted-foreground">
+                      Loading…
+                    </td>
+                  </tr>
+                ) : table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="px-3 py-8 text-center text-muted-foreground">
+                      No results. Try widening filters or ingest findings.
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <tr key={row.id} className="border-b border-border/70 hover:bg-muted/40">
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="px-3 py-2 align-middle">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
                 )}
-              </div>
-            )}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="card" style={{ marginTop: 12 }}>
-              <h3>Raw</h3>
-              <pre style={{ maxHeight: 340, overflow: 'auto' }}>{JSON.stringify(selected.raw || {}, null, 2)}</pre>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-3 py-3">
+            <p className="text-xs text-muted-foreground">
+              Page <strong>{pagination.pageIndex + 1}</strong> of <strong>{pageCount}</strong>
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pagination.pageIndex <= 0}
+                onClick={() => setPagination((p) => ({ ...p, pageIndex: Math.max(0, p.pageIndex - 1) }))}
+              >
+                Prev
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pagination.pageIndex + 1 >= pageCount}
+                onClick={() => setPagination((p) => ({ ...p, pageIndex: p.pageIndex + 1 }))}
+              >
+                Next
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
+
+      <FindingDetailSheet
+        finding={detail}
+        open={sheetOpen}
+        onOpenChange={(o) => {
+          setSheetOpen(o)
+          if (!o) setDetail(null)
+        }}
+        onSaved={() => void refetch()}
+      />
     </div>
   )
 }

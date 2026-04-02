@@ -1,61 +1,43 @@
-import { NavLink, Route, Routes } from 'react-router-dom'
-import Overview from './pages/Overview'
-import Findings from './pages/Findings'
-import AttackPaths from './pages/AttackPaths'
-import PentestRunner from './pages/PentestRunner'
-import PluginManager from './pages/PluginManager'
-import Connectors from './pages/Connectors'
-import Alerts from './pages/Alerts'
-import Compliance from './pages/Compliance'
-
-type NavItem = { label: string; to: string }
-const nav: NavItem[] = [
-  { label: 'Overview', to: '/' },
-  { label: 'Findings', to: '/findings' },
-  { label: 'Attack Paths', to: '/attackpaths' },
-  { label: 'Pentest Runner', to: '/pentestrunner' },
-  { label: 'Plugin Manager', to: '/pluginmanager' },
-  { label: 'Connectors', to: '/connectors' },
-  { label: 'Alerts', to: '/alerts' },
-  { label: 'Compliance', to: '/compliance' },
-]
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { CommandPalette } from '@/components/CommandPalette'
+import { AppShell } from '@/layout/AppShell'
+import UnifiedDashboard from '@/pages/UnifiedDashboard'
+import DomainDashboard from '@/pages/DomainDashboard'
+import Findings from '@/pages/Findings'
+import AttackPaths from '@/pages/AttackPaths'
+import PentestRunner from '@/pages/PentestRunner'
+import PluginManager from '@/pages/PluginManager'
+import Connectors from '@/pages/Connectors'
+import Alerts from '@/pages/Alerts'
+import Compliance from '@/pages/Compliance'
+import Inventory from '@/pages/Inventory'
+import Settings from '@/pages/Settings'
 
 export default function App() {
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-badge" />
-          <div>
-            <div className="brand-title">OpenCNAPP</div>
-            <div className="brand-sub">Local-first · Multi-cloud · Pluggable</div>
-          </div>
-        </div>
-        <nav className="nav">
-          {nav.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.to === '/'}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              {n.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-      <main className="content">
-        <Routes>
-          <Route path='/' element={<Overview />} />
-          <Route path='/findings' element={<Findings />} />
-          <Route path='/attackpaths' element={<AttackPaths />} />
-          <Route path='/pentestrunner' element={<PentestRunner />} />
-          <Route path='/pluginmanager' element={<PluginManager />} />
-          <Route path='/connectors' element={<Connectors />} />
-          <Route path='/alerts' element={<Alerts />} />
-          <Route path='/compliance' element={<Compliance />} />
-        </Routes>
-      </main>
-    </div>
+    <>
+      <CommandPalette />
+      <AppShell>
+      <Routes>
+        <Route path="/" element={<UnifiedDashboard />} />
+        <Route path="/dashboard/:domain" element={<DomainDashboard />} />
+        <Route path="/findings" element={<Findings />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/attack-paths" element={<AttackPaths />} />
+        <Route path="/attack-paths/:pathId" element={<AttackPathDetail />} />
+        <Route path="/pentest" element={<PentestRunner />} />
+        <Route path="/plugins" element={<PluginManager />} />
+        <Route path="/connectors" element={<Connectors />} />
+        <Route path="/alerts" element={<Alerts />} />
+        <Route path="/compliance" element={<Compliance />} />
+        <Route path="/settings" element={<Settings />} />
+
+        <Route path="/attackpaths" element={<Navigate to="/attack-paths" replace />} />
+        <Route path="/pentestrunner" element={<Navigate to="/pentest" replace />} />
+        <Route path="/pluginmanager" element={<Navigate to="/plugins" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      </AppShell>
+    </>
   )
 }
