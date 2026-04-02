@@ -18,9 +18,9 @@ def ensure_bootstrap_admin(db: Session) -> None:
     legacy = os.getenv("OPENCNAPP_ADMIN_USER", "").strip()
 
     if not email and legacy:
-        email = f"{legacy}@localhost".lower()
+        email = f"{legacy}@example.com".lower()
     if not email:
-        email = "admin@localhost"
+        email = "admin@example.com"
     if not password:
         password = "admin"
 

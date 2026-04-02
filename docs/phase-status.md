@@ -1,5 +1,5 @@
 # OpenCNAPP phase status
 
-All roadmap phases (1-6) are now marked complete at implementation baseline level.
+Roadmap phases (1–6) are tracked at a high level in `docs/roadmap-gap-analysis.md`.
 
-See `docs/roadmap-gap-analysis.md` for consolidated status totals.
+For **what is actually implemented in the codebase** (connectors, inventory, dashboard slices, known gaps), use **`docs/IMPLEMENTATION_STATUS.md`** — it is updated when features land.

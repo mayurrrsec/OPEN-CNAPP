@@ -14,7 +14,7 @@ stringData:
   DATABASE_URL: postgresql+psycopg2://opencnapp:CHANGE@postgres:5432/opencnapp
   REDIS_URL: redis://redis:6379/0
   SECRET_KEY: CHANGE-me-in-production
-  OPENCNAPP_ADMIN_EMAIL: admin@localhost
+  OPENCNAPP_ADMIN_EMAIL: admin@example.com
   OPENCNAPP_ADMIN_PASSWORD: changeme
   OPENCNAPP_DASHBOARD_URL: https://dashboard.example.com
   OPENCNAPP_API_PUBLIC_URL: https://api.example.com
