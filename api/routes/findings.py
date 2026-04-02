@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from api.auth import get_current_user
 from api.database.session import get_db
 from api.models import Finding
 from api.schemas import FindingCreate
 
-router = APIRouter(prefix="/findings", tags=["findings"])
+router = APIRouter(prefix="/findings", tags=["findings"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("")

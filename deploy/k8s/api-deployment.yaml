@@ -1,0 +1,77 @@
+# Minimal API deployment — tune resources, probes, and secrets for your cluster.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opencnapp
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: opencnapp-api
+  namespace: opencnapp
+type: Opaque
+stringData:
+  DATABASE_URL: postgresql+psycopg2://opencnapp:CHANGE@postgres:5432/opencnapp
+  REDIS_URL: redis://redis:6379/0
+  SECRET_KEY: CHANGE-me-in-production
+  OPENCNAPP_ADMIN_EMAIL: admin@localhost
+  OPENCNAPP_ADMIN_PASSWORD: changeme
+  OPENCNAPP_DASHBOARD_URL: https://dashboard.example.com
+  OPENCNAPP_API_PUBLIC_URL: https://api.example.com
+  OIDC_REDIRECT_URI: https://api.example.com/auth/oidc/callback
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencnapp-api
+  namespace: opencnapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opencnapp-api
+  template:
+    metadata:
+      labels:
+        app: opencnapp-api
+    spec:
+      containers:
+        - name: api
+          image: opencnapp-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: opencnapp-api
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opencnapp-api
+  namespace: opencnapp
+spec:
+  selector:
+    app: opencnapp-api
+  ports:
+    - port: 8000
+      targetPort: 8000

@@ -3,9 +3,27 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.bootstrap import ensure_bootstrap_admin
 from api.database.session import Base, SessionLocal, engine
 from api.plugin_engine import sync_plugins_to_db
-from api.routes import findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths, native_ingest, alerts
+from api.routes import (
+    findings,
+    scans,
+    ingest,
+    webhooks,
+    plugins,
+    connectors,
+    dashboard,
+    compliance,
+    reports,
+    auth,
+    attack_paths,
+    native_ingest,
+    alerts,
+    admin_users,
+    search,
+    inventory_api,
+)
 from api.websocket import manager
 from api.workers.scheduler import start_scheduler
 
@@ -15,6 +33,7 @@ async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
+        ensure_bootstrap_admin(db)
         sync_plugins_to_db(db)
     finally:
         db.close()
@@ -30,7 +49,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in [findings, scans, ingest, webhooks, plugins, connectors, dashboard, compliance, reports, auth, attack_paths, native_ingest, alerts]:
+for r in [
+    findings,
+    scans,
+    ingest,
+    webhooks,
+    plugins,
+    connectors,
+    dashboard,
+    compliance,
+    reports,
+    auth,
+    attack_paths,
+    native_ingest,
+    alerts,
+    admin_users,
+    search,
+    inventory_api,
+]:
     app.include_router(r.router)
 
 

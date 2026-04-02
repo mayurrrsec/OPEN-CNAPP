@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { RefreshCw, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatCard } from '@/components/ui/StatCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SeverityBadge } from '@/components/ui/SeverityBadge'
@@ -11,6 +11,11 @@ import { fetchDashboardSummary } from '@/api/dashboard'
 import SeverityDonut from '@/components/charts/SeverityDonut'
 import TrendLine from '@/components/charts/TrendLine'
 import DomainBar from '@/components/charts/DomainBar'
+import { RiskScoreGauge } from '@/components/dashboard/RiskScoreGauge'
+import { FindingsByCloudTable } from '@/components/dashboard/FindingsByCloudTable'
+import { LifecycleStrip } from '@/components/dashboard/LifecycleStrip'
+import { AttackPathSummaryCard } from '@/components/dashboard/AttackPathSummaryCard'
+import { ComplianceOverviewMini } from '@/components/dashboard/ComplianceOverviewMini'
 import { cn } from '@/lib/utils'
 
 const DASH_TABS = [
@@ -25,8 +30,8 @@ export default function UnifiedDashboard() {
   const navigate = useNavigate()
   const location = useLocation()
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['dashboard', 'summary'],
-    queryFn: fetchDashboardSummary,
+    queryKey: ['dashboard', 'summary', 'unified'],
+    queryFn: () => fetchDashboardSummary(),
   })
 
   const summary = data ?? {
@@ -35,9 +40,14 @@ export default function UnifiedDashboard() {
     domain_breakdown: [],
     cloud_breakdown: [],
     top_findings: [],
+    findings_by_cloud: [],
+    lifecycle_by_status: {},
+    compliance_overview: [],
+    attack_path_summary: { high_impact: 0, medium_impact: 0, low_impact: 0, edge_count: 0 },
   }
 
   const score = Number(summary.secure_score ?? 0)
+  const posture = summary.risk_posture
   const scoreBadge =
     score >= 80 ? (
       <Badge variant="success">Good</Badge>
@@ -68,6 +78,12 @@ export default function UnifiedDashboard() {
 
   const clouds = summary.cloud_breakdown?.length ?? 0
   const domains = summary.domain_breakdown?.length ?? 0
+  const ap = summary.attack_path_summary ?? {
+    high_impact: 0,
+    medium_impact: 0,
+    low_impact: 0,
+    edge_count: 0,
+  }
 
   return (
     <div className="space-y-6">
@@ -91,11 +107,11 @@ export default function UnifiedDashboard() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Posture overview</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Risk score, trends, and top issues across CSPM, KSPM, CWPP, and CIEM.
+            Risk score, trends, and top issues across CSPM, KSPM, CWPP, and CIEM (roadmap widget grid v1).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -117,37 +133,77 @@ export default function UnifiedDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Total findings"
-          value={summary.total_findings ?? '—'}
-          hint="All sources"
-          badge={<Badge variant="secondary">Open: {summary.open_findings ?? '—'}</Badge>}
-        />
-        <StatCard
-          label="Critical"
-          value={summary.critical ?? '—'}
-          hint="Immediate action"
-          accent="critical"
-          badge={<Badge variant="destructive">Top priority</Badge>}
-        />
-        <StatCard
-          label="High"
-          value={summary.high ?? '—'}
-          hint="Fix next"
-          accent="high"
-          badge={<Badge variant="warning">Elevated</Badge>}
-        />
-        <StatCard
-          label="Coverage"
-          value={clouds > 0 ? clouds : '—'}
-          hint="Clouds detected"
-          badge={<Badge variant="secondary">Domains: {domains > 0 ? domains : '—'}</Badge>}
-        />
+      {/* Row 1 — stats + gauge (roadmap: stats strip + risk gauge) */}
+      <div className="grid gap-4 lg:grid-cols-6">
+        <div className="lg:col-span-2">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Risk score</CardTitle>
+              <CardDescription>{posture?.label ?? '—'} · Δ week: {posture?.delta_week ?? 0}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RiskScoreGauge score={score} label={posture?.label ?? '—'} />
+            </CardContent>
+          </Card>
+        </div>
+        <div className="lg:col-span-4 grid gap-4 sm:grid-cols-2">
+          <StatCard
+            label="Total findings"
+            value={summary.total_findings ?? '—'}
+            hint="All sources"
+            badge={<Badge variant="secondary">Open: {summary.open_findings ?? '—'}</Badge>}
+            onClick={() => navigate('/findings')}
+          />
+          <StatCard
+            label="Critical"
+            value={summary.critical ?? '—'}
+            hint="Immediate action"
+            accent="critical"
+            badge={<Badge variant="destructive">Top priority</Badge>}
+            onClick={() => navigate('/findings?severity=CRITICAL')}
+          />
+          <StatCard
+            label="High"
+            value={summary.high ?? '—'}
+            hint="Fix next"
+            accent="high"
+            badge={<Badge variant="warning">Elevated</Badge>}
+            onClick={() => navigate('/findings?severity=HIGH')}
+          />
+          <StatCard
+            label="Coverage"
+            value={clouds > 0 ? clouds : '—'}
+            hint="Clouds detected"
+            badge={<Badge variant="secondary">Domains: {domains > 0 ? domains : '—'}</Badge>}
+            onClick={() => navigate('/connectors')}
+          />
+        </div>
       </div>
 
+      {/* Row 2 — lifecycle + attack path summary */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
+          <CardHeader>
+            <CardTitle>Remediation / lifecycle</CardTitle>
+            <CardDescription>Open → fixed distribution (from finding status).</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LifecycleStrip lifecycle={summary.lifecycle_by_status ?? {}} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Attack path summary</CardTitle>
+            <CardDescription>Impact tiers from graph edges (same model as Attack Paths page).</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AttackPathSummaryCard summary={ap} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Severity distribution</CardTitle>
           </CardHeader>
@@ -167,6 +223,18 @@ export default function UnifiedDashboard() {
 
         <Card>
           <CardHeader>
+            <CardTitle>Compliance (frameworks)</CardTitle>
+            <CardDescription>Mapped findings per framework prefix.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ComplianceOverviewMini rows={summary.compliance_overview ?? []} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
             <CardTitle>Findings by domain</CardTitle>
           </CardHeader>
           <CardContent>
@@ -179,6 +247,16 @@ export default function UnifiedDashboard() {
                 description="Once findings include a domain tag, this chart will summarize volume by domain."
               />
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Findings by cloud</CardTitle>
+            <CardDescription>Counts by provider with severity columns (C/H/M/L+I).</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FindingsByCloudTable rows={summary.findings_by_cloud ?? []} />
           </CardContent>
         </Card>
       </div>

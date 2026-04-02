@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from api.auth import get_current_user
 from api.connectors.aws import AwsConnector
 from api.connectors.azure import AzureConnector
 from api.connectors.gcp import GcpConnector
@@ -13,7 +14,7 @@ from api.crypto import encrypt
 from api.database.session import get_db
 from api.models import Connector
 
-router = APIRouter(prefix="/connectors", tags=["connectors"])
+router = APIRouter(prefix="/connectors", tags=["connectors"], dependencies=[Depends(get_current_user)])
 
 CONNECTOR_IMPLS = {
     "azure": AzureConnector,

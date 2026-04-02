@@ -5,10 +5,11 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
+from api.auth import get_current_user
 from api.database.session import get_db
 from api.models import Finding
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(prefix="/reports", tags=["reports"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/csv")
