@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from api.auth import create_access_token, get_current_user
 from api.database.session import get_db
 from api.models import User
+from api.tenant import resolve_tenant_id
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -26,11 +27,16 @@ class LoginInput(BaseModel):
     password: str = Field(min_length=1)
 
 
+def _tenant_id() -> str:
+    return (os.getenv("OPENCNAPP_TENANT_ID", "default") or "default").strip() or "default"
+
+
 class MeOut(BaseModel):
     id: str
     email: str
     role: str
     auth_provider: str
+    tenant_id: str
 
 
 def _issuer_base() -> str | None:
@@ -63,7 +69,7 @@ def _oidc_admin_emails() -> set[str]:
 
 
 @router.get("/config")
-def auth_config():
+def auth_config(db: Session = Depends(get_db)):
     issuer = _issuer_base()
     client_id = os.getenv("OIDC_CLIENT_ID", "").strip()
     oidc_ready = bool(issuer and client_id)
@@ -72,6 +78,7 @@ def auth_config():
         "oidc_enabled": oidc_ready,
         "oidc_login_url": f"{api_public}/auth/oidc/login" if oidc_ready else None,
         "password_login_enabled": True,
+        "tenant_id": resolve_tenant_id(db),
     }
 
 
@@ -90,12 +97,13 @@ def login(payload: LoginInput, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=MeOut)
-def me(user: User = Depends(get_current_user)):
+def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return MeOut(
         id=user.id,
         email=user.email,
         role=user.role,
         auth_provider=user.auth_provider,
+        tenant_id=resolve_tenant_id(db),
     )
 
 

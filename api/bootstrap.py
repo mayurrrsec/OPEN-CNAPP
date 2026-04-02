@@ -1,9 +1,10 @@
 import os
+import uuid
 
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from api.models import User
+from api.models import User, Workspace
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -32,4 +33,12 @@ def ensure_bootstrap_admin(db: Session) -> None:
         is_active=True,
     )
     db.add(user)
+    db.commit()
+
+
+def ensure_default_workspace(db: Session) -> None:
+    """Create the default workspace with a UUID tenant id when none exist."""
+    if db.query(Workspace).count() > 0:
+        return
+    db.add(Workspace(id=str(uuid.uuid4()), name="Default workspace"))
     db.commit()

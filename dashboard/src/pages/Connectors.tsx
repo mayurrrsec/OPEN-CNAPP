@@ -1,10 +1,13 @@
-import { useState, type ComponentProps } from 'react'
+import { useEffect, useState, type ComponentProps } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { Cloud, MoreHorizontal, Plug, Plus, RefreshCw } from 'lucide-react'
 import { api } from '@/api/client'
 import { AddCloudWizard } from '@/components/connectors/AddCloudWizard'
-import { AddClusterWizard } from '@/components/connectors/AddClusterWizard'
+import {
+  AddClusterWizard,
+  type SavedClusterConnectorDetail,
+} from '@/components/connectors/AddClusterWizard'
 import { AddRegistryModal } from '@/components/connectors/AddRegistryModal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +30,7 @@ import {
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { useSearchParams } from 'react-router-dom'
 
 type ConnectorRow = {
   id: string
@@ -59,6 +63,7 @@ function isCloudType(t: string | null | undefined) {
 }
 
 export default function Connectors() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const qc = useQueryClient()
   const [cloudOpen, setCloudOpen] = useState(false)
   const [clusterOpen, setClusterOpen] = useState(false)
@@ -71,10 +76,22 @@ export default function Connectors() {
   const [renameTarget, setRenameTarget] = useState<ConnectorRow | null>(null)
   const [renameValue, setRenameValue] = useState('')
 
+  const [savedClusterOpen, setSavedClusterOpen] = useState(false)
+  const [savedClusterDetail, setSavedClusterDetail] = useState<SavedClusterConnectorDetail | null>(null)
+
   const { data: connectors = [], isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['connectors'],
     queryFn: () => api.get<ConnectorRow[]>('/connectors').then((r) => r.data),
   })
+
+  useEffect(() => {
+    if (searchParams.get('addCluster') !== '1') return
+    setEditClusterInitial(null)
+    setClusterOpen(true)
+    const next = new URLSearchParams(searchParams)
+    next.delete('addCluster')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams])
 
   const patchMut = useMutation({
     mutationFn: async ({ name, enabled }: { name: string; enabled: boolean }) => {
@@ -343,9 +360,97 @@ export default function Connectors() {
           setClusterOpen(v)
           if (!v) setEditClusterInitial(null)
         }}
-        onSaved={() => void qc.invalidateQueries({ queryKey: ['connectors'] })}
+        onSaved={(detail) => {
+          void qc.invalidateQueries({ queryKey: ['connectors'] })
+          if (detail) {
+            setSavedClusterDetail(detail)
+            setSavedClusterOpen(true)
+          }
+        }}
         initial={editClusterInitial}
       />
+
+      <Dialog
+        open={savedClusterOpen}
+        onOpenChange={(v) => {
+          setSavedClusterOpen(v)
+          if (!v) setSavedClusterDetail(null)
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Connector saved</DialogTitle>
+            <DialogDescription>
+              Configuration stored in OpenCNAPP. Use <strong>Edit…</strong> on the card to change it later.
+            </DialogDescription>
+          </DialogHeader>
+          {savedClusterDetail ? (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Display name</span>
+                  <span className="font-medium text-right">{savedClusterDetail.display_name}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Connector ID</span>
+                  <span className="font-mono text-xs text-right break-all">{savedClusterDetail.name}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Workload</span>
+                  <span className="font-medium">
+                    {savedClusterDetail.target === 'kubernetes' ? 'Kubernetes' : 'VM / bare metal'}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Cluster / group name</span>
+                  <span className="font-mono text-xs text-right">{savedClusterDetail.cluster_name}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Workspace tenant id</span>
+                  <span className="font-mono text-[11px] text-right break-all max-w-[14rem]">
+                    {savedClusterDetail.tenant_id}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Join token</span>
+                  <span className="font-medium">{savedClusterDetail.has_join_token ? 'Saved' : 'Not set'}</span>
+                </div>
+              </div>
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Capabilities</p>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Runtime visibility</span>
+                  <span>{savedClusterDetail.enable_runtime ? 'On' : 'Off'}</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">Misconfiguration scans</span>
+                  <span>{savedClusterDetail.enable_misconfig ? 'On' : 'Off'}</span>
+                </div>
+              </div>
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">KSPM scanners</p>
+                <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                  {savedClusterDetail.kspm.kubescape ? <li>Kubescape</li> : null}
+                  {savedClusterDetail.kspm.kube_bench ? <li>kube-bench (CIS)</li> : null}
+                  {savedClusterDetail.kspm.kube_hunter ? <li>kube-hunter</li> : null}
+                  {savedClusterDetail.kspm.polaris ? <li>Polaris</li> : null}
+                  {!savedClusterDetail.kspm.kubescape &&
+                  !savedClusterDetail.kspm.kube_bench &&
+                  !savedClusterDetail.kspm.kube_hunter &&
+                  !savedClusterDetail.kspm.polaris ? (
+                    <li className="list-none pl-0 text-muted-foreground/80">None selected</li>
+                  ) : null}
+                </ul>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" onClick={() => setSavedClusterOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AddRegistryModal
         open={registryOpen}

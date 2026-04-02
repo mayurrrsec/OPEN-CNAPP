@@ -16,12 +16,14 @@ export type AuthUser = {
   email: string
   role: string
   auth_provider: string
+  tenant_id?: string
 }
 
 type AuthConfig = {
   oidc_enabled: boolean
   oidc_login_url: string | null
   password_login_enabled: boolean
+  tenant_id?: string
 }
 
 type AuthContextValue = {
