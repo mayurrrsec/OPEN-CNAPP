@@ -31,6 +31,13 @@ export type AddClusterWizardProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSaved: () => void
+  /** Prefill from GET /connectors/{name} (settings + display; secrets not returned). */
+  initial?: {
+    name: string
+    display_name: string
+    connector_type: string
+    settings: Record<string, unknown>
+  } | null
 }
 
 function slugify(raw: string) {
@@ -41,7 +48,7 @@ function slugify(raw: string) {
     .replace(/[^a-z0-9_-]/g, '')
 }
 
-export function AddClusterWizard({ open, onOpenChange, onSaved }: AddClusterWizardProps) {
+export function AddClusterWizard({ open, onOpenChange, onSaved, initial }: AddClusterWizardProps) {
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -66,9 +73,22 @@ export function AddClusterWizard({ open, onOpenChange, onSaved }: AddClusterWiza
   const enableMisconfig = form.watch('enable_misconfig')
 
   useEffect(() => {
-    if (open) {
-      setStep(1)
-      setErr(null)
+    if (!open) return
+    setStep(1)
+    setErr(null)
+    if (initial) {
+      const s = initial.settings || {}
+      const target = (s.target as 'kubernetes' | 'vm') || 'kubernetes'
+      form.reset({
+        target,
+        cluster_name: String(s.cluster_name || 'prod-cluster'),
+        connector_id: initial.name,
+        display_name: initial.display_name,
+        token: '',
+        enable_runtime: s.enable_runtime !== false,
+        enable_misconfig: s.enable_misconfig !== false,
+      })
+    } else {
       form.reset({
         target: 'kubernetes',
         cluster_name: 'prod-cluster',
@@ -79,7 +99,7 @@ export function AddClusterWizard({ open, onOpenChange, onSaved }: AddClusterWiza
         enable_misconfig: true,
       })
     }
-  }, [open, form.reset])
+  }, [open, initial?.name, form.reset])
 
   const helmSnippet = useMemo(() => {
     const tenant = 'YOUR_TENANT'
@@ -142,17 +162,8 @@ export function AddClusterWizard({ open, onOpenChange, onSaved }: AddClusterWiza
         <DialogHeader>
           <DialogTitle>Add cluster / workload</DialogTitle>
           <DialogDescription>
-            Choose Kubernetes or VM-style onboarding. The command is generated locally for you to run in your environment (
-            similar in spirit to{' '}
-            <a
-              className="text-primary underline"
-              href="https://help.accuknox.com/how-to/cluster-misconfig-scan-onboarding/?h=cluster"
-              target="_blank"
-              rel="noreferrer"
-            >
-              cluster onboarding guides
-            </a>
-            ).
+            Choose Kubernetes or VM-style onboarding. Install commands are generated locally for you to run in your own
+            environment; OpenCNAPP does not execute them on your behalf.
           </DialogDescription>
         </DialogHeader>
 
@@ -199,7 +210,7 @@ export function AddClusterWizard({ open, onOpenChange, onSaved }: AddClusterWiza
                 {...form.register('display_name')}
                 onChange={(e) => {
                   form.setValue('display_name', e.target.value)
-                  if (!form.getValues('connector_id')) {
+                  if (!initial && !form.getValues('connector_id')) {
                     form.setValue('connector_id', slugify(e.target.value))
                   }
                 }}
@@ -208,7 +219,7 @@ export function AddClusterWizard({ open, onOpenChange, onSaved }: AddClusterWiza
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Connector ID</label>
-              <Input {...form.register('connector_id')} className="font-mono text-sm" />
+              <Input {...form.register('connector_id')} className="font-mono text-sm" disabled={!!initial} />
             </div>
           </div>
         ) : null}

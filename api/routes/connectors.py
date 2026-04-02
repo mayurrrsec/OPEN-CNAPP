@@ -1,3 +1,5 @@
+import ast
+import json
 import os
 import time
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,7 +13,7 @@ from api.connectors.gcp import GcpConnector
 from api.connectors.kubernetes import KubernetesConnector
 from api.connectors.onprem import OnpremConnector
 from api.connectors.registry import RegistryConnector
-from api.crypto import encrypt
+from api.crypto import decrypt, encrypt
 from api.database.session import get_db
 from api.models import Connector
 
@@ -122,21 +124,28 @@ def patch_connector(name: str, payload: ConnectorPatch, db: Session = Depends(ge
     return _connector_public(row)
 
 
+def _parse_credentials_blob(raw: str) -> dict:
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except Exception:
+        pass
+    try:
+        return ast.literal_eval(raw)
+    except Exception:
+        return {}
+
+
 @router.post("/test")
 def test_connector_payload(payload: ConnectorTestPayload):
-    """Validate connector type and return a stub resource count (real SDK checks can be added per provider)."""
+    """Validate credentials with provider SDKs where possible (STS, ARM, GCP CRM, registry HTTP)."""
     ct = (payload.connector_type or "").lower().strip()
     if ct not in CONNECTOR_IMPLS:
         raise HTTPException(status_code=404, detail="Connector implementation not found")
     impl = CONNECTOR_IMPLS[ct]()
-    result = impl.validate()
-    resource_count = 0
-    try:
-        resources = impl.list_resources()
-        resource_count = len(resources or [])
-    except Exception:
-        resource_count = 0
-    out = {**result, "connector_type": ct, "resource_count": resource_count}
+    result = impl.test_credentials(payload.credentials or {}, payload.settings or {})
+    out = {**result, "connector_type": ct}
     if "message" not in out and "ok" in out:
         out["message"] = "ok" if out.get("ok") else "validation failed"
     return out
@@ -169,10 +178,23 @@ def upsert_connector(payload: ConnectorUpsert, db: Session = Depends(get_db)):
 
 
 @router.post("/{name}/test")
-def test_connector(name: str):
-    if name not in CONNECTOR_IMPLS:
+def test_saved_connector(name: str, db: Session = Depends(get_db)):
+    row = db.query(Connector).filter(Connector.name == name).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Connector not found")
+    ct = (row.connector_type or "").lower().strip()
+    if ct not in CONNECTOR_IMPLS:
         raise HTTPException(status_code=404, detail="Connector implementation not found")
-    result = CONNECTOR_IMPLS[name]().validate()
+    creds: dict = {}
+    if row.encrypted_credentials:
+        try:
+            creds = _parse_credentials_blob(decrypt(row.encrypted_credentials))
+            if not isinstance(creds, dict):
+                creds = {}
+        except Exception:
+            creds = {}
+    impl = CONNECTOR_IMPLS[ct]()
+    result = impl.test_credentials(creds, row.settings or {})
     return {"connector": name, **result}
 
 

@@ -2,7 +2,7 @@
 
 This file records **what is implemented in the repo today** (not roadmap intent). Update it when you merge meaningful features. For roadmap vs gaps, see `docs/roadmap-gap-analysis.md`.
 
-**Last updated:** 2026-04-02
+**Last updated:** 2026-04-02 (connectors + empty states pass)
 
 ---
 
@@ -22,11 +22,12 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 - **Auth** — JWT login, protected routes, axios 401 → login redirect (`dashboard/src/api/client.ts`).
 - **App shell** — Sidebar, Topbar, theme, command palette (**⌘K** / **Ctrl+K**).
-- **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling.
-- **Findings** — TanStack Table, filters, lifecycle sheet (RHF + Zod).
-- **Attack paths** — Graph + story route `/attack-paths/:pathId`.
+- **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling (add-cloud CTA lives in the top bar).
+- **Findings** — TanStack Table, filters, lifecycle sheet (RHF + Zod), **empty states** (no data vs filtered).
+- **Attack paths** — Graph + story route `/attack-paths/:pathId`, empty state when graph has no nodes.
 - **Compliance** — Framework rollup, control grid route.
-- **Alerts** — Rules UI (as present in branch).
+- **Alerts** — Rules UI; live feed **empty state** copy.
+- **Plugin manager** — Empty state when no plugins synced.
 
 ---
 
@@ -40,16 +41,16 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 - `DELETE /connectors/{name}` — remove connector.
 - `PATCH /connectors/{name}/enabled` — enable/disable.
 - `PATCH /connectors/{name}` — partial update (`display_name`, `settings`, `enabled`; `credentials` only if non-empty to avoid wiping secrets).
-- `POST /connectors/test` — body `{ connector_type, credentials?, settings? }` for validation without persisting (provider `validate()` + optional `list_resources` count).
-- `POST /connectors/{name}/test` — test saved connector by implementation name.
+- `POST /connectors/test` — body `{ connector_type, credentials?, settings? }`; runs provider **`test_credentials()`** (AWS STS / assume role + optional Organizations list, Azure Resource Manager resource groups, GCP Cloud Resource Manager project GET, registry `/v2/` probe, etc.).
+- `POST /connectors/{name}/test` — decrypts stored credentials and runs the same **`test_credentials()`** checks.
 - **Registry** connector type: `api/connectors/registry.py` (`registry` in `CONNECTOR_IMPLS`).
 
 ### Dashboard
 
 - **Connectors page** — Entry points: **Add cloud**, **Add cluster**, **Add registry**; connector cards with **⋯** menu: Edit (cloud wizards + rename for others), Enable/Disable, Test connection, Delete.
-- **`AddCloudWizard.tsx`** — Multi-step: provider (AWS/Azure/GCP), standalone vs organization, connection method, regions / scan asset type, provider-specific credentials (e.g. AWS keys vs IAM role fields; Azure app registration fields; GCP service account fields); Test + Save.
-- **`AddClusterWizard.tsx`** — Kubernetes vs VM, options, generated install snippet, save as `kubernetes` or `onprem`.
-- **`AddRegistryModal.tsx`** — Registry kind + URL + optional credentials; save as `registry`.
+- **`AddCloudWizard.tsx`** — Multi-step: provider (AWS/Azure/GCP), standalone vs organization, connection method, regions / scan asset type, **organization scope** fields (AWS org ID / account filter, Azure management groups, GCP notes, IaC notes — no template generation), provider-specific credentials; Test + Save.
+- **`AddClusterWizard.tsx`** — Kubernetes vs VM, options, generated install snippet, save as `kubernetes` or `onprem`; **Edit** prefills from `settings` (secrets not returned — re-enter token to rotate).
+- **`AddRegistryModal.tsx`** — Registry kind + URL + optional credentials; `registry_url` duplicated in `settings` for display; **Edit** prefills non-secret fields.
 - **UI primitives** — `components/ui/tabs.tsx`, `components/ui/separator.tsx`.
 
 ### Inventory
@@ -61,12 +62,10 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 ## Known remaining gaps (explicit)
 
-These are **not** bugs per se; they are the next increments:
-
-1. **Real cloud tests** — `POST /connectors/test` still relies on connector `validate()` stubs; real AWS STS / Azure ARM / GCP API checks are a follow-up.
-2. **Org / Terraform flows** — AWS Organizations StackSet, Azure org Terraform, etc., are only partially reflected in settings; full generated IaC UX is not implemented.
-3. **Plan empty states** — Not every page from the product plan (Unified Dashboard, Findings, Attack Paths, Alerts, Plugins, etc.) has the final empty-state copy/CTAs; Inventory + partial compliance card were updated in this slice.
-4. **Edit registry/cluster** — Non-cloud **Edit** is rename-oriented; full wizard prefill for registries/clusters can be added later.
+1. **Deeper cloud enumeration** — Connector tests validate identity and minimal resource visibility; broad asset counts (per service) can be added per provider.
+2. **Generated IaC / StackSets** — Organization onboarding UI stores scope and notes only; templates are not generated or applied from OpenCNAPP.
+3. **KSPM vertical** — Next planned focus: Kubernetes posture flows (policies, benchmarks, in-cluster inventory) beyond connector + inventory stubs.
+4. **Registry/cluster edit** — Password / token fields are not prefilled (by design); paste new values to rotate.
 
 ---
 

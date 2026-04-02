@@ -17,5 +17,19 @@ class CloudConnector(ABC):
     def list_resources(self) -> list[dict]:
         return []
 
+    def test_credentials(self, credentials: dict | None, settings: dict | None) -> dict:
+        """Live check for POST /connectors/test. Override in cloud providers for STS/ARM/API calls."""
+        credentials = credentials or {}
+        settings = settings or {}
+        base = self.validate()
+        if "message" not in base:
+            base = {**base, "message": "Schema check passed"}
+        rc = 0
+        try:
+            rc = len(self.list_resources() or [])
+        except Exception:
+            rc = 0
+        return {**base, "resource_count": rc}
+
     def ingest_native_findings(self) -> list[dict]:
         return []

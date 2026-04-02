@@ -60,6 +60,12 @@ const schema = z
     gcp_project_id: z.string().optional(),
     gcp_client_email: z.string().optional(),
     gcp_private_key: z.string().optional(),
+    aws_organization_id: z.string().optional(),
+    aws_account_filter: z.enum(['NONE', 'INCLUDE', 'EXCLUDE']),
+    aws_account_ids: z.string().optional(),
+    azure_management_group_ids: z.string().optional(),
+    gcp_folder_org_notes: z.string().optional(),
+    terraform_notes: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const needKeys =
@@ -164,11 +170,18 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
       gcp_project_id: '',
       gcp_client_email: '',
       gcp_private_key: '',
+      aws_organization_id: '',
+      aws_account_filter: 'NONE',
+      aws_account_ids: '',
+      azure_management_group_ids: '',
+      gcp_folder_org_notes: '',
+      terraform_notes: '',
     },
   })
 
   const provider = form.watch('provider')
   const connectionMethod = form.watch('connection_method')
+  const accountType = form.watch('account_type')
 
   const resetForOpen = () => {
     setStep(1)
@@ -181,7 +194,9 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
           (initial.settings?.connection_method as 'terraform' | 'access_keys' | 'iam_role') || 'terraform',
         display_name: initial.display_name,
         connector_id: initial.name,
-        regions: String(initial.settings?.regions || 'us-east-1'),
+        regions: Array.isArray(initial.settings?.regions)
+          ? (initial.settings?.regions as string[]).join(', ')
+          : String(initial.settings?.regions || 'us-east-1'),
         scan_asset_type: (initial.settings?.scan_asset_type as 'general' | 'general_aiml') || 'general',
         access_key_id: '',
         secret_access_key: '',
@@ -194,6 +209,13 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
         gcp_project_id: '',
         gcp_client_email: '',
         gcp_private_key: '',
+        aws_organization_id: String(initial.settings?.aws_organization_id || ''),
+        aws_account_filter:
+          (initial.settings?.aws_account_filter as 'NONE' | 'INCLUDE' | 'EXCLUDE') || 'NONE',
+        aws_account_ids: String(initial.settings?.aws_account_ids || ''),
+        azure_management_group_ids: String(initial.settings?.azure_management_group_ids || ''),
+        gcp_folder_org_notes: String(initial.settings?.gcp_folder_org_notes || ''),
+        terraform_notes: String(initial.settings?.terraform_notes || ''),
       })
     } else {
       form.reset({
@@ -215,6 +237,12 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
         gcp_project_id: '',
         gcp_client_email: '',
         gcp_private_key: '',
+        aws_organization_id: '',
+        aws_account_filter: 'NONE',
+        aws_account_ids: '',
+        azure_management_group_ids: '',
+        gcp_folder_org_notes: '',
+        terraform_notes: '',
       })
     }
   }
@@ -241,6 +269,14 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
     if (values.provider === 'aws' && values.connection_method === 'iam_role') {
       settings.external_id = values.external_id
       settings.role_arn = values.role_arn
+    }
+    if (values.account_type === 'organization') {
+      settings.aws_organization_id = values.aws_organization_id?.trim() || undefined
+      settings.aws_account_filter = values.aws_account_filter
+      settings.aws_account_ids = values.aws_account_ids?.trim() || undefined
+      settings.azure_management_group_ids = values.azure_management_group_ids?.trim() || undefined
+      settings.gcp_folder_org_notes = values.gcp_folder_org_notes?.trim() || undefined
+      settings.terraform_notes = values.terraform_notes?.trim() || undefined
     }
     const credentials: Record<string, string> = {}
     if (values.provider === 'aws') {
@@ -464,6 +500,63 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
                 ))}
               </select>
             </div>
+
+            {accountType === 'organization' ? (
+              <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-3">
+                <p className="text-sm font-medium">Organization scope</p>
+                <p className="text-xs text-muted-foreground">
+                  Identifiers for multi-account inventory and automation. Infrastructure-as-code templates are not
+                  generated or applied from this screen; use your own pipeline and keep notes below if useful.
+                </p>
+                {provider === 'aws' ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium">AWS Organization ID</label>
+                      <Input {...form.register('aws_organization_id')} placeholder="o-xxxxxxxxxx" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium">Account filter</label>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={form.watch('aws_account_filter')}
+                        onChange={(e) =>
+                          form.setValue('aws_account_filter', e.target.value as 'NONE' | 'INCLUDE' | 'EXCLUDE')
+                        }
+                      >
+                        <option value="NONE">All accounts in org</option>
+                        <option value="INCLUDE">Include listed accounts only</option>
+                        <option value="EXCLUDE">Exclude listed accounts</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium">Account IDs (comma-separated)</label>
+                      <Input {...form.register('aws_account_ids')} placeholder="111111111111, 222222222222" />
+                    </div>
+                  </>
+                ) : null}
+                {provider === 'azure' ? (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium">Management group IDs (comma-separated)</label>
+                    <Input {...form.register('azure_management_group_ids')} placeholder="mg-root, mg-platform…" />
+                  </div>
+                ) : null}
+                {provider === 'gcp' ? (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium">Organization / folder (notes)</label>
+                    <Input {...form.register('gcp_folder_org_notes')} placeholder="Optional hierarchy hints" />
+                  </div>
+                ) : null}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">IaC / runbook notes (optional)</label>
+                  <textarea
+                    {...form.register('terraform_notes')}
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder="e.g. StackSet name, Terraform workspace, change ticket…"
+                  />
+                </div>
+              </div>
+            ) : null}
 
             {provider === 'aws' ? (
               <>

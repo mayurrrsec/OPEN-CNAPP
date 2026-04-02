@@ -64,6 +64,8 @@ export default function Connectors() {
   const [clusterOpen, setClusterOpen] = useState(false)
   const [registryOpen, setRegistryOpen] = useState(false)
   const [editCloudInitial, setEditCloudInitial] = useState<ComponentProps<typeof AddCloudWizard>['initial']>(null)
+  const [editClusterInitial, setEditClusterInitial] = useState<ComponentProps<typeof AddClusterWizard>['initial']>(null)
+  const [editRegistryInitial, setEditRegistryInitial] = useState<ComponentProps<typeof AddRegistryModal>['initial']>(null)
 
   const [renameOpen, setRenameOpen] = useState(false)
   const [renameTarget, setRenameTarget] = useState<ConnectorRow | null>(null)
@@ -125,6 +127,26 @@ export default function Connectors() {
       setCloudOpen(true)
       return
     }
+    const t = (c.connector_type || '').toLowerCase()
+    if (t === 'kubernetes' || t === 'onprem') {
+      setEditClusterInitial({
+        name: c.name,
+        display_name: c.display_name,
+        connector_type: c.connector_type || 'kubernetes',
+        settings: (c.settings || {}) as Record<string, unknown>,
+      })
+      setClusterOpen(true)
+      return
+    }
+    if (t === 'registry') {
+      setEditRegistryInitial({
+        name: c.name,
+        display_name: c.display_name,
+        settings: (c.settings || {}) as Record<string, unknown>,
+      })
+      setRegistryOpen(true)
+      return
+    }
     setRenameTarget(c)
     setRenameValue(c.display_name)
     setRenameOpen(true)
@@ -161,10 +183,25 @@ export default function Connectors() {
           <Button type="button" variant="outline" size="sm" onClick={openAddCloud}>
             Add cloud
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setClusterOpen(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditClusterInitial(null)
+              setClusterOpen(true)
+            }}
+          >
             Add cluster
           </Button>
-          <Button type="button" size="sm" onClick={() => setRegistryOpen(true)}>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setEditRegistryInitial(null)
+              setRegistryOpen(true)
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add registry
           </Button>
@@ -302,14 +339,22 @@ export default function Connectors() {
 
       <AddClusterWizard
         open={clusterOpen}
-        onOpenChange={setClusterOpen}
+        onOpenChange={(v) => {
+          setClusterOpen(v)
+          if (!v) setEditClusterInitial(null)
+        }}
         onSaved={() => void qc.invalidateQueries({ queryKey: ['connectors'] })}
+        initial={editClusterInitial}
       />
 
       <AddRegistryModal
         open={registryOpen}
-        onOpenChange={setRegistryOpen}
+        onOpenChange={(v) => {
+          setRegistryOpen(v)
+          if (!v) setEditRegistryInitial(null)
+        }}
         onSaved={() => void qc.invalidateQueries({ queryKey: ['connectors'] })}
+        initial={editRegistryInitial}
       />
 
       <Dialog

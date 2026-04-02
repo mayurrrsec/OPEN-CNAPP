@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { GitBranch } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { api } from '../api/client'
 import * as d3 from 'd3'
 
@@ -137,6 +139,17 @@ export default function AttackPaths() {
         </div>
         <div className="pill">Nodes: <strong>{graph.nodes.length}</strong> · Edges: <strong>{graph.edges.length}</strong></div>
       </div>
+
+      {graph.nodes.length === 0 && graph.edges.length === 0 ? (
+        <div style={{ marginTop: 12 }}>
+          <EmptyState
+            icon={GitBranch}
+            title="No attack paths found"
+            description="Attack paths appear after running scans with connected clouds and relationship data."
+            action={{ label: 'Run scan', onClick: () => (window.location.href = '/plugins') }}
+          />
+        </div>
+      ) : null}
 
       <div className="grid two" style={{ marginTop: 12 }}>
         <div className="card">

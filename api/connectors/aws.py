@@ -17,6 +17,76 @@ class AwsConnector(CloudConnector):
     def validate(self):
         return {"ok": True, "message": "AWS connector schema validated"}
 
+    def test_credentials(self, credentials: dict | None, settings: dict | None) -> dict:
+        credentials = credentials or {}
+        settings = settings or {}
+        regions = settings.get("regions") or []
+        region = (credentials.get("region") or "").strip() or None
+        if not region and isinstance(regions, list) and len(regions) > 0:
+            region = str(regions[0])
+        if not region or not isinstance(region, str):
+            region = "us-east-1"
+
+        ak = (credentials.get("access_key_id") or "").strip()
+        sk = (credentials.get("secret_access_key") or "").strip()
+        role_arn = (credentials.get("role_arn") or settings.get("role_arn") or "").strip()
+        ext = (credentials.get("external_id") or settings.get("external_id") or "").strip()
+
+        if not ak or not sk:
+            return {**self.validate(), "message": "Provide access key ID and secret access key to test.", "resource_count": 0}
+
+        try:
+            import boto3
+
+            sts = boto3.client(
+                "sts",
+                region_name=region,
+                aws_access_key_id=ak,
+                aws_secret_access_key=sk,
+            )
+
+            if role_arn:
+                assumed = sts.assume_role(
+                    RoleArn=role_arn,
+                    RoleSessionName="opencnapp-connector-test",
+                    ExternalId=ext or None,
+                )
+                c = assumed["Credentials"]
+                sts = boto3.client(
+                    "sts",
+                    region_name=region,
+                    aws_access_key_id=c["AccessKeyId"],
+                    aws_secret_access_key=c["SecretAccessKey"],
+                    aws_session_token=c["SessionToken"],
+                )
+
+            ident = sts.get_caller_identity()
+            arn = ident.get("Arn", "")
+
+            org_count = 0
+            org_id = (settings.get("aws_organization_id") or "").strip()
+            if org_id:
+                try:
+                    org = boto3.client(
+                        "organizations",
+                        region_name=region,
+                        aws_access_key_id=ak,
+                        aws_secret_access_key=sk,
+                    )
+                    paginator = org.get_paginator("list_accounts")
+                    for page in paginator.paginate():
+                        org_count += len(page.get("Accounts", []))
+                except Exception:
+                    pass
+
+            msg = f"AWS identity OK: {arn}"
+            if org_count:
+                msg += f" · {org_count} account(s) visible in Organization"
+            return {"ok": True, "message": msg, "resource_count": org_count or 1}
+
+        except Exception as e:
+            return {"ok": False, "message": str(e), "resource_count": 0}
+
     def get_scan_env(self):
         return {"CLOUD_PROVIDER": "aws"}
 

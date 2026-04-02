@@ -153,7 +153,7 @@ Summary:
 ## 10) Roadmap (still to build)
 See `docs/roadmap-gap-analysis.md` and `docs/execplans/opencnapp-v3-dashboard-and-platform.md`. Highlights: deeper **asset inventory**, global search wired to APIs, richer **attack-path** correlation, full **compliance control library** (pass/fail per control), **SSO**, and production-hardening of Compose/Kubernetes.
 
-**What is actually implemented today** (vs plan intent) is tracked in **`docs/IMPLEMENTATION_STATUS.md`**, including known gaps such as real cloud SDK tests in `POST /connectors/test`, full org/Terraform onboarding UX, and remaining empty-state polish across all pages.
+**What is actually implemented today** (vs plan intent) is tracked in **`docs/IMPLEMENTATION_STATUS.md`**, including remaining gaps (deeper asset enumeration, generated IaC from the UI, KSPM depth).
 
 ## 11) Docs index
 - Contributor guide: `docs/CONTRIBUTING.md`

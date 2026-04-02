@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Puzzle, RefreshCw, Zap } from 'lucide-react'
+import { Play, Puzzle, RefreshCw, Zap } from 'lucide-react'
 import { api } from '../api/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -64,6 +64,13 @@ export default function PluginManager() {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading plugins…</p>
+      ) : plugins.length === 0 ? (
+        <EmptyState
+          icon={Play}
+          title="No scan history"
+          description="Enable plugins and run scans to see results here."
+          action={{ label: 'Enable plugins', onClick: () => syncMutation.mutate() }}
+        />
       ) : (
         Object.entries(grouped)
           .sort(([a], [b]) => a.localeCompare(b))

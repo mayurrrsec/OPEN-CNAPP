@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, Bell, Radio, Send } from 'lucide-react'
+import { Bell, Radio, Send } from 'lucide-react'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
@@ -195,13 +195,11 @@ export default function Alerts() {
           </CardHeader>
           <CardContent className="flex min-h-[280px] flex-1 flex-col">
             {feedPreview.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 py-12">
-                <Activity className="mb-2 h-10 w-10 text-muted-foreground/60" />
-                <p className="text-sm font-medium text-foreground">Waiting for events</p>
-                <p className="mt-1 max-w-xs text-center text-xs text-muted-foreground">
-                  When the API broadcasts alert activity, entries will appear here in real time.
-                </p>
-              </div>
+              <EmptyState
+                icon={Bell}
+                title="No alerts"
+                description="No runtime alerts in the selected time range. When the API broadcasts activity, entries appear here."
+              />
             ) : (
               <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
                 {feedPreview.map((item) => (
