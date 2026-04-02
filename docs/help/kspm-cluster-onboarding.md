@@ -113,8 +113,41 @@ These are **separate scanner plugins** in the `plugins/` directory. They run as 
 
 ---
 
+## Inventory: cluster row & detail panel
+
+After a **kubernetes** / **onprem** connector exists, **Inventory → Clusters** lists it with connection status (derived from recent findings), finding counts by bucket (CIS / KSPM / IMG / SEC), and opens a **right-hand detail panel** on row click.
+
+| Area | Behavior |
+|------|-----------|
+| **Panel** | Full-height slide-over (`Dialog` variant `right`, wide). List stays visible behind dimmed overlay. |
+| **Status badge** | **Connected** / **Pending** / **Disconnected** from `GET /inventory/clusters/{id}/status` (polls ~30s while open). |
+| **Tabs** | Overview, Misconfiguration, Cloud Assets (cluster-scoped), Vulnerabilities, Alerts, Compliance, Policies, App behaviour, KIEM — each backed by a dedicated API under `/inventory/clusters/{id}/…`. |
+| **Data** | Findings are matched to the connector via `account_id` / `resource_id` / `resource_name` (see `api/inventory/helpers.py`). Ingest from Kubescape, Trivy, Falco, etc., tags findings to this cluster for inventory views. |
+
+### API quick reference (authenticated)
+
+- `GET /inventory/clusters` — table rows for K8s connectors.
+- `GET /inventory/clusters/{cluster_id}/overview` — K8s resource summary, trend, cluster_info.
+- `GET /inventory/clusters/{cluster_id}/status` — `{ "connection_status": "connected" \| "pending" \| "disconnected" }`.
+- `GET /inventory/clusters/{cluster_id}/misconfigurations` — KSPM/CIS-style findings + insights (pagination, `severity`, `search`).
+- `GET /inventory/clusters/{cluster_id}/vulnerabilities` — CVE / image-scanner style rows.
+- `GET /inventory/clusters/{cluster_id}/alerts` — high-severity / runtime-alert style rows.
+- `GET /inventory/clusters/{cluster_id}/compliance` — framework-domain findings.
+- `GET /inventory/clusters/{cluster_id}/policies` — controls grouped by `check_id` (Kubescape-style).
+- `GET /inventory/clusters/{cluster_id}/app-behaviour` — Falco/runtime-oriented rows.
+- `GET /inventory/clusters/{cluster_id}/kiem` — identity / RBAC–oriented rows.
+- `GET /inventory/clusters/{cluster_id}/cloud-assets` — cloud-linked asset groups + severity rollups.
+- `GET /inventory/assets` — global CSPM asset aggregation from findings (optional `group_by=category`).
+
+Full UI specification and checklist: **`docs/plans/kspm-inventory-plan.md`**.
+
+---
+
 ## Related files
 
 - Wizard UI: `dashboard/src/components/connectors/AddClusterWizard.tsx`
 - Kubernetes connector: `api/connectors/kubernetes.py`
+- Cluster detail routes: `api/routes/cluster_detail.py`
+- Inventory routes: `api/routes/inventory_api.py`
+- Inventory UI: `dashboard/src/pages/Inventory.tsx`, `dashboard/src/pages/inventory/`
 - Plugins: `plugins/kubescape/`, `plugins/kube-bench/`, `plugins/kube-hunter/`, `plugins/polaris/`

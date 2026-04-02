@@ -538,16 +538,22 @@ def app_behaviour_insights(db: Session, connector: Connector) -> dict[str, Any]:
 
 
 def kiem_insights(db: Session, connector: Connector) -> dict[str, Any]:
-    fq = kiem_query(db, connector)
+    base = kiem_query(db, connector)
     by_cat = (
-        fq.with_entities(Finding.resource_type, func.count(Finding.id))
+        base.with_entities(Finding.resource_type, func.count(Finding.id))
         .group_by(Finding.resource_type)
         .order_by(desc(func.count(Finding.id)))
         .limit(12)
         .all()
     )
-    n = fq.count()
-    risk_score = min(100, n * 3)
+    # Plan §4.8: weighted severities → score = 100 - min(weighted_sum, 100)
+    weights = {"CRITICAL": 10.0, "HIGH": 5.0, "MEDIUM": 2.0, "LOW": 0.5, "INFO": 0.1}
+    total_w = 0.0
+    sev_q = kiem_query(db, connector)
+    for sev, cnt in sev_q.with_entities(Finding.severity, func.count(Finding.id)).group_by(Finding.severity).all():
+        w = weights.get((sev or "MEDIUM").upper(), 0.5)
+        total_w += w * int(cnt or 0)
+    risk_score = int(max(0, min(100, 100 - min(total_w, 100.0))))
     return {
         "risk_score": risk_score,
         "by_asset_type": [{"type": r[0] or "unknown", "count": int(r[1] or 0)} for r in by_cat],

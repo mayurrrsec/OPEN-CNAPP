@@ -79,9 +79,10 @@ export function ClusterDetailPanel({
     refetchInterval: 30_000,
   })
 
+  // Preserve tab when closing/reopening the panel; reset only when switching to another cluster.
   useEffect(() => {
-    if (open && cluster) setTab('overview')
-  }, [open, cluster?.id])
+    setTab('overview')
+  }, [cluster?.id])
 
   if (!cluster) return null
 
