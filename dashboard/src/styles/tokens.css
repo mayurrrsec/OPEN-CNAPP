@@ -1,0 +1,41 @@
+/* Severity, domain, cloud — used by charts and badges (works in light + dark) */
+:root {
+  --severity-critical: #dc2626;
+  --severity-critical-bg: #fef2f2;
+  --severity-critical-border: #fecaca;
+  --severity-high: #ea580c;
+  --severity-high-bg: #fff7ed;
+  --severity-high-border: #fed7aa;
+  --severity-medium: #d97706;
+  --severity-medium-bg: #fffbeb;
+  --severity-medium-border: #fde68a;
+  --severity-low: #16a34a;
+  --severity-low-bg: #f0fdf4;
+  --severity-low-border: #bbf7d0;
+  --severity-info: #2563eb;
+  --severity-info-bg: #eff6ff;
+  --severity-info-border: #bfdbfe;
+
+  --cloud-azure: #0078d4;
+  --cloud-aws: #f90;
+  --cloud-gcp: #4285f4;
+  --cloud-k8s: #326ce5;
+  --cloud-onprem: #6b7280;
+
+  --domain-cspm: #2563eb;
+  --domain-kspm: #0d9488;
+  --domain-cwpp: #d97706;
+  --domain-ciem: #dc2626;
+
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+  --content-padding: 24px;
+}
+
+[data-theme='dark'] {
+  --severity-critical-bg: rgba(220, 38, 38, 0.12);
+  --severity-high-bg: rgba(234, 88, 12, 0.12);
+  --severity-medium-bg: rgba(217, 119, 6, 0.12);
+  --severity-low-bg: rgba(22, 163, 74, 0.12);
+  --severity-info-bg: rgba(37, 99, 235, 0.12);
+}
