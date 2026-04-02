@@ -2,7 +2,7 @@
 
 This file records **what is implemented in the repo today** (not roadmap intent). Update it when you merge meaningful features. For roadmap vs gaps, see `docs/roadmap-gap-analysis.md`.
 
-**Last updated:** 2026-04-02 (KSPM inventory + cluster detail slice)
+**Last updated:** 2026-04-02 (KSPM inventory documented in `docs/inventory-kspm-built.md`)
 
 ---
 
@@ -20,6 +20,7 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 ## Platform & dashboard (recent)
 
+- **KSPM domain dashboard** (`/dashboard/kspm`) — **25 widget slots** (five wired to `/dashboard/summary?domain=kspm` + findings-by-cloud; remainder AccuKnox-style placeholders until APIs exist). See **`docs/kspm-domain-dashboard-scope.md`**, registry: `dashboard/src/config/kspmDashboardWidgets.ts`.
 - **Auth** — JWT login, protected routes, axios 401 → login redirect (`dashboard/src/api/client.ts`).
 - **App shell** — Sidebar, Topbar, theme, command palette (**⌘K** / **Ctrl+K**).
 - **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling. **Do not** add a second full-width “Add cloud” empty state in the page body; the primary action stays in the **top bar** (this branch never shipped a centered duplicate CTA in `UnifiedDashboard.tsx`).
@@ -55,11 +56,15 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 ### Inventory (KSPM-oriented)
 
+**Full detail:** see **`docs/inventory-kspm-built.md`** (routes, files, APIs, DB).
+
 - **`GET /inventory/assets`** — Aggregated asset rows from findings; optional **`group_by=category`** returns grouped rollups with heuristic categories (`api/inventory/asset_categories.py`).
-- **`GET /inventory/clouds`** — Cloud connector list for **Clouds** tab.
-- **`GET /inventory/clusters`** — K8s/on-prem connectors + domain-bucket finding counts + **connection_status** from latest findings.
-- **`GET /inventory/namespaces`**, **`GET /inventory/workloads`** — Stubs (empty lists) until inventory sync writes namespace/workload rows.
+- **`GET /inventory/clouds`** — Cloud connector list (CSPM connectors).
+- **`GET /inventory/clusters`** — K8s/on-prem connectors + domain-bucket finding counts + **connection_status** + inventory-derived counts (from findings or from **`k8s_clusters`** after sync).
+- **`GET /inventory/namespaces`**, **`GET /inventory/workloads`** — Populated from **findings** (distinct namespaces; grouped workload-like rows). Requires `cluster_id`.
 - **`GET /inventory/images`** — Image rows from CVE findings (optional `cluster_id`).
+- **`POST /inventory/sync-k8s-tables`** — Materializes **`k8s_clusters`** / **`k8s_nodes`** from findings (optional cache).
+- **`GET /inventory/k8s-nodes`** — Lists synced node names for a cluster connector.
 
 ### Cluster detail (`api/routes/cluster_detail.py`)
 
@@ -73,17 +78,19 @@ Per-connector (`cluster_id` = connector UUID) JSON APIs:
 | `GET /inventory/clusters/{id}/vulnerabilities` | CVE / scanner-style findings |
 | `GET /inventory/clusters/{id}/alerts` | High-severity / Falco-style alert findings |
 | `GET /inventory/clusters/{id}/compliance` | Compliance-domain findings |
-| `GET /inventory/clusters/{id}/policies` | Controls grouped by `check_id` |
+| `GET /inventory/clusters/{id}/policies` | Controls / policy rows (enriched toward AccuKnox-style columns when ingest provides data) |
 | `GET /inventory/clusters/{id}/app-behaviour` | Runtime / Falco-oriented rows |
 | `GET /inventory/clusters/{id}/kiem` | Identity/RBAC-oriented rows + weighted risk score |
 | `GET /inventory/clusters/{id}/cloud-assets` | Cloud-linked asset groups for cluster |
 
 Shared query helpers: `api/inventory/helpers.py`, `api/inventory/cluster_detail_service.py`.
 
-### Inventory UI (`dashboard/src/pages/Inventory.tsx`)
+### Inventory UI (`dashboard/src/pages/inventory/InventoryLayout.tsx` + route children)
 
-- Tabs: **Clouds**, **Clusters**, **Namespaces**, **Workloads**, **Images** (plus compliance coverage card where applicable).
-- **Clusters** — `ClusterTable` (TanStack Table), row opens **`ClusterDetailPanel`** (right `Dialog`, wide). Delete via connector API.
+- **Sidebar** — **Inventory assets**: **Cloud assets**, **Clusters** (nested: Clusters, Namespaces, Workloads), **Images** (`dashboard/src/layout/Sidebar.tsx`).
+- **Routes** — `/inventory/cloud`, `/inventory/clusters`, `/inventory/namespaces`, `/inventory/workloads`, `/inventory/images` (no single flat `Inventory.tsx` tabs page).
+- **Clusters** — `ClusterTable` (TanStack: selection, columns, pagination); row opens **`ClusterDetailPanel`** (right **Sheet**). **Sync K8s tables** triggers POST sync. Delete via connector API.
+- **Namespaces / Workloads / Cloud assets (flat)** — `InventoryDataTable` (TanStack: selection, columns, pagination); namespaces/workloads use **server** pagination; cloud flat list uses **client** pagination over filtered rows.
 - **Cluster detail** — Tabs per plan (Overview, Misconfiguration, Cloud Assets, Vulnerabilities, Alerts, Compliance, Policies, App behaviour, KIEM). **Tab choice persists** when closing/reopening the same cluster; resets when selecting a different cluster.
 - **Components** — `SeverityBars`, `SeverityToggle`, `NoGraphData`, `K8sResourceSummary`, `FindingsByCategoryChart` (misconfiguration insights).
 
@@ -91,21 +98,21 @@ Shared query helpers: `api/inventory/helpers.py`, `api/inventory/cluster_detail_
 
 ## KSPM plan document
 
-- Canonical spec: **`docs/plans/kspm-inventory-plan.md`** (copy of the working group plan).
-- Help doc cross-link: **`docs/help/kspm-cluster-onboarding.md`** (Inventory + API table).
+- **What is built (inventory slice):** **`docs/inventory-kspm-built.md`**
+- Canonical checklist: **`docs/plans/kspm-inventory-plan.md`**
+- Help (onboarding): **`docs/help/kspm-cluster-onboarding.md`**
 
 ---
 
 ## Known remaining gaps (explicit)
 
-1. **TanStack Table “full” spec** — Cluster and several detail tables use tables + server pagination; not all columns from the plan (checkboxes, column toggles, AccuKnox-style pagination footer) are implemented.
-2. **Namespaces / Workloads inventory** — API stubs; no sync pipeline populating rows yet.
-3. **Cloud Assets (global)** — `/inventory/assets?group_by=category` implemented; the **Clouds** tab is still connector-centric, not the full AccuKnox multi-filter / grouped UI from §7 of the plan.
-4. **Dedicated K8s tables** — Plan suggests `k8s_clusters`, `k8s_nodes`, etc.; current implementation derives metrics from **findings** + **connectors** until agents persist inventory rows.
-5. **Policies tab** — Rows are **check_id** rollups with severity breakdowns, not full AccuKnox policy columns (selector labels, namespace scope, etc.).
-6. **Deeper cloud enumeration** — Connector tests validate identity; broad per-service counts can be added per provider.
-7. **Generated IaC / StackSets** — Organization onboarding UI stores scope and notes only.
-8. **Registry/cluster edit** — Password / token fields are not prefilled (by design).
+1. **AccuKnox-style Cloud Assets §7** — Multi-row filters (date discovered, org/OU, collector, etc.), refresh/clear/export affordances: only partially mirrored; core grouping + expand + search exist.
+2. **TanStack on every surface** — Cluster list, namespaces, workloads, and cloud (flat) use shared table patterns; **cluster detail** sub-tabs still use mixed table implementations where not yet refactored.
+3. **Scheduled sync** — `k8s_clusters` / `k8s_nodes` are filled by **POST** `/inventory/sync-k8s-tables` (or UI button); no automatic scheduler hook in this slice unless added elsewhere.
+4. **Policies tab** — Presentation is enriched when **`raw`** / normalizer provides fields; full parity with AccuKnox policy rows depends on ingest.
+5. **Deeper cloud enumeration** — Connector tests validate identity; broad per-service counts can be added per provider.
+6. **Generated IaC / StackSets** — Organization onboarding UI stores scope and notes only.
+7. **Registry/cluster edit** — Password / token fields are not prefilled (by design).
 
 ---
 
