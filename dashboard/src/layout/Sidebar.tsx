@@ -1,5 +1,5 @@
-import { useState, type ComponentType } from 'react'
-import { NavLink } from 'react-router-dom'
+import { useEffect, useState, type ComponentType } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   Activity,
   CheckSquare,
@@ -10,6 +10,7 @@ import {
   FileCode,
   GitBranch,
   Globe,
+  ImageIcon,
   Key,
   LayoutDashboard,
   Lock,
@@ -33,7 +34,6 @@ const overview: NavItem[] = [
 const findings: NavItem[] = [
   { to: '/findings', label: 'Findings', icon: ShieldAlert },
   { to: '/attack-paths', label: 'Attack Paths', icon: GitBranch },
-  { to: '/inventory', label: 'Inventory', icon: Server },
 ]
 
 const domains: NavItem[] = [
@@ -56,6 +56,109 @@ const configuration: NavItem[] = [
   { to: '/connectors', label: 'Connectors', icon: Plug },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
+
+const invNavLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    'flex items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium transition-colors',
+    isActive
+      ? 'border-primary bg-white/10 text-sidebar-foreground'
+      : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-sidebar-foreground'
+  )
+
+function InventoryAssetsNav() {
+  const location = useLocation()
+  const onInventory = location.pathname.startsWith('/inventory')
+  const [open, setOpen] = useState(onInventory)
+  const clustersSectionActive = /^\/inventory\/(clusters|namespaces|workloads)(?:\/|$)/.test(location.pathname)
+  const [clustersOpen, setClustersOpen] = useState(clustersSectionActive)
+
+  useEffect(() => {
+    if (onInventory) setOpen(true)
+    if (clustersSectionActive) setClustersOpen(true)
+  }, [onInventory, clustersSectionActive])
+
+  return (
+    <div className="mb-6">
+      <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+        Findings
+      </p>
+      <div className="flex flex-col gap-0.5">
+        {findings.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={invNavLinkClass}
+          >
+            <item.icon className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+            {item.label}
+          </NavLink>
+        ))}
+      </div>
+
+      <div className="mt-4 px-3">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45 hover:text-sidebar-foreground/70"
+        >
+          <span className="flex items-center gap-2">
+            <Server className="h-3.5 w-3.5" aria-hidden />
+            Inventory assets
+          </span>
+          {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+      {open ? (
+        <div className="mt-1 flex flex-col gap-0.5">
+          <NavLink to="/inventory/cloud" className={invNavLinkClass}>
+            <Cloud className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+            Cloud assets
+          </NavLink>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setClustersOpen((c) => !c)}
+              className={cn(
+                'flex w-full items-center justify-between rounded-md border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium transition-colors',
+                clustersSectionActive
+                  ? 'border-primary/60 bg-white/5 text-sidebar-foreground'
+                  : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-sidebar-foreground'
+              )}
+            >
+              <span className="flex items-center gap-3">
+                <Container className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                Clusters
+              </span>
+              {clustersOpen ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+            </button>
+            {clustersOpen ? (
+              <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                <NavLink to="/inventory/clusters" className={invNavLinkClass}>
+                  <span className="h-4 w-4 shrink-0" aria-hidden />
+                  Clusters
+                </NavLink>
+                <NavLink to="/inventory/namespaces" className={invNavLinkClass}>
+                  <span className="h-4 w-4 shrink-0" aria-hidden />
+                  Namespaces
+                </NavLink>
+                <NavLink to="/inventory/workloads" className={invNavLinkClass}>
+                  <span className="h-4 w-4 shrink-0" aria-hidden />
+                  Workloads
+                </NavLink>
+              </div>
+            ) : null}
+          </div>
+
+          <NavLink to="/inventory/images" className={invNavLinkClass}>
+            <ImageIcon className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+            Images
+          </NavLink>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 function NavBlock({ title, items }: { title: string; items: NavItem[] }) {
   return (
@@ -108,7 +211,7 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-2 py-4">
         <NavBlock title="Overview" items={overview} />
-        <NavBlock title="Findings" items={findings} />
+        <InventoryAssetsNav />
 
         <div className="mb-2 px-3">
           <button

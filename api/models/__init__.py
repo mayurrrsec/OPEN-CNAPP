@@ -5,3 +5,5 @@ from .connector import Connector
 from .user import User
 from .agent_join_token import AgentJoinToken
 from .workspace import Workspace
+from .k8s_cluster import K8sCluster
+from .k8s_node import K8sNode

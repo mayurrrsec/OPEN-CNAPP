@@ -12,7 +12,15 @@ import PluginManager from '@/pages/PluginManager'
 import Connectors from '@/pages/Connectors'
 import Alerts from '@/pages/Alerts'
 import Compliance from '@/pages/Compliance'
-import Inventory from '@/pages/Inventory'
+import {
+  ClustersInventoryPage,
+  InventoryIndexRedirect,
+  InventoryLayout,
+} from '@/pages/inventory/InventoryLayout'
+import { CloudAssetsInventoryTab } from '@/pages/inventory/CloudAssetsInventoryTab'
+import { ImagesInventoryTab } from '@/pages/inventory/ImagesInventoryTab'
+import { NamespacesInventoryTab } from '@/pages/inventory/NamespacesInventoryTab'
+import { WorkloadsInventoryTab } from '@/pages/inventory/WorkloadsInventoryTab'
 import Settings from '@/pages/Settings'
 import Login from '@/pages/Login'
 import AuthCallback from '@/pages/AuthCallback'
@@ -52,7 +60,14 @@ export default function App() {
           <Route path="/" element={<UnifiedDashboard />} />
           <Route path="/dashboard/:domain" element={<DomainDashboard />} />
           <Route path="/findings" element={<Findings />} />
-          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/inventory" element={<InventoryLayout />}>
+            <Route index element={<InventoryIndexRedirect />} />
+            <Route path="cloud" element={<CloudAssetsInventoryTab />} />
+            <Route path="clusters" element={<ClustersInventoryPage />} />
+            <Route path="namespaces" element={<NamespacesInventoryTab />} />
+            <Route path="workloads" element={<WorkloadsInventoryTab />} />
+            <Route path="images" element={<ImagesInventoryTab />} />
+          </Route>
           <Route path="/attack-paths" element={<AttackPaths />} />
           <Route path="/attack-paths/:pathId" element={<AttackPathDetail />} />
           <Route path="/pentest" element={<PentestRunner />} />

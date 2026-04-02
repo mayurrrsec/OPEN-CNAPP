@@ -67,3 +67,21 @@ CREATE TABLE IF NOT EXISTS connectors (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Optional materialized K8s inventory (POST /inventory/sync-k8s-tables aggregates from findings)
+CREATE TABLE IF NOT EXISTS k8s_clusters (
+  connector_id VARCHAR(36) PRIMARY KEY REFERENCES connectors(id) ON DELETE CASCADE,
+  nodes_count INTEGER DEFAULT 0,
+  workloads_count INTEGER DEFAULT 0,
+  namespaces_count INTEGER DEFAULT 0,
+  synced_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS k8s_nodes (
+  id VARCHAR(36) PRIMARY KEY,
+  connector_id VARCHAR(36) NOT NULL REFERENCES connectors(id) ON DELETE CASCADE,
+  name VARCHAR(500) NOT NULL,
+  last_seen TIMESTAMP NULL,
+  UNIQUE(connector_id, name)
+);
+CREATE INDEX IF NOT EXISTS ix_k8s_nodes_connector_id ON k8s_nodes(connector_id);

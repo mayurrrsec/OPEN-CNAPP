@@ -6,13 +6,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SeverityBars, type SeverityBreakdown } from '@/components/inventory/SeverityBars'
 import { SeverityToggle, severityQueryParam, SEVERITY_KEYS } from '@/components/inventory/SeverityToggle'
+import { cn } from '@/lib/utils'
 
 type PolicyRow = {
   check_id: string
+  name: string
   title: string
+  category: string
+  namespaces_display: string | null
+  alerts: number
+  selector_labels: string | null
+  tags: string[]
   failed_resources: number
   severity_breakdown: SeverityBreakdown
   framework_refs: unknown[]
+  status: string
 }
 
 type Payload = {
@@ -74,40 +82,61 @@ export function ClusterPoliciesTab({ clusterId }: { clusterId: string }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Controls grouped by Kubescape-style <code className="rounded bg-muted px-1">check_id</code> with severity
-        rollups.
+        Hardening controls from Kubescape-style findings (grouped by <code className="rounded bg-muted px-1">check_id</code>
+        ). Status reflects whether any failing resources remain.
       </p>
 
       <div className="overflow-x-auto rounded-md border">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[960px] text-sm">
           <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
             <tr>
-              <th className="p-2">Control</th>
-              <th className="p-2">Title</th>
-              <th className="p-2">Findings</th>
+              <th className="p-2 w-8" />
+              <th className="p-2">Name</th>
+              <th className="p-2">Category</th>
+              <th className="p-2">Namespaces</th>
+              <th className="p-2">Alerts</th>
+              <th className="p-2">Selector</th>
+              <th className="p-2">Tags</th>
               <th className="p-2">Severity</th>
             </tr>
           </thead>
           <tbody>
             {data.policies.items.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-6 text-center text-muted-foreground">
-                  No policy findings yet. Ingest Kubescape / KSPM scans for this cluster.
+                <td colSpan={8} className="p-6 text-center text-muted-foreground">
+                  No policy findings yet. Run a Kubescape scan to populate hardening policies.
                 </td>
               </tr>
             ) : (
               data.policies.items.map((p) => (
                 <tr key={p.check_id} className="border-t border-border">
-                  <td className="p-2 align-top font-mono text-xs">{p.check_id}</td>
-                  <td className="p-2 align-top">
-                    <div>{p.title}</div>
-                    {p.framework_refs?.length ? (
-                      <div className="mt-1 text-[10px] text-muted-foreground">
-                        {p.framework_refs.length} compliance link{p.framework_refs.length === 1 ? '' : 's'}
-                      </div>
-                    ) : null}
+                  <td className="p-2 align-middle">
+                    <span
+                      className={cn(
+                        'inline-block h-2 w-2 rounded-full',
+                        p.status === 'passed' ? 'bg-emerald-500' : 'bg-red-500'
+                      )}
+                      title={p.status === 'passed' ? 'No failing resources' : 'Has failing resources'}
+                    />
                   </td>
-                  <td className="p-2 align-top tabular-nums">{p.failed_resources}</td>
+                  <td className="p-2 align-top">
+                    <div className="font-mono text-xs text-muted-foreground">{p.check_id}</div>
+                    <div className="font-medium">{p.name}</div>
+                    <div className="text-xs text-muted-foreground">{p.title}</div>
+                  </td>
+                  <td className="p-2 align-top capitalize">{p.category}</td>
+                  <td className="max-w-[140px] p-2 align-top text-xs">{p.namespaces_display ?? '—'}</td>
+                  <td className="p-2 align-top tabular-nums">{p.alerts}</td>
+                  <td className="max-w-[120px] p-2 align-top text-xs text-muted-foreground">
+                    {p.selector_labels ?? 'None'}
+                  </td>
+                  <td className="max-w-[140px] p-2 align-top text-xs">
+                    {p.tags?.length ? (
+                      <span className="line-clamp-2">{p.tags.slice(0, 3).join(', ')}</span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td className="p-2 align-top">
                     <SeverityBars breakdown={p.severity_breakdown} />
                   </td>
