@@ -7,9 +7,17 @@ OpenCNAPP is an open, local-first CNAPP platform that unifies posture, vulnerabi
 - Plugin-driven scanner model (YAML + adapter).
 - Multi-cloud connector model (Azure, AWS, GCP, Kubernetes, On-prem).
 - Celery + APScheduler orchestration with Docker-capable runner.
-- React dashboard with overview, findings explorer, alerts, attack paths, pentest runner, connectors, and plugin manager.
+- **React (Vite) dashboard** — Orca/Wiz-style shell (dark sidebar, light main), unified posture home, domain pivots, command palette (**⌘K** / **Ctrl+K**), and charts driven by `/dashboard/summary`.
+- **Findings Explorer** — TanStack Table with server-side pagination/sorting, filters, and a detail sheet with lifecycle form (React Hook Form + Zod).
+- **Attack paths** — D3 force graph, top paths table with links to an **attack story** view (`/attack-paths/:pathId`) backed by `/attack-paths/story/{path_id}`.
+- **Compliance** — framework rollup plus **control grid** (`/compliance/control-grid`) with severity columns and drilldown stub.
 - Docker Compose profiles for core, runtime (Falco), and CIEM (BloodHound/AzureHound).
 - Helm chart baseline for Kubernetes deployment.
+
+### What landed on `main` (dashboard + API)
+Foundation (Phase 1–2): Tailwind + design tokens, TanStack Query, Zustand theme, AppShell/Sidebar/Topbar, `UnifiedDashboard`, redirects from legacy routes, Recharts with `ResponsiveContainer`, safe JSON for `top_findings` on `/dashboard/summary`.
+
+Follow-on: command palette, Findings table + sheet, attack story endpoint + detail route, compliance control grid, Vite `manualChunks`, PostCSS/Tailwind wiring, `.cursor/` gitignored.
 
 ## 2) Updating an existing VM clone (you already did `git clone`)
 If your VM already has this repo cloned, use the repo's default branch (`main`):
@@ -47,6 +55,18 @@ git stash pop
 Then open:
 - API docs: http://localhost:8000/docs
 - Dashboard: http://localhost:3000
+
+### Smoke-test after `docker compose up`
+From the host (browser runs on your machine; the dashboard container exposes Vite on port **3000** → **5173** inside):
+
+```bash
+curl -s http://localhost:8000/health
+curl -s "http://localhost:8000/dashboard/summary" | head -c 400
+```
+
+Then open **http://localhost:3000** — you should see the unified dashboard; use **Findings**, **Attack paths** (open an **Attack story** link if you have data), and **Compliance** (control grid loads when findings carry `compliance` tags).
+
+If the dashboard shows API errors, confirm `VITE_API_URL` points to `http://localhost:8000` (default in `docker-compose.yml`) and that port **8000** is reachable.
 
 ### No Docker available (local fallback)
 ```bash
@@ -88,17 +108,18 @@ docker compose --profile ciem up -d
 - Roadmap completion status: `docs/roadmap-gap-analysis.md`
 
 ## 6) API capabilities
-- `/findings` CRUD-ish lifecycle (status/assignment/ticket fields)
+- `/findings` list + filters + pagination/sort; `GET/PATCH /findings/{id}` lifecycle (status/assignment/ticket fields)
 - `/ingest/{tool}` normalized ingest and fingerprint dedup
 - `/native-ingest/{provider}` native security source ingest (AWS/Azure/GCP)
 - `/scans` trigger/list scans (active-scan authorization gate)
 - `/plugins` sync/list/enable/configure
 - `/connectors` upsert/test + CI pull endpoints (sonarqube/zap/snyk)
-- `/dashboard/summary` posture KPIs + trends
-- `/attack-paths` risk-ranked path graph payload
+- `/dashboard/summary` posture KPIs, trends, severity/domain breakdown, top findings (JSON-safe)
+- `/attack-paths` graph payload (nodes, edges, `top_paths` with `path_id`)
+- `/attack-paths/story/{path_id}` narrative + risk for a single edge
+- `/compliance/frameworks`, `/compliance/heatmap`, `/compliance/control-grid` (per-tag severity rollups)
 - `/alerts/rules` + `/alerts/test` Apprise-backed notification rules
 - `/reports/csv` + `/reports/pdf`
-- `/compliance/heatmap`
 - `/auth/login` + `/auth/me`
 - `/ws/alerts` + `/ws/scan-progress`
 
@@ -122,7 +143,10 @@ Summary:
 - GHCR image publish: `.github/workflows/publish-ghcr.yml`
 - Supply-chain SBOM/attestation baseline: `.github/workflows/supply-chain.yml`
 
-## 9) Docs index
+## 10) Roadmap (still to build)
+See `docs/roadmap-gap-analysis.md` and `docs/execplans/opencnapp-v3-dashboard-and-platform.md`. Highlights: deeper **asset inventory**, global search wired to APIs, richer **attack-path** correlation, full **compliance control library** (pass/fail per control), **SSO**, and production-hardening of Compose/Kubernetes.
+
+## 11) Docs index
 - Contributor guide: `docs/CONTRIBUTING.md`
 - Plugin authoring: `docs/adding-a-plugin.md`
 - Connector authoring: `docs/adding-a-connector.md`
@@ -132,11 +156,11 @@ Summary:
 - Architecture plan usage: `docs/how-to-use-architecture-plan.md`
 - Roadmap status: `docs/roadmap-gap-analysis.md`
 
-## 10) Visual preview
+## 12) Visual preview
 
 ![OpenCNAPP architecture preview](raw%20cnapp%20idea/opencnapp_architecture.png)
 
-## 12) Troubleshooting
+## 13) Troubleshooting
 - **I accidentally changed `README.md` in my PR branch and want to reset it**:
   - Restore only README from `origin/main`:
     - `git fetch origin`
@@ -154,3 +178,5 @@ Summary:
     - `git pull --rebase origin main`
 - **`ModuleNotFoundError: No module named 'api'`** while running tests:
   - Use `PYTHONPATH=. pytest -q` or `python -m unittest discover -s tests`.
+- **Docker image pull fails (`unexpected EOF`, timeout)**:
+  - Retry `docker compose pull` or `docker compose build --no-cache`; check VPN/firewall; on Windows ensure Docker Desktop has enough disk/RAM.
