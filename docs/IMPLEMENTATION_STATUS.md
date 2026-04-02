@@ -20,6 +20,7 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 ## Platform & dashboard (recent)
 
+- **KSPM domain dashboard** (`/dashboard/kspm`) — **25 widget slots** (five wired to `/dashboard/summary?domain=kspm` + findings-by-cloud; remainder AccuKnox-style placeholders until APIs exist). See **`docs/kspm-domain-dashboard-scope.md`**, registry: `dashboard/src/config/kspmDashboardWidgets.ts`.
 - **Auth** — JWT login, protected routes, axios 401 → login redirect (`dashboard/src/api/client.ts`).
 - **App shell** — Sidebar, Topbar, theme, command palette (**⌘K** / **Ctrl+K**).
 - **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling. **Do not** add a second full-width “Add cloud” empty state in the page body; the primary action stays in the **top bar** (this branch never shipped a centered duplicate CTA in `UnifiedDashboard.tsx`).
