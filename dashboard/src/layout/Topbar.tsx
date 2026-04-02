@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell,
   ChevronDown,
@@ -31,6 +31,8 @@ const RANGE_LABEL: Record<DateRangePreset, string> = {
 }
 
 export function Topbar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const theme = useAppStore((s) => s.theme)
   const setTheme = useAppStore((s) => s.setTheme)
   const dateRange = useAppStore((s) => s.dateRange)
@@ -119,6 +121,28 @@ export function Topbar() {
         <Button variant="ghost" size="icon" type="button" aria-label="Help">
           <HelpCircle className="h-4 w-4" />
         </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="max-w-[200px] truncate">
+              {user?.email ?? 'Account'}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="truncate font-normal text-xs text-muted-foreground">
+              {user?.email}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                logout()
+                navigate('/login')
+              }}
+            >
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <Button
           variant="ghost"

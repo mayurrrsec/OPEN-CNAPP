@@ -3,10 +3,11 @@ import hashlib
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from api.auth import get_current_user
 from api.database.session import get_db
 from api.models import Finding
 
-router = APIRouter(prefix="/attack-paths", tags=["attack-paths"])
+router = APIRouter(prefix="/attack-paths", tags=["attack-paths"], dependencies=[Depends(get_current_user)])
 SEV_WEIGHT = {"CRITICAL": 10, "HIGH": 7, "MEDIUM": 4, "LOW": 2, "INFO": 1}
 
 
@@ -105,6 +106,22 @@ def _build_story(source: str, target: str, risk_score: float, findings: list[Fin
 def attack_paths(db: Session = Depends(get_db)):
     g = _build_graph(db)
     return {"nodes": g["nodes"], "edges": g["edges"], "top_paths": g["top_paths"]}
+
+
+@router.get("/graph")
+def attack_asset_graph(db: Session = Depends(get_db)):
+    """Same graph with explicit metadata for UI / graph widgets."""
+    g = _build_graph(db)
+    return {
+        "nodes": g["nodes"],
+        "edges": g["edges"],
+        "top_paths": g["top_paths"],
+        "meta": {
+            "node_count": len(g["nodes"]),
+            "edge_count": len(g["edges"]),
+            "description": "Cloud → resource → check edges derived from findings; expands with more ingest.",
+        },
+    }
 
 
 @router.get("/story/{path_id}")

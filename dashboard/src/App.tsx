@@ -1,10 +1,12 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { CommandPalette } from '@/components/CommandPalette'
 import { AppShell } from '@/layout/AppShell'
+import { useAuth } from '@/context/AuthContext'
 import UnifiedDashboard from '@/pages/UnifiedDashboard'
 import DomainDashboard from '@/pages/DomainDashboard'
 import Findings from '@/pages/Findings'
 import AttackPaths from '@/pages/AttackPaths'
+import AttackPathDetail from '@/pages/AttackPathDetail'
 import PentestRunner from '@/pages/PentestRunner'
 import PluginManager from '@/pages/PluginManager'
 import Connectors from '@/pages/Connectors'
@@ -12,32 +14,60 @@ import Alerts from '@/pages/Alerts'
 import Compliance from '@/pages/Compliance'
 import Inventory from '@/pages/Inventory'
 import Settings from '@/pages/Settings'
+import Login from '@/pages/Login'
+import AuthCallback from '@/pages/AuthCallback'
 
-export default function App() {
+function ProtectedRoute() {
+  const { token, loading } = useAuth()
+  const location = useLocation()
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        Loading…
+      </div>
+    )
+  }
+  if (!token) {
+    return <Navigate to="/login" replace state={{ from: location }} />
+  }
+  return <Outlet />
+}
+
+function AppLayout() {
   return (
     <>
       <CommandPalette />
-      <AppShell>
-      <Routes>
-        <Route path="/" element={<UnifiedDashboard />} />
-        <Route path="/dashboard/:domain" element={<DomainDashboard />} />
-        <Route path="/findings" element={<Findings />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/attack-paths" element={<AttackPaths />} />
-        <Route path="/attack-paths/:pathId" element={<AttackPathDetail />} />
-        <Route path="/pentest" element={<PentestRunner />} />
-        <Route path="/plugins" element={<PluginManager />} />
-        <Route path="/connectors" element={<Connectors />} />
-        <Route path="/alerts" element={<Alerts />} />
-        <Route path="/compliance" element={<Compliance />} />
-        <Route path="/settings" element={<Settings />} />
-
-        <Route path="/attackpaths" element={<Navigate to="/attack-paths" replace />} />
-        <Route path="/pentestrunner" element={<Navigate to="/pentest" replace />} />
-        <Route path="/pluginmanager" element={<Navigate to="/plugins" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      </AppShell>
+      <AppShell />
     </>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<UnifiedDashboard />} />
+          <Route path="/dashboard/:domain" element={<DomainDashboard />} />
+          <Route path="/findings" element={<Findings />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/attack-paths" element={<AttackPaths />} />
+          <Route path="/attack-paths/:pathId" element={<AttackPathDetail />} />
+          <Route path="/pentest" element={<PentestRunner />} />
+          <Route path="/plugins" element={<PluginManager />} />
+          <Route path="/connectors" element={<Connectors />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/compliance" element={<Compliance />} />
+          <Route path="/settings" element={<Settings />} />
+
+          <Route path="/attackpaths" element={<Navigate to="/attack-paths" replace />} />
+          <Route path="/pentestrunner" element={<Navigate to="/pentest" replace />} />
+          <Route path="/pluginmanager" element={<Navigate to="/plugins" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Route>
+    </Routes>
   )
 }

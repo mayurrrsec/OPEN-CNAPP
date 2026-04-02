@@ -1,12 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from api.auth import get_current_user
 
 try:
     import apprise
 except Exception:
     apprise = None
 
-router = APIRouter(prefix="/alerts", tags=["alerts"])
+router = APIRouter(prefix="/alerts", tags=["alerts"], dependencies=[Depends(get_current_user)])
 RULES: list[dict] = []
 
 

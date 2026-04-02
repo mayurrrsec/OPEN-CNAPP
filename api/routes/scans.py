@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 
 from api.auth import get_current_user
 from api.database.session import get_db
-from api.models import Scan, Plugin
+from api.models import Scan, Plugin, User
 from api.schemas import ScanTrigger
 from api.workers.scanner_runner import run_scan
 
-router = APIRouter(prefix="/scans", tags=["scans"])
+router = APIRouter(prefix="/scans", tags=["scans"], dependencies=[Depends(get_current_user)])
 ACTIVE_SCAN_PLUGINS = {"nuclei", "nmap", "nikto", "sslyze", "cloudfox"}
 
 
@@ -18,7 +18,7 @@ def list_scans(db: Session = Depends(get_db), limit: int = 200):
 
 
 @router.post("/trigger")
-def trigger_scan(payload: ScanTrigger, db: Session = Depends(get_db), user: str = Depends(get_current_user)):
+def trigger_scan(payload: ScanTrigger, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     plugin = db.query(Plugin).filter(Plugin.name == payload.plugin, Plugin.enabled.is_(True)).first()
     if not plugin:
         raise HTTPException(status_code=404, detail="Enabled plugin not found")
@@ -31,7 +31,7 @@ def trigger_scan(payload: ScanTrigger, db: Session = Depends(get_db), user: str 
         connector=payload.connector,
         status="queued",
         started_at=datetime.utcnow(),
-        meta={"source": payload.source, "requested_by": user},
+        meta={"source": payload.source, "requested_by": user.email},
     )
     db.add(scan)
     db.commit()

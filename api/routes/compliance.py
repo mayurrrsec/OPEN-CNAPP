@@ -3,16 +3,34 @@ from collections import Counter
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from api.auth import get_current_user
 from api.database.session import get_db
 from api.models import Finding
 
-router = APIRouter(prefix="/compliance", tags=["compliance"])
+router = APIRouter(prefix="/compliance", tags=["compliance"], dependencies=[Depends(get_current_user)])
 FRAMEWORKS = ["CIS", "NIST", "PCI-DSS", "SOC2", "ISO27001"]
 
 
 @router.get("/frameworks")
 def frameworks():
     return FRAMEWORKS
+
+
+@router.get("/control-model")
+def control_model():
+    """Static control taxonomy; enforcement mapping stays tied to finding compliance tags."""
+    return {
+        "frameworks": [
+            {
+                "id": fw,
+                "title": fw,
+                "domains": ["Identity", "Data protection", "Logging", "Network"],
+            }
+            for fw in FRAMEWORKS
+        ],
+        "policy_engine": "tag_rollups",
+        "note": "Full policy-as-code and automated evidence collection are tracked on the roadmap.",
+    }
 
 
 @router.get("/heatmap")

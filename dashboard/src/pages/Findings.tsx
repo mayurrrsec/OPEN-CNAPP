@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   flexRender,
   getCoreRowModel,
@@ -22,12 +23,24 @@ const PAGE_SIZE = 25
 const SORT_FIELDS = new Set(['created_at', 'severity', 'domain', 'tool', 'status', 'cloud_provider'])
 
 export default function Findings() {
+  const [searchParams] = useSearchParams()
   const [severity, setSeverity] = useState('')
   const [domain, setDomain] = useState('')
   const [cloud, setCloud] = useState('')
   const [status, setStatus] = useState('')
   const [tool, setTool] = useState('')
   const [q, setQ] = useState('')
+
+  useEffect(() => {
+    const sev = searchParams.get('severity')
+    const dom = searchParams.get('domain')
+    const cl = searchParams.get('cloud')
+    const st = searchParams.get('status')
+    if (sev) setSeverity(sev)
+    if (dom) setDomain(dom)
+    if (cl) setCloud(cl)
+    if (st) setStatus(st)
+  }, [searchParams])
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: PAGE_SIZE })
   const [sorting, setSorting] = useState<SortingState>([{ id: 'created_at', desc: true }])
