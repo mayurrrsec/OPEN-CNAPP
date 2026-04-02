@@ -22,7 +22,7 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 - **Auth** — JWT login, protected routes, axios 401 → login redirect (`dashboard/src/api/client.ts`).
 - **App shell** — Sidebar, Topbar, theme, command palette (**⌘K** / **Ctrl+K**).
-- **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling (add-cloud CTA lives in the top bar).
+- **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling. **Do not** add a second full-width “Add cloud” empty state in the page body; the primary action stays in the **top bar** (this branch never shipped a centered duplicate CTA in `UnifiedDashboard.tsx`).
 - **Findings** — TanStack Table, filters, lifecycle sheet (RHF + Zod), **empty states** (no data vs filtered).
 - **Attack paths** — Graph + story route `/attack-paths/:pathId`, empty state when graph has no nodes.
 - **Compliance** — Framework rollup, control grid route.
