@@ -21,7 +21,7 @@ Follow-on: command palette, Findings table + sheet, attack story endpoint + deta
 
 ### Feature branches / recent work (check your branch)
 - **Auth & admin** — Login/session, protected API routes, user settings flows (as on `feat/auth-sso-admin-users` or similar).
-- **Connectors + inventory (Phase 2 slice)** — Connector CRUD + enable/disable, `POST /connectors/test` (payload-based validation), **Add Cloud / Add Cluster / Add Registry** wizards in the dashboard, **Inventory** tabs (assets from findings aggregation). Details: **`docs/IMPLEMENTATION_STATUS.md`**.
+- **Connectors + inventory (Phase 2 slice)** — Connector CRUD + enable/disable, `POST /connectors/test` (payload-based validation), **Add Cloud / Add Cluster / Add Registry** wizards in the dashboard, **Inventory** (nested routes: cloud assets, clusters, namespaces, workloads, images; findings-backed APIs; optional `k8s_*` sync). **Inventory (KSPM) built scope:** **`docs/inventory-kspm-built.md`**. Broader status: **`docs/IMPLEMENTATION_STATUS.md`**.
 
 **Process:** Prefer completing **one domain at a time** (e.g. CSPM, KSPM, registry scanning) before starting the next; see `docs/IMPLEMENTATION_STATUS.md` → “How we work from here”.
 
