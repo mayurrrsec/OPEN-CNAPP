@@ -118,6 +118,7 @@ Shared query helpers: `api/inventory/helpers.py`, `api/inventory/cluster_detail_
 
 ## Related docs
 
+- **`docs/plan-of-action-kspm-cspm-testing.md`** — Plan of action for **management / cloud team**: KSPM → CSPM testing, asks, Defender, RG scope, egress & risk.
 - `README.md` — Quick overview and API index.
 - `scripts/DEV_CONTEXT.md` — Repo layout and commands (for humans and agents).
 - `docs/roadmap-gap-analysis.md` — Roadmap vs current gaps.
