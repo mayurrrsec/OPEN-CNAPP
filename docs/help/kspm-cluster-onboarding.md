@@ -44,6 +44,28 @@ Placeholder **`YOUR_TENANT`** in generic docs means “paste the `tenant_id` fro
 
 ## What does the Helm command do?
 
+### Beginner: what is `oci://YOUR_REGISTRY/agents`?
+
+- **`oci://`** means “install this Helm chart from an **OCI registry**” (same idea as Docker images, but for charts).
+- **`YOUR_REGISTRY/agents`** is a **placeholder**. You replace it with the real location of the **in-cluster agents** chart your team publishes, for example:
+  - `oci://ghcr.io/your-org/charts/opencnapp-agents` (example shape — not a live URL),
+  - or a private Harbor / ECR / Artifactory path your company uses.
+
+**This repository** ships **`helm/opencnapp`** — that chart deploys the **OpenCNAPP control plane** (API, dashboard, worker, etc.) on a cluster. It does **not** automatically publish a separate public **`opencnapp-agents`** chart at a fixed `oci://…` URL. Until your deployment provides that chart (or you vendor/build one), the wizard command is a **template** showing which **values** (`tenantId`, `joinToken`, `global.kspm.*`) the agents are expected to accept.
+
+**If you don’t have an agents chart yet**, you can still use KSPM-style findings by:
+
+1. **Plugin manager** — enable Kubescape / kube-bench / etc. and run scans from an environment that has **kubeconfig** access (Celery worker with Docker, or external CI), with results ingested into OpenCNAPP; or  
+2. **`POST /ingest/{tool}`** — push normalized findings from any scanner you run yourself.
+
+### Where do you run the Helm command?
+
+You run it in a **terminal on your laptop or in CI** — wherever **`kubectl` and `helm`** are installed and configured to talk to **your Kubernetes cluster** (same kubeconfig you use for `kubectl get nodes`). You do **not** paste the command into the OpenCNAPP web UI; the UI only **generates** the command for you to copy.
+
+The command **installs workloads into that cluster** (namespace `opencnapp-agents` in the example). It does not run “inside” the OpenCNAPP server container.
+
+---
+
 The snippet is a **template** (your registry URL and chart version will come from your deployment docs):
 
 ```text
@@ -110,6 +132,32 @@ These are **separate scanner plugins** in the `plugins/` directory. They run as 
 2. **Plugin manager** — Enable **kubescape**, **kube-bench**, **kube-hunter**, **polaris** as needed; sync plugins from `plugins/`.
 3. **Scans** — Run or schedule scans so findings appear (connector / kubeconfig context must match how your runner executes jobs).
 4. **Findings / KSPM dashboard** — Filter by domain `kspm` (or tool name) as data flows in.
+
+---
+
+## Testing with Azure Kubernetes Service (AKS)
+
+If your clusters live in **Azure** (e.g. **Kubernetes center** in the portal, multiple AKS clusters in resource groups like `RG-SANDBOX-CI`, `isb-rg`, etc.):
+
+1. **Pick one cluster** for testing and install the **Azure CLI** (`az`) if you don’t have it.
+2. **Sign in and get kubeconfig** (run on your laptop or in Cloud Shell):
+
+   ```bash
+   az login
+   az aks get-credentials --resource-group <YOUR_RG> --name <YOUR_CLUSTER_NAME>
+   ```
+
+   After this, `kubectl get nodes` should talk to **that** AKS cluster.
+
+3. **Helm** uses the **same** kubeconfig context. The **Add cluster** wizard command is still `helm upgrade --install ...` — you run it **against that cluster** once you replace `oci://YOUR_REGISTRY/agents` with a chart you actually have (or use the plugin/ingest path below).
+
+4. **OCI registry on Azure** — If you publish your own agents Helm chart to **Azure Container Registry (ACR)**, the URL usually looks like:
+
+   `oci://<acrName>.azurecr.io/<path-to-chart>:<version>`
+
+   You must **`az acr login -n <acrName>`** (or use a token) and configure Helm for OCI (`helm registry login ...`) per [Microsoft’s Helm OCI docs](https://learn.microsoft.com/azure/container-registry/container-registry-helm-charts). This repo does **not** ship a fixed ACR URL; your team creates the registry and pushes the chart.
+
+5. **If you don’t have an agents chart in ACR yet** — Use AKS only as the **scan target**: run **Plugin manager** scans from a machine/worker whose kubeconfig points at that AKS (after `get-credentials`), or run scanners in CI and **`POST /ingest/{tool}`**. Findings will still show under **Findings** and **Inventory** when tagged to your connector.
 
 ---
 
