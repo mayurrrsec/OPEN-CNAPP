@@ -12,7 +12,6 @@ opencnapp.db
 # Node
 dashboard/node_modules/
 dashboard/dist/
-dashboard/package-lock.json
 
 # IDE
 .vscode/

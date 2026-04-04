@@ -7,7 +7,7 @@
 
 **Note:** OpenCNAPP is **open source** and **self-hosted**. There is **no vendor SaaS fee**; any **cost** is **your cloud and infrastructure** (compute, egress, optional Defender APIs, etc.).
 
-**Revision 1.3** — Azure-first PoC, **resource-group–scoped** CSPM, sandbox KSPM (Helm agents), and explicit **asks for the company**.
+**Revision 1.4** — §8.1: security team (OpenCNAPP) vs **company cloud team** deliverables.
 
 ---
 
@@ -396,12 +396,16 @@ Same principles as KSPM: **egress** from scanners/runners to OpenCNAPP API; **AP
 | **Security / IAM** | Approve scanner types (active vs passive) for **test** clusters; agent join token handling. | Approve app registration / MI and **least-privilege** role on **PoC RG** only. |
 | **Management** | Approve **non-prod** boundary and **timeline** for Phase 1 then Phase 2. | Approve **scope** (RG-first), **cost** monitoring, and **rollback** if PoC ends. |
 
-### 8.1 Deliverables — us vs the company
+### 8.1 Deliverables — security team vs company cloud team
+
+**Roles:** The **OpenCNAPP / project** side acts as the **security team** running the PoC (deploy, configure, demonstrate). The **company** provides the **cloud team** (and IAM/security approvers) to supply environments, credentials, and approvals.
 
 | Owner | Deliverable |
 |-------|-------------|
-| **OpenCNAPP / project team** | Deploy OpenCNAPP (Compose or Helm); document URLs; enable plugins; run test ingest/scans **within agreed scope**; demo dashboard (KSPM then CSPM). |
-| **Company** | Sandbox AKS + network path; **Azure** credentials / MI per **Section 6.1.1**; **RG-scoped** IAM; named contacts; approval for passive vs active scanners. |
+| **Security team** (OpenCNAPP project) | Deploy OpenCNAPP (Compose or Helm); document URLs; enable plugins; run test ingest/scans **within agreed scope**; demo dashboard (KSPM then CSPM); coordinate with the company **cloud team** on schedules and scope. |
+| **Company — cloud team** | Sandbox **AKS** + network path to OpenCNAPP API; **Azure** subscription/RG for PoC; **service principal** or **managed identity** per **Section 6.1.1**; **RG-scoped** IAM assignments; named technical contacts; firewall/egress rules; optional **ACR** for agents chart. |
+| **Company — security / IAM** (if separate from cloud) | Approve scanner posture (passive vs active), app registrations, and **Defender** API read if used (**Section 6.1.2**). |
+| **Company — management** | Approve non-prod boundary, timeline, and **rollback** when the PoC ends. |
 
 ---
 
@@ -430,7 +434,7 @@ When you have the **full OpenCNAPP source or release**, these files add detail b
 ---
 
 **Document owner:** Testing / platform lead  
-**Revision:** 1.3 — Azure-first PoC, RG-scoped CSPM, sandbox KSPM Helm agents, company checklists (5.3.2, 6.1.2), connection-method guidance.
+**Revision:** 1.4 — §8.1 deliverables: security team vs company cloud team; see also 1.3 notes (Azure RG scope, checklists).
 
 ---
 
