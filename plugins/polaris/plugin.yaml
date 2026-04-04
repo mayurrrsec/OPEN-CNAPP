@@ -6,3 +6,5 @@ enabled: true
 schedule: "0 */12 * * *"
 image: quay.io/fairwinds/polaris:latest
 normalizer: api.adapters.polaris.PolarisAdapter
+config:
+  command: ["audit", "--format", "json"]

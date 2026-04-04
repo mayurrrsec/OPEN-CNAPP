@@ -193,6 +193,7 @@ Full UI specification and checklist: **`docs/plans/kspm-inventory-plan.md`**.
 
 ## Related files
 
+- **Ingest, worker scans, kubeconfig:** `docs/help/kspm-ingest-runbook.md`
 - Wizard UI: `dashboard/src/components/connectors/AddClusterWizard.tsx`
 - Kubernetes connector: `api/connectors/kubernetes.py`
 - Cluster detail routes: `api/routes/cluster_detail.py`

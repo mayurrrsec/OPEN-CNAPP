@@ -6,6 +6,7 @@ from api.adapters.trivy import TrivyAdapter
 from api.adapters.grype import GrypeAdapter
 from api.adapters.syft import SyftAdapter
 from api.adapters.kubebench import KubebenchAdapter
+from api.adapters.kubescape import KubescapeAdapter
 from api.adapters.polaris import PolarisAdapter
 from api.adapters.kubehunter import KubehunterAdapter
 from api.adapters.pmapper import PmapperAdapter
@@ -26,6 +27,7 @@ ADAPTERS: dict[str, type[BaseAdapter]] = {
     "grype": GrypeAdapter,
     "syft": SyftAdapter,
     "kubebench": KubebenchAdapter,
+    "kubescape": KubescapeAdapter,
     "polaris": PolarisAdapter,
     "kubehunter": KubehunterAdapter,
     "pmapper": PmapperAdapter,
@@ -39,6 +41,15 @@ ADAPTERS: dict[str, type[BaseAdapter]] = {
 }
 
 
+# Friendly aliases (folder / CLI names differ from ingest key)
+ADAPTER_ALIASES: dict[str, str] = {
+    "kube-bench": "kubebench",
+    "kube_hunter": "kubehunter",
+    "kube-hunter": "kubehunter",
+}
+
+
 def get_adapter(tool: str) -> BaseAdapter | None:
-    cls = ADAPTERS.get(tool)
+    key = ADAPTER_ALIASES.get(tool, tool)
+    cls = ADAPTERS.get(key)
     return cls() if cls else None

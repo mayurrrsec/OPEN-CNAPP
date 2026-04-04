@@ -6,3 +6,6 @@ enabled: true
 schedule: "0 0 * * 0"
 image: aquasec/kube-hunter:latest
 normalizer: api.adapters.kubehunter.KubehunterAdapter
+# Active probing — use non-prod clusters only. JSON report on stdout.
+config:
+  command: ["--report", "json"]

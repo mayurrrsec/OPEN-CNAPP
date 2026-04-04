@@ -6,3 +6,6 @@ enabled: true
 schedule: "0 */12 * * *"
 image: aquasec/kube-bench:latest
 normalizer: api.adapters.kubebench.KubebenchAdapter
+# JSON on stdout for Celery scanner_runner → ingest (requires OPENCNAPP_KUBECONFIG + mount on worker)
+config:
+  command: ["--json"]

@@ -4,5 +4,7 @@ domain: cnapp
 run_mode: container
 enabled: true
 schedule: "0 */6 * * *"
-image: ghcr.io/opencnapp/kubescape:latest
+image: quay.io/kubescape/kubescape:latest
 normalizer: api.adapters.kubescape
+config:
+  command: ["scan", "framework", "nsa", "--format", "json"]

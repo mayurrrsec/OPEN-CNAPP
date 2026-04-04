@@ -44,8 +44,11 @@ services:
       DATABASE_URL: postgresql+psycopg2://opencnapp:opencnapp@postgres:5432/opencnapp
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: change-me
+      # Optional: mount kubeconfig and set path so KSPM plugin containers can scan a cluster
+      # OPENCNAPP_KUBECONFIG: /kubeconfig
     depends_on: [postgres, redis]
     volumes: ["./:/app", "/var/run/docker.sock:/var/run/docker.sock"]
+    # Optional: - ${HOME}/.kube/config:/kubeconfig:ro
 
   dashboard:
     image: node:20
