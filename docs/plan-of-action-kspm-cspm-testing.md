@@ -7,6 +7,8 @@
 
 **Note:** OpenCNAPP is **open source** and **self-hosted**. There is **no vendor SaaS fee**; any **cost** is **your cloud and infrastructure** (compute, egress, optional Defender APIs, etc.).
 
+**Revision 1.3** — Azure-first PoC, **resource-group–scoped** CSPM, sandbox KSPM (Helm agents), and explicit **asks for the company**.
+
 ---
 
 ## 1. Executive overview
@@ -27,6 +29,19 @@
 - **Single pane** for security findings from **Kubernetes** and (later) **Azure**, tied to **your** connectors and policies — not locked to one vendor UI.
 - **Repeatable testing** of **KSPM then CSPM** in a controlled way, with **documented** permissions and blast radius.
 - **Open architecture**: you can add **plugins** (e.g. Kubescape, kube-bench, cloud scanners) and **ingest** paths without replacing Defender or AKS — **complementary**, not mandatory replacement.
+
+### 1.4 Client context — Azure-only cloud, minimum blast radius
+
+This engagement assumes **Microsoft Azure** is the **only** cloud connector needed for **CSPM** in the first phase. The company has asked to **avoid scanning or touching an entire subscription** in a way that could disturb services. We align with that by:
+
+| Principle | What it means in practice |
+|-----------|---------------------------|
+| **CSPM scope** | Run assessments against **one or more dedicated resource groups** (e.g. `rg-opencnapp-poc-*`) that contain **non-production** or **test** workloads — **not** a default “whole subscription” scan profile. |
+| **IAM** | Grant the OpenCNAPP connector identity (**service principal** or **managed identity**) **Reader** (and only extra permissions explicitly agreed for scanners) **at resource group scope** — or a **test subscription** containing only those RGs. |
+| **KSPM scope** | Use a **sandbox / non-production AKS** in a **test resource group**; deploy **in-cluster agents (Helm)** or run **scanner-only** flows **only** there first. |
+| **Production** | **No** change to production clusters or production RGs without a separate approval and window. |
+
+The **attack path** and **IAM graph** features in OpenCNAPP are **separate** from raw CSPM scans: they aggregate **findings** and optional **ingested graph** data — they do not replace Azure Policy or Defender.
 
 ---
 
@@ -259,6 +274,30 @@ Then `kubectl get nodes` and Helm use that context. If you host a chart in **Azu
 | **Service principal / identity** (if scans run from a **CI** or **VM** in Azure) with permission to use **kubeconfig** or AKS API for **test** clusters only. |
 | **Optional**: **Azure Container Registry (ACR)** if we **publish** an internal **agents Helm chart** — otherwise we rely on **scanner + ingest** without in-cluster agents. |
 
+#### 5.3.1 Sandbox AKS — deploy in-cluster agents (Helm) for the PoC
+
+To exercise **end-to-end KSPM** (connectors → optional **agent join token** → **Helm** install → findings), the company should:
+
+| # | Ask | Detail |
+|---|-----|--------|
+| **1** | **Identify a sandbox AKS** | Subscription ID, **resource group name**, **cluster name** — **non-production** only. |
+| **2** | **Allow Helm install** | A namespace (e.g. `opencnapp-agents` or your standard) where the **in-cluster agents** chart can run; **NetworkPolicy** / **firewall** rules allowing **HTTPS outbound** from the cluster to the **OpenCNAPP API** URL (`VITE_API_URL` / public API endpoint). |
+| **3** | **Create an agent join token** | In OpenCNAPP: **Settings → Agent join tokens**; paste into Helm values as `global.agents.joinToken` (see **Section 4.8**). |
+| **4** | **Run the Helm command** from a jump box or pipeline with `kubectl` context pointing **only** at the sandbox cluster — *not* production. |
+| **5** | **If no Helm chart is published yet** | Fall back to **Plugin manager** + **kubeconfig** scans or **`POST /ingest/{tool}`**; the PoC still validates findings and dashboards without in-cluster agents. |
+
+**Naming note:** Some teams refer to workload or “chat” agents internally. In OpenCNAPP the wizard calls this **Helm-based agents** / **in-cluster agents** — a **lightweight component** in the test cluster that talks to your **self-hosted** OpenCNAPP API using the **join token**.
+
+#### 5.3.2 What we need from the company (KSPM) — checklist to send
+
+Please provide in writing (email or ticket):
+
+- [ ] **Sandbox AKS**: subscription, resource group, cluster name, region.  
+- [ ] **Who** will run `az aks get-credentials` and **Helm** (named contacts).  
+- [ ] **Egress**: confirm cluster → OpenCNAPP API **HTTPS** allowed (URL + port 443).  
+- [ ] **Approval** for **passive** KSPM plugins (kubescape, kube-bench, polaris) vs **active** (e.g. kube-hunter) — active should stay **off** unless explicitly approved.  
+- [ ] **Optional**: ACR URL if you host a private **agents** Helm chart **OCI** reference.
+
 ### 5.4 After onboarding — agents Helm vs scans without agents
 
 | Path | When |
@@ -290,13 +329,38 @@ Then `kubectl get nodes` and Helm use that context. If you host a chart in **Azu
 
 ### 6.1 Cloud team requirement: resource group scope (not whole subscription)
 
-**Ask:** Perform **CSPM-related testing** in a **dedicated resource group** (or subscription) with **multiple resources**, **not** open-ended activity across the **entire** production subscription.
+**Ask:** Perform **CSPM-related testing** in a **dedicated resource group** (or **test subscription** containing only PoC RGs), **not** open-ended activity across **production** or the **entire** enterprise subscription.
 
 **How we align**
 
-- **Azure RBAC**: grant the OpenCNAPP connector’s **service principal** (or managed identity) permissions **only** on that **resource group** (e.g. Reader + scoped custom role for assessments), **not** Owner on the full subscription.
-- **Connector settings**: store **subscription ID** + **resource group name(s)** in connector **settings** so scanners **target** that scope (implementation detail as features land; principle is **least privilege**).
-- **Prowler / Steampipe / Scoutsuite**-style tools should be configured with **explicit** scope in **plugin config** — avoid “scan entire subscription” defaults in **test**.
+- **Azure RBAC**: grant the OpenCNAPP connector’s **service principal** (or **user-assigned managed identity**) permissions **only** on that **resource group** — typically **Reader** for inventory-style CSPM; add **narrow** extra permissions only if a specific plugin requires them (document per plugin).
+- **Connector (UI)**: **Add cloud → Azure** stores **subscription ID**, credentials, and **settings** such as **`azure_connection_method`** and optional **`azure_management_group_ids`** (organization-level — **leave empty** for this PoC if you want **strict RG-only** scope). Prefer a **dedicated test subscription** or **RG-level role assignment** so the identity **cannot** enumerate unrelated RGs.
+- **Scanner commands** (Prowler / Steampipe / ScoutSuite): operators must pass **vendor-documented** filters for **resource group** / region (e.g. restrict to the PoC RG). The **default** “scan everything in subscription” profile must **not** be used for this test. Document the **exact CLI flags or config** in the **runbook** for each tool version you use.
+- **OpenCNAPP worker** runs scanner **containers** when Docker is available; **scope** is ultimately enforced by **Azure RBAC** + **scanner args** — both are required.
+
+### 6.1.1 Azure connection methods — which to use (recommendation)
+
+The **Add cloud** wizard supports three **Azure** authentication modes (stored in connector **settings**):
+
+| Method | When to use | What the company provides |
+|--------|-------------|---------------------------|
+| **Service principal** | **Recommended for PoC** — predictable for a VM/worker running Docker scans | App registration: **Tenant ID**, **Application (client) ID**, **Client secret** (or cert), **Subscription ID**; secret stored **encrypted** in OpenCNAPP. |
+| **Managed identity** | OpenCNAPP **worker** runs on an **Azure VM** or **AKS** with **user-assigned or system MI** | **Subscription ID**; Azure platform attaches MI; no client secret in OpenCNAPP. |
+| **`az login` / Azure CLI** | **Developer machines only** — not for long-running production workers | Interactive login on the host; same subscription ID in connector. |
+
+**For the company’s security review:** Prefer **Reader** at **resource group** scope for the PoC RG. Add **Microsoft Defender for Cloud** read APIs only if you enable **native Defender ingest** (optional; **Section 6.2**).
+
+### 6.1.2 What we need from the company (CSPM) — checklist to send
+
+Please provide:
+
+- [ ] **Subscription ID** used for the PoC (ideally a **non-production** subscription).  
+- [ ] **Resource group name(s)** that may be scanned (e.g. `rg-opencnapp-cspm-poc`).  
+- [ ] **Written approval** of the **connection method** (service principal vs managed identity vs dev `az login`).  
+- [ ] **App registration** (if SP): tenant ID, client ID, client secret **or** process to create a secret in **Key Vault** and grant OpenCNAPP worker access (your standard).  
+- [ ] **RBAC assignment** proof: SP/MI has **Reader** (or agreed role) **only** on the PoC RG (screenshot or IaC reference).  
+- [ ] **Optional**: enable **Defender for Cloud** trial/read API for **correlation PoC** — separate IAM approval.  
+- [ ] **Confirmation** that scans will **not** use subscription-wide defaults; attach **scanner config** snippet with **RG filter** once tools are chosen.
 
 ### 6.2 Microsoft Defender for Cloud — what OpenCNAPP adds
 
@@ -328,9 +392,16 @@ Same principles as KSPM: **egress** from scanners/runners to OpenCNAPP API; **AP
 
 | Team | KSPM asks | CSPM asks |
 |------|---------|-----------|
-| **Cloud team / platform** | Test AKS + `get-credentials`; firewall path to OpenCNAPP API; optional ACR for internal Helm chart. | SP / MI with **RG-scoped** RBAC; optional Defender read for ingest PoC. |
-| **Security / IAM** | Approve scanner types (active vs passive) for test clusters. | Approve cloud connector permissions and Defender API read (if used). |
-| **Management** | Approve **non-prod** boundary and **timeline** for Phase 1 then Phase 2. | Approve **scope** (RG vs subscription) and **cost** monitoring. |
+| **Cloud team / platform** | Sandbox **AKS** + `get-credentials`; **Helm** namespace + egress to OpenCNAPP API; optional **ACR** for internal agents chart; **Section 5.3.2** checklist. | **Azure-only**: **SP or MI** with **RG-scoped** RBAC; **subscription ID**; **no** full-subscription scan profile; optional **Defender** read; **Section 6.1.2** checklist. |
+| **Security / IAM** | Approve scanner types (active vs passive) for **test** clusters; agent join token handling. | Approve app registration / MI and **least-privilege** role on **PoC RG** only. |
+| **Management** | Approve **non-prod** boundary and **timeline** for Phase 1 then Phase 2. | Approve **scope** (RG-first), **cost** monitoring, and **rollback** if PoC ends. |
+
+### 8.1 Deliverables — us vs the company
+
+| Owner | Deliverable |
+|-------|-------------|
+| **OpenCNAPP / project team** | Deploy OpenCNAPP (Compose or Helm); document URLs; enable plugins; run test ingest/scans **within agreed scope**; demo dashboard (KSPM then CSPM). |
+| **Company** | Sandbox AKS + network path; **Azure** credentials / MI per **Section 6.1.1**; **RG-scoped** IAM; named contacts; approval for passive vs active scanners. |
 
 ---
 
@@ -359,4 +430,33 @@ When you have the **full OpenCNAPP source or release**, these files add detail b
 ---
 
 **Document owner:** Testing / platform lead  
-**Revision:** 1.2 — standalone deployment (Compose, Helm, KSPM onboarding), no external doc dependency.
+**Revision:** 1.3 — Azure-first PoC, RG-scoped CSPM, sandbox KSPM Helm agents, company checklists (5.3.2, 6.1.2), connection-method guidance.
+
+---
+
+## 11. Appendix — one-page “ask” for the company (email-ready)
+
+**Subject:** OpenCNAPP PoC — Azure + AKS — information and approvals needed
+
+We are planning a **phased test** of OpenCNAPP (**KSPM** first, then **CSPM**) in your environment. Please confirm or provide:
+
+1. **Azure — scope**  
+   - PoC will use **resource group–scoped** access (and/or a **test subscription**), **not** a full production subscription crawl.  
+   - Please name the **subscription ID** and **resource group(s)** for CSPM testing.
+
+2. **Azure — authentication**  
+   - Preferred: **service principal** (app registration) with **Reader** on the PoC resource group only — **tenant ID, client ID, client secret** (or managed identity if the OpenCNAPP worker runs on Azure with MI).  
+   - Confirm which **connection method** you allow (**Section 6.1.1**).
+
+3. **AKS — sandbox**  
+   - Name the **non-production** cluster, resource group, and who will run **Helm** to deploy **in-cluster agents** (optional) for KSPM — **Section 5.3.1**.  
+   - Confirm **HTTPS egress** from that cluster to our OpenCNAPP API URL.
+
+4. **Safety**  
+   - Passive scanners first; **active** tools (e.g. certain probes) only with explicit approval.  
+   - No production clusters or RGs without a separate change.
+
+5. **Optional**  
+   - **Microsoft Defender for Cloud** API read for correlation — separate approval.
+
+We will attach this **plan-of-action** document for full detail.
