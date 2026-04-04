@@ -218,10 +218,13 @@ export function AddClusterWizard({ open, onOpenChange, onSaved, initial }: AddCl
   }
 
   const helmSnippet = useMemo(() => {
+    const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
     const join = tokenVal || 'YOUR_JOIN_TOKEN'
     const lines = [
       `helm upgrade --install opencnapp-agents oci://YOUR_REGISTRY/agents \\`,
       `  -n opencnapp-agents --create-namespace \\`,
+      `# Same API URL as the dashboard (VITE_API_URL). Rename the value key if your agents chart differs.`,
+      `  --set global.opencnappApiUrl="${apiBase}" \\`,
       `  --set global.clusterName="${clusterName}" \\`,
       `  --set global.tenantId="${tenantId}" \\`,
       `  --set global.agents.joinToken="${join}" \\`,
@@ -496,8 +499,9 @@ export function AddClusterWizard({ open, onOpenChange, onSaved, initial }: AddCl
               {target === 'kubernetes' ? (
                 <>
                   Run in a shell with <code className="text-xs">kubectl</code> and Helm configured.{' '}
-                  <code className="text-xs">global.tenantId</code> is your workspace id;{' '}
-                  <code className="text-xs">global.agents.joinToken</code> is the join token from step 2.
+                  <code className="text-xs">global.opencnappApiUrl</code> matches this dashboard&apos;s API (
+                  <code className="text-xs">VITE_API_URL</code>); <code className="text-xs">global.tenantId</code> is your
+                  workspace id; <code className="text-xs">global.agents.joinToken</code> is the join token from step 2.
                 </>
               ) : (
                 <>
