@@ -3,6 +3,7 @@ import { api } from './client'
 export type FindingRow = {
   id: string
   tool: string
+  source?: string
   severity: string
   domain: string
   cloud_provider?: string | null
@@ -18,6 +19,7 @@ export type FindingRow = {
   compliance?: string[]
   assigned_to?: string | null
   ticket_ref?: string | null
+  attack_path_count?: number
 }
 
 export type FindingsListParams = {
@@ -26,6 +28,7 @@ export type FindingsListParams = {
   cloud_provider?: string
   status?: string
   tool?: string
+  source?: string
   q?: string
   limit: number
   offset: number

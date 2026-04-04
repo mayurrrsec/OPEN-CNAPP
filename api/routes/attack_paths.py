@@ -17,6 +17,28 @@ from api.services.attack_story import steps_for_path, timeline_for_path
 router = APIRouter(prefix="/attack-paths", tags=["attack-paths"], dependencies=[Depends(get_current_user)])
 
 
+def guess_target_category(rid: str | None) -> str:
+    """Heuristic bucket for Orca-style chips (v1 — from resource id string, not full IAM graph)."""
+    if not rid:
+        return "unknown"
+    s = str(rid).lower()
+    if "bucket" in s or ":s3:" in s or "/s3" in s:
+        return "bucket"
+    if "ec2" in s or "instance" in s or "virtualmachine" in s or "compute" in s:
+        return "vm"
+    if "lambda" in s or "function" in s or "cloudfunctions" in s:
+        return "function"
+    if "rds" in s or "sql" in s or "databases" in s or "cosmos" in s:
+        return "db"
+    if ":role/" in s or "/roles/" in s:
+        return "role"
+    if ":user/" in s or "iam/user" in s:
+        return "user"
+    if "container" in s or "pod" in s:
+        return "container"
+    return "other"
+
+
 def _impact_band(score: float) -> str:
     s = float(score or 0)
     if s >= 70:
@@ -45,6 +67,7 @@ def _path_to_item(p: AttackPath) -> dict[str, Any]:
         "source_resource_id": p.source_resource_id,
         "target_resource_id": p.target_resource_id,
         "finding_count": len(p.finding_ids or []),
+        "target_category": guess_target_category(p.target_resource_id),
         "created_at": p.created_at.isoformat() if p.created_at else None,
         "updated_at": p.updated_at.isoformat() if p.updated_at else None,
     }
@@ -66,10 +89,13 @@ def list_attack_paths(
     q = db.query(AttackPath).filter(AttackPath.status == "active")
     all_rows = q.all()
     summary = {"high": 0, "medium": 0, "low": 0, "informational": 0}
+    by_target_category: dict[str, int] = {}
     for p in all_rows:
         b = _impact_band(p.impact_score or 0).lower()
         if b in summary:
             summary[b] += 1
+        cat = guess_target_category(p.target_resource_id)
+        by_target_category[cat] = by_target_category.get(cat, 0) + 1
 
     filtered = all_rows
     if impact_band:
@@ -84,6 +110,7 @@ def list_attack_paths(
         "summary": {
             "by_impact": summary,
             "total_paths": len(all_rows),
+            "by_target_category": by_target_category,
         },
         "total": total,
         "items": [_path_to_item(p) for p in page],

@@ -2,7 +2,7 @@
 
 This file records **what is implemented in the repo today** (not roadmap intent). Update it when you merge meaningful features. For roadmap vs gaps, see `docs/roadmap-gap-analysis.md`.
 
-**Last updated:** 2026-04-02 (KSPM inventory documented in `docs/inventory-kspm-built.md`)
+**Last updated:** 2026-04-04 (CSPM attack paths, connector scan, findings columns — see §CSPM & attack paths)
 
 ---
 
@@ -18,14 +18,47 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 ---
 
+## CSPM & attack paths (2026-04)
+
+**ExecPlan:** `docs/execplans/cspm-attack-paths.md` · **Diagram:** `docs/execplans/cspm_attack_path_architecture.svg` · **Help:** `docs/help/attack-paths.md`
+
+### What is implemented
+
+| Area | Status |
+|------|--------|
+| **Persisted attack paths** | `attack_paths` + `attack_path_edges` tables; SQLAlchemy models; `api/attack_path_builder.py` rebuilds from `findings` (limit 5000). |
+| **Rebuild trigger** | After `persist_normalized_findings` (ingest) and after `native_ingest` commit; optional **`POST /attack-paths/rebuild`**; env **`OPENCNAPP_SKIP_ATTACK_PATH_REBUILD=1`** skips rebuild. |
+| **API** | `GET /attack-paths` (list + summary: **by_impact**, **by_target_category** heuristic, **total_paths**), `GET /attack-paths/{id}`, `GET /attack-paths/{id}/graph` (D3 payload), `GET /attack-paths/assets?resource_id=`, `GET /attack-paths/graph` (legacy aggregate), `GET /attack-paths/story/{id}` (compat). |
+| **Adapters** | `defender_for_cloud`, `aws_security_hub` registered for **`POST /ingest/{tool}`** (normalized rows). |
+| **Connectors** | Multi-method: AWS (keys, IAM role, **SSO profile**), Azure (SP, **managed identity**, **az login**), GCP (SA JSON; other methods rejected in test with message). **`AddCloudWizard.tsx`** updated. |
+| **Connector-triggered scan** | **`POST /connectors/{name}/scan`** — queues worker scan (default **prowler** for aws/azure/gcp, **kubescape** for kubernetes); body optional `{ "plugin", "source", "confirm_active_scan" }` (same active-scan guard as **`POST /scans/trigger`**). |
+| **Dashboard** | **`/attack-paths`** — impact cards, **target category chips** (heuristic), table with **View flow**; **`/attack-paths/:pathId`** — horizontal **D3** flow (`AttackFlowGraph.tsx`), attack story, timeline, node sheet (findings for resource). |
+| **Findings** | **`GET /findings?source=`** filter; each row includes **`attack_path_count`**; **`GET /findings/{id}`** includes **`attack_path_count`**. UI: **Source** column, **Paths** link when count > 0, source filter dropdown. |
+
+### Orca Security–style UI: parity vs OpenCNAPP (honest)
+
+Commercial UIs (e.g. Orca) combine **deep cloud graph mining** (IAM edges, effective permissions, network + identity joins) with **rich asset modals** and **MITRE-tagged** alert cards.
+
+| Capability | Orca-style reference | OpenCNAPP today |
+|------------|----------------------|-----------------|
+| **Attack flow (main canvas)** | Multi-hop story: Internet → asset → IAM → crown jewel; alert diamonds; account banners | **Horizontal** Internet → source → target + **alert cards** from **findings** attached to the path; **heuristic** aggregation (cloud→resource→check style), not a full IAM permission graph. |
+| **Node / asset panel (“crazy graph”)** | Second graph: roles, policies, “any principal” → bucket | **Sheet** lists **findings** for **`resource_id`**; **no** separate IAM topology graph (would need IAM/API inventory + graph DB or heavy enrichment). |
+| **Scoring** | Impact / probability / risk tuned on big data | **impact_score** / **probability_score** / **risk_score** from **severity + exposure heuristics** on aggregated edges. |
+| **Attack story** | Polished copy + MITRE tags | **Steps** from **finding titles/domains** via `api/services/attack_story.py`; MITRE only if **ingest** provides it in **`raw`**. |
+| **Target category chips** | VM, bucket, role, etc. from asset model | **`by_target_category`** + per-row **`target_category`** from **string heuristics** on `target_resource_id` (improves as **`resource_type`** is normalized on findings). |
+
+**Bottom line:** The **layout and tabs** (list → flow → story → side panel) are **directionally** similar; the **depth of graph semantics** (especially IAM-level edges inside the node panel) is **not** equivalent yet — that requires more **data model + collectors**, not only UI.
+
+---
+
 ## Platform & dashboard (recent)
 
-- **KSPM domain dashboard** (`/dashboard/kspm`) — **25 widget slots** (five wired to `/dashboard/summary?domain=kspm` + findings-by-cloud; remainder AccuKnox-style placeholders until APIs exist). See **`docs/kspm-domain-dashboard-scope.md`**, registry: `dashboard/src/config/kspmDashboardWidgets.ts`.
+- **KSPM domain dashboard** (`/dashboard/kspm`) — **25 widget slots** (five wired to `/dashboard/summary?domain=kspm` + findings-by-cloud; remainder placeholders until APIs exist). See **`docs/kspm-domain-dashboard-scope.md`**, registry: `dashboard/src/config/kspmDashboardWidgets.ts`.
 - **Auth** — JWT login, protected routes, axios 401 → login redirect (`dashboard/src/api/client.ts`).
 - **App shell** — Sidebar, Topbar, theme, command palette (**⌘K** / **Ctrl+K**).
-- **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling. **Do not** add a second full-width “Add cloud” empty state in the page body; the primary action stays in the **top bar** (this branch never shipped a centered duplicate CTA in `UnifiedDashboard.tsx`).
-- **Findings** — TanStack Table, filters, lifecycle sheet (RHF + Zod), **empty states** (no data vs filtered).
-- **Attack paths** — Graph + story route `/attack-paths/:pathId`, empty state when graph has no nodes.
+- **Unified dashboard** — Posture summary from `/dashboard/summary`, charts, safe JSON handling.
+- **Findings** — TanStack Table, filters (**including `source`**), **`attack_path_count`**, lifecycle sheet (RHF + Zod), **empty states** (no data vs filtered).
+- **Attack paths** — Persisted paths, list + detail + D3 flow (`/attack-paths`, `/attack-paths/:pathId`). See §CSPM & attack paths above.
 - **Compliance** — Framework rollup, control grid route.
 - **Alerts** — Rules UI; live feed **empty state** copy.
 - **Plugin manager** — Empty state when no plugins synced.
@@ -42,14 +75,20 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 - `DELETE /connectors/{name}` — remove connector.
 - `PATCH /connectors/{name}/enabled` — enable/disable.
 - `PATCH /connectors/{name}` — partial update (`display_name`, `settings`, `enabled`; `credentials` only if non-empty to avoid wiping secrets).
-- `POST /connectors/test` — body `{ connector_type, credentials?, settings? }`; runs provider **`test_credentials()`** (AWS STS / assume role + optional Organizations list, Azure Resource Manager resource groups, GCP Cloud Resource Manager project GET, registry `/v2/` probe, etc.).
-- `POST /connectors/{name}/test` — decrypts stored credentials and runs the same **`test_credentials()`** checks.
+- `POST /connectors/test` — body `{ connector_type, credentials?, settings? }`; runs provider **`test_credentials()`**.
+- `POST /connectors/{name}/test` — decrypts stored credentials and runs **`test_credentials()`**.
+- **`POST /connectors/{name}/scan`** — queue **Celery** scan for this connector (default plugin by type: **prowler** / **kubescape**); same **`confirm_active_scan`** rule as **`POST /scans/trigger`** for intrusive plugins.
 - **Registry** connector type: `api/connectors/registry.py` (`registry` in `CONNECTOR_IMPLS`).
+
+### Findings API (`api/routes/findings.py`)
+
+- `GET /findings` — filters: `severity`, `domain`, `cloud_provider`, `status`, `tool`, **`source`**, `q`; sort includes **`source`**; each item includes **`attack_path_count`** (membership in persisted **`attack_paths.finding_ids`**).
+- `GET /findings/{id}` — includes **`attack_path_count`**.
 
 ### Dashboard
 
 - **Connectors page** — Entry points: **Add cloud**, **Add cluster**, **Add registry**; connector cards with **⋯** menu: Edit (cloud wizards + rename for others), Enable/Disable, Test connection, Delete.
-- **`AddCloudWizard.tsx`** — Multi-step: provider (AWS/Azure/GCP), standalone vs organization, connection method, regions / scan asset type, **organization scope** fields (AWS org ID / account filter, Azure management groups, GCP notes, IaC notes — no template generation), provider-specific credentials; Test + Save.
+- **`AddCloudWizard.tsx`** — Multi-step: provider (AWS/Azure/GCP), standalone vs organization, **AWS** connection methods (including **SSO profile**), **Azure** methods (service principal / managed identity / az login), regions / scan asset type, **organization scope** fields (AWS org ID / account filter, Azure management groups, GCP notes, IaC notes — no template generation), provider-specific credentials; Test + Save.
 - **`AddClusterWizard.tsx`** — Kubernetes vs VM, options, generated install snippet, save as `kubernetes` or `onprem`; **Edit** prefills from `settings` (secrets not returned — re-enter token to rotate).
 - **`AddRegistryModal.tsx`** — Registry kind + URL + optional credentials; `registry_url` duplicated in `settings` for display; **Edit** prefills non-secret fields.
 - **UI primitives** — `components/ui/tabs.tsx`, `components/ui/separator.tsx`.
@@ -78,7 +117,7 @@ Per-connector (`cluster_id` = connector UUID) JSON APIs:
 | `GET /inventory/clusters/{id}/vulnerabilities` | CVE / scanner-style findings |
 | `GET /inventory/clusters/{id}/alerts` | High-severity / Falco-style alert findings |
 | `GET /inventory/clusters/{id}/compliance` | Compliance-domain findings |
-| `GET /inventory/clusters/{id}/policies` | Controls / policy rows (enriched toward AccuKnox-style columns when ingest provides data) |
+| `GET /inventory/clusters/{id}/policies` | Controls / policy rows |
 | `GET /inventory/clusters/{id}/app-behaviour` | Runtime / Falco-oriented rows |
 | `GET /inventory/clusters/{id}/kiem` | Identity/RBAC-oriented rows + weighted risk score |
 | `GET /inventory/clusters/{id}/cloud-assets` | Cloud-linked asset groups for cluster |
@@ -87,12 +126,12 @@ Shared query helpers: `api/inventory/helpers.py`, `api/inventory/cluster_detail_
 
 ### Inventory UI (`dashboard/src/pages/inventory/InventoryLayout.tsx` + route children)
 
-- **Sidebar** — **Inventory assets**: **Cloud assets**, **Clusters** (nested: Clusters, Namespaces, Workloads), **Images** (`dashboard/src/layout/Sidebar.tsx`).
-- **Routes** — `/inventory/cloud`, `/inventory/clusters`, `/inventory/namespaces`, `/inventory/workloads`, `/inventory/images` (no single flat `Inventory.tsx` tabs page).
-- **Clusters** — `ClusterTable` (TanStack: selection, columns, pagination); row opens **`ClusterDetailPanel`** (right **Sheet**). **Sync K8s tables** triggers POST sync. Delete via connector API.
-- **Namespaces / Workloads / Cloud assets (flat)** — `InventoryDataTable` (TanStack: selection, columns, pagination); namespaces/workloads use **server** pagination; cloud flat list uses **client** pagination over filtered rows.
-- **Cluster detail** — Tabs per plan (Overview, Misconfiguration, Cloud Assets, Vulnerabilities, Alerts, Compliance, Policies, App behaviour, KIEM). **Tab choice persists** when closing/reopening the same cluster; resets when selecting a different cluster.
-- **Components** — `SeverityBars`, `SeverityToggle`, `NoGraphData`, `K8sResourceSummary`, `FindingsByCategoryChart` (misconfiguration insights).
+- **Sidebar** — **Inventory assets**: **Cloud assets**, **Cloud accounts**, **Clusters** (nested: Clusters, Namespaces, Workloads), **Images** (`dashboard/src/layout/Sidebar.tsx`).
+- **Routes** — `/inventory/cloud`, `/inventory/clouds`, `/inventory/clusters`, `/inventory/namespaces`, `/inventory/workloads`, `/inventory/images`.
+- **Clusters** — `ClusterTable` (TanStack); row opens **`ClusterDetailPanel`** (right **Sheet**). **Sync K8s tables** triggers POST sync. Delete via connector API.
+- **Namespaces / Workloads / Cloud assets (flat)** — `InventoryDataTable` (TanStack); namespaces/workloads use **server** pagination; cloud flat list uses **client** pagination over filtered rows.
+- **Cluster detail** — Tabs (Overview, Misconfiguration, Cloud Assets, Vulnerabilities, Alerts, Compliance, Policies, App behaviour, KIEM). **Tab choice persists** when closing/reopening the same cluster.
+- **Components** — `SeverityBars`, `SeverityToggle`, `NoGraphData`, `K8sResourceSummary`, `FindingsByCategoryChart`.
 
 ---
 
@@ -100,27 +139,29 @@ Shared query helpers: `api/inventory/helpers.py`, `api/inventory/cluster_detail_
 
 - **What is built (inventory slice):** **`docs/inventory-kspm-built.md`**
 - Canonical checklist: **`docs/plans/kspm-inventory-plan.md`**
-- Help (onboarding): **`docs/help/kspm-cluster-onboarding.md`**
+- Help (onboarding): **`docs/help/kspm-cluster-onboarding.md`**, **`docs/help/kspm-ingest-runbook.md`**
 
 ---
 
 ## Known remaining gaps (explicit)
 
-1. **AccuKnox-style Cloud Assets §7** — Multi-row filters (date discovered, org/OU, collector, etc.), refresh/clear/export affordances: only partially mirrored; core grouping + expand + search exist.
-2. **TanStack on every surface** — Cluster list, namespaces, workloads, and cloud (flat) use shared table patterns; **cluster detail** sub-tabs still use mixed table implementations where not yet refactored.
-3. **Scheduled sync** — `k8s_clusters` / `k8s_nodes` are filled by **POST** `/inventory/sync-k8s-tables` (or UI button); no automatic scheduler hook in this slice unless added elsewhere.
-4. **Policies tab** — Presentation is enriched when **`raw`** / normalizer provides fields; full parity with AccuKnox policy rows depends on ingest.
-5. **Deeper cloud enumeration** — Connector tests validate identity; broad per-service counts can be added per provider.
-6. **Generated IaC / StackSets** — Organization onboarding UI stores scope and notes only.
-7. **Registry/cluster edit** — Password / token fields are not prefilled (by design).
+1. **Attack path depth** — No **IAM permission graph** inside the asset panel (Orca-style second graph). Needs IAM/identity inventory + edge model beyond **findings**-only heuristics.
+2. **AccuKnox-style Cloud Assets §7** — Multi-row filters, refresh/clear/export: only partially mirrored.
+3. **TanStack on every surface** — Cluster list, namespaces, workloads, cloud use shared table patterns; **cluster detail** sub-tabs may still use mixed table implementations.
+4. **Scheduled sync** — `k8s_clusters` / `k8s_nodes` are filled by **POST** `/inventory/sync-k8s-tables` (or UI button); no automatic scheduler unless added elsewhere.
+5. **Policies tab** — Presentation is enriched when **`raw`** / normalizer provides fields; full parity depends on ingest.
+6. **Deeper cloud enumeration** — Connector tests validate identity; broad per-service counts can be added per provider.
+7. **Generated IaC / StackSets** — Organization onboarding UI stores scope and notes only.
+8. **Registry/cluster edit** — Password / token fields are not prefilled (by design).
+9. **Target category accuracy** — Chips use **string heuristics**; improves when **`resource_type`** is populated consistently across tools.
 
 ---
 
 ## Related docs
 
-- **`docs/plan-of-action-kspm-cspm-testing.md`** — Plan of action for **management / cloud team**: KSPM → CSPM testing, asks, Defender, RG scope, egress & risk.
+- **`docs/plan-of-action-kspm-cspm-testing.md`** — Plan of action for **management / cloud team**: KSPM → CSPM testing.
+- **`docs/execplans/cspm-attack-paths.md`** — CSPM + attack paths implementation plan.
 - `README.md` — Quick overview and API index.
 - `scripts/DEV_CONTEXT.md` — Repo layout and commands (for humans and agents).
 - `docs/roadmap-gap-analysis.md` — Roadmap vs current gaps.
 - `docs/plans/kspm-inventory-plan.md` — KSPM inventory UI/API checklist.
-- `raw cnapp idea/Opencnapp kspm inventory plan.md` — May duplicate the plan on some clones; prefer **`docs/plans/`** as the tracked canonical path.

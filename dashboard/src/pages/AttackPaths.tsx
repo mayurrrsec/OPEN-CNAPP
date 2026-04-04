@@ -52,6 +52,7 @@ export default function AttackPaths() {
   }
 
   const impact = data?.summary?.by_impact
+  const byTargetCategory = data?.summary?.by_target_category
 
   return (
     <div className="space-y-6">
@@ -107,6 +108,28 @@ export default function AttackPaths() {
         </div>
       ) : null}
 
+      {byTargetCategory && Object.keys(byTargetCategory).length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Target category (heuristic)</p>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(byTargetCategory)
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, v]) => (
+                <span
+                  key={k}
+                  className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-xs"
+                >
+                  <span className="capitalize">{k.replace(/_/g, ' ')}</span>
+                  <span className="ml-2 tabular-nums font-semibold text-foreground">{v}</span>
+                </span>
+              ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Derived from path target resource strings — not full IAM graph mining (see implementation status doc).
+          </p>
+        </div>
+      ) : null}
+
       {!loading && data && (data.items?.length ?? 0) === 0 ? (
         <EmptyState
           icon={GitBranch}
@@ -130,6 +153,7 @@ export default function AttackPaths() {
                   <th className="py-2 pr-3">Impact</th>
                   <th className="py-2 pr-3">Band</th>
                   <th className="py-2 pr-3">Cloud</th>
+                  <th className="py-2 pr-3">Target</th>
                   <th className="py-2">Flow</th>
                 </tr>
               </thead>
@@ -145,6 +169,7 @@ export default function AttackPaths() {
                     <td className="whitespace-nowrap py-2 pr-3 tabular-nums">{p.impact_score?.toFixed(0)}</td>
                     <td className="py-2 pr-3">{p.impact_band}</td>
                     <td className="py-2 pr-3">{p.cloud_provider || '—'}</td>
+                    <td className="py-2 pr-3 capitalize text-muted-foreground">{p.target_category ?? '—'}</td>
                     <td className="py-2">
                       <Button variant="link" className="h-auto p-0" asChild>
                         <Link to={`/attack-paths/${encodeURIComponent(p.id)}`}>View flow</Link>

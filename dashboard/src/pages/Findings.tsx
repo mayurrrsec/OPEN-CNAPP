@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   flexRender,
   getCoreRowModel,
@@ -21,7 +21,15 @@ import { EmptyState } from '@/components/ui/EmptyState'
 
 const PAGE_SIZE = 25
 
-const SORT_FIELDS = new Set(['created_at', 'severity', 'domain', 'tool', 'status', 'cloud_provider'])
+const SORT_FIELDS = new Set([
+  'created_at',
+  'severity',
+  'domain',
+  'tool',
+  'source',
+  'status',
+  'cloud_provider',
+])
 
 export default function Findings() {
   const [searchParams] = useSearchParams()
@@ -30,6 +38,7 @@ export default function Findings() {
   const [cloud, setCloud] = useState('')
   const [status, setStatus] = useState('')
   const [tool, setTool] = useState('')
+  const [source, setSource] = useState('')
   const [q, setQ] = useState('')
 
   useEffect(() => {
@@ -60,6 +69,7 @@ export default function Findings() {
       cloud_provider: cloud || undefined,
       status: status || undefined,
       tool: tool || undefined,
+      source: source || undefined,
       q: q || undefined,
       limit: pagination.pageSize,
       offset: pagination.pageIndex * pagination.pageSize,
@@ -72,6 +82,7 @@ export default function Findings() {
       cloud,
       status,
       tool,
+      source,
       q,
       pagination.pageIndex,
       pagination.pageSize,
@@ -88,7 +99,7 @@ export default function Findings() {
   const items = data?.items ?? []
   const total = data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize))
-  const hasFilters = !!(severity || domain || cloud || status || tool || q)
+  const hasFilters = !!(severity || domain || cloud || status || tool || source || q)
 
   const clearFilters = () => {
     setSeverity('')
@@ -96,6 +107,7 @@ export default function Findings() {
     setCloud('')
     setStatus('')
     setTool('')
+    setSource('')
     setQ('')
     setPagination((p) => ({ ...p, pageIndex: 0 }))
   }
@@ -127,6 +139,31 @@ export default function Findings() {
         accessorKey: 'tool',
         header: 'Tool',
         enableSorting: true,
+      },
+      {
+        accessorKey: 'source',
+        header: 'Source',
+        enableSorting: true,
+        cell: ({ getValue }) => (
+          <span className="font-mono text-xs">{(getValue() as string | undefined) ?? '—'}</span>
+        ),
+      },
+      {
+        id: 'attack_paths',
+        header: 'Paths',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const n = row.original.attack_path_count ?? 0
+          if (n <= 0) return <span className="text-muted-foreground">—</span>
+          return (
+            <Link
+              to="/attack-paths"
+              className="inline-flex items-center rounded-md border border-border bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground hover:bg-muted"
+            >
+              {n} path{n === 1 ? '' : 's'}
+            </Link>
+          )
+        },
       },
       {
         accessorKey: 'cloud_provider',
@@ -245,6 +282,19 @@ export default function Findings() {
               placeholder="Tool"
               className="h-9 max-w-[140px]"
             />
+            <select
+              value={source}
+              onChange={(e) => {
+                setPagination((p) => ({ ...p, pageIndex: 0 }))
+                setSource(e.target.value)
+              }}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="">Source: All</option>
+              <option value="ci_ingest">ci_ingest</option>
+              <option value="native_ingest">native_ingest</option>
+              <option value="scheduled">scheduled</option>
+            </select>
             <Input
               value={cloud}
               onChange={(e) => {

@@ -21,6 +21,7 @@ export type AttackPathListItem = {
   source_resource_id: string | null
   target_resource_id: string | null
   finding_count: number
+  target_category?: string
   created_at: string | null
   updated_at: string | null
 }
@@ -29,6 +30,7 @@ export type AttackPathsListResponse = {
   summary: {
     by_impact: AttackPathSummary['by_impact']
     total_paths: number
+    by_target_category?: Record<string, number>
   }
   total: number
   items: AttackPathListItem[]

@@ -2,6 +2,8 @@ import ast
 import json
 import os
 import time
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -15,7 +17,8 @@ from api.connectors.onprem import OnpremConnector
 from api.connectors.registry import RegistryConnector
 from api.crypto import decrypt, encrypt
 from api.database.session import get_db
-from api.models import Connector
+from api.models import Connector, Plugin, Scan, User
+from api.workers.scanner_runner import run_scan
 
 router = APIRouter(prefix="/connectors", tags=["connectors"], dependencies=[Depends(get_current_user)])
 
@@ -47,6 +50,18 @@ class ConnectorTestPayload(BaseModel):
 
 class EnabledPatch(BaseModel):
     enabled: bool
+
+
+class ConnectorScanBody(BaseModel):
+    """Trigger a scan using this connector (cloud: default prowler; kubernetes: default kubescape)."""
+
+    plugin: str | None = None
+    source: str = "on_demand"
+    confirm_active_scan: bool = False
+
+
+# Same guard as scans.trigger for active / intrusive plugins
+_CONNECTOR_SCAN_ACTIVE_PLUGINS = {"nuclei", "nmap", "nikto", "sslyze", "cloudfox"}
 
 
 class ConnectorPatch(BaseModel):
@@ -175,6 +190,58 @@ def upsert_connector(payload: ConnectorUpsert, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(connector)
     return _connector_public(connector)
+
+
+@router.post("/{name}/scan")
+def trigger_connector_scan(
+    name: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    payload: ConnectorScanBody | None = None,
+):
+    """
+    Queue a scan for the named connector (same worker pipeline as POST /scans/trigger).
+    Default plugin: **prowler** for aws/azure/gcp, **kubescape** for kubernetes.
+    """
+    row = db.query(Connector).filter(Connector.name == name).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Connector not found")
+    if not row.enabled:
+        raise HTTPException(status_code=400, detail="Connector is disabled")
+
+    body = payload or ConnectorScanBody()
+    ct = (row.connector_type or "").lower().strip()
+    plugin = (body.plugin or "").strip() or None
+    if not plugin:
+        if ct in ("aws", "azure", "gcp"):
+            plugin = "prowler"
+        elif ct == "kubernetes":
+            plugin = "kubescape"
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Specify plugin in body for this connector type (e.g. {\"plugin\": \"prowler\"}).",
+            )
+
+    pl = db.query(Plugin).filter(Plugin.name == plugin, Plugin.enabled.is_(True)).first()
+    if not pl:
+        raise HTTPException(status_code=404, detail=f"Enabled plugin not found: {plugin}")
+
+    if plugin in _CONNECTOR_SCAN_ACTIVE_PLUGINS and not body.confirm_active_scan:
+        raise HTTPException(status_code=400, detail="Active scan requires confirm_active_scan=true")
+
+    scan = Scan(
+        plugin=plugin,
+        connector=name,
+        status="queued",
+        started_at=datetime.utcnow(),
+        meta={"source": body.source, "requested_by": user.email, "via": "POST /connectors/{name}/scan"},
+    )
+    db.add(scan)
+    db.commit()
+    db.refresh(scan)
+    run_scan.delay(scan.id, scan.plugin, scan.connector)
+    return {"scan_id": scan.id, "status": scan.status, "plugin": plugin, "connector": name}
 
 
 @router.post("/{name}/test")
