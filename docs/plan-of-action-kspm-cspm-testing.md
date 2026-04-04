@@ -7,7 +7,7 @@
 
 **Note:** OpenCNAPP is **open source** and **self-hosted**. There is **no vendor SaaS fee**; any **cost** is **your cloud and infrastructure** (compute, egress, optional Defender APIs, etc.).
 
-**Revision 1.4** — §8.1: security team (OpenCNAPP) vs **company cloud team** deliverables.
+**Revision 1.7** — KSPM: **existing AKS** sufficient for Helm agents (**no new cluster** required when one is designated).
 
 ---
 
@@ -38,7 +38,7 @@ This engagement assumes **Microsoft Azure** is the **only** cloud connector need
 |-----------|---------------------------|
 | **CSPM scope** | Run assessments against **one or more dedicated resource groups** (e.g. `rg-opencnapp-poc-*`) that contain **non-production** or **test** workloads — **not** a default “whole subscription” scan profile. |
 | **IAM** | Grant the OpenCNAPP connector identity (**service principal** or **managed identity**) **Reader** (and only extra permissions explicitly agreed for scanners) **at resource group scope** — or a **test subscription** containing only those RGs. |
-| **KSPM scope** | Use a **sandbox / non-production AKS** in a **test resource group**; deploy **in-cluster agents (Helm)** or run **scanner-only** flows **only** there first. |
+| **KSPM scope** | **Designate one existing AKS** (from your **Kubernetes center** or similar inventory) for the PoC—**a net-new cluster is not required** if an already-running cluster is approved. Prefer **non-production** / low-risk workloads; deploy **in-cluster agents (Helm)** or **scanner-only** flows **only** on that agreed cluster first. |
 | **Production** | **No** change to production clusters or production RGs without a separate approval and window. |
 
 The **attack path** and **IAM graph** features in OpenCNAPP are **separate** from raw CSPM scans: they aggregate **findings** and optional **ingested graph** data — they do not replace Azure Policy or Defender.
@@ -194,21 +194,26 @@ OpenCNAPP **does not** run `helm` or `kubectl` for you. Admins run install comma
 
 **Tenant ID (`global.tenantId`)** — Stable workspace id for agents. The UI fills it from the API (same as **`tenant_id`** from **`GET /auth/me`** / **`GET /auth/config`**). On first API start a **default workspace UUID** is created. Optional override: set **`OPENCNAPP_TENANT_ID`** on the API server and use the **same** value in Helm.
 
-**Helm example (template — values must match your chart)**
+**Helm example (wizard parity — values must match your chart)**
 
-```text
+The **Add cluster → Install command** step generates a command shaped like this. Replace placeholders with values from your environment (API base URL, tenant UUID, join token from **Settings → Agent join tokens**, cluster name). Use the **same API URL** as the dashboard (`VITE_API_URL`); rename the value key if your agents chart differs. For **KSPM** scanners, enable matching plugins under **Plugin manager** (chart flag names may vary by release).
+
+```bash
 helm upgrade --install opencnapp-agents oci://YOUR_REGISTRY/agents \
   -n opencnapp-agents --create-namespace \
-  --set global.clusterName="<your cluster name>" \
-  --set global.tenantId="<tenant uuid>" \
-  --set global.agents.joinToken="<token>" \
-  --set global.runtime.enabled=true|false \
-  --set global.riskassessment.enabled=true|false \
-  --set global.kspm.kubescape.enabled=true|false \
-  --set global.kspm.kubeBench.enabled=true|false \
-  --set global.kspm.kubeHunter.enabled=true|false \
-  --set global.kspm.polaris.enabled=true|false
+  --set global.opencnappApiUrl="http://localhost:8001" \
+  --set global.clusterName="prod-cluster" \
+  --set global.tenantId="49a4d786-d5c7-432a-802f-154be0d89931" \
+  --set global.agents.joinToken="ccn_b1cab0c6fa4102e7c543cc83c6bdffabe687393c184822b2" \
+  --set global.runtime.enabled=true \
+  --set global.riskassessment.enabled=true \
+  --set global.kspm.kubescape.enabled=true \
+  --set global.kspm.kubeBench.enabled=true \
+  --set global.kspm.kubeHunter.enabled=false \
+  --set global.kspm.polaris.enabled=true
 ```
+
+More detail: `docs/help/kspm-cluster-onboarding.md`.
 
 - **`oci://YOUR_REGISTRY/agents`** is a **placeholder**. Replace with your real **OCI Helm chart** location (e.g. private registry). The project’s **`helm/opencnapp`** chart deploys the **control plane**, not necessarily a separate public **`agents`** chart — until your team publishes an **agents** chart, treat this as a **template** showing expected **values**.
 - Run the command in a **terminal** (laptop, jump box, or CI) with kubeconfig for the cluster — **not** inside the OpenCNAPP API container.
@@ -260,7 +265,7 @@ Then `kubectl get nodes` and Helm use that context. If you host a chart in **Azu
 ```
 
 1. **Connector** — A **Kubernetes** (or on-prem) connector is created in OpenCNAPP (name, settings, optional **join token**).
-2. **Access to cluster** — An admin runs **`az aks get-credentials`** (for AKS) so `kubectl` / `helm` target the **test** cluster only.
+2. **Access to cluster** — An admin runs **`az aks get-credentials`** (for AKS) so `kubectl` / `helm` target the **designated** PoC cluster only.
 3. **Data path** — Findings reach OpenCNAPP via **Section 3.2** (scan, ingest, or native).
 4. **UI** — Inventory, KSPM dashboard, and findings update from the **database**.
 
@@ -268,22 +273,24 @@ Then `kubectl get nodes` and Helm use that context. If you host a chart in **Azu
 
 | Ask | Why |
 |-----|-----|
-| **One (or few) non-production AKS clusters** dedicated to **testing** | Isolated blast radius; no production change window tied to PoC. |
-| **RBAC**: least-privilege for testers (`Azure Kubernetes Service Cluster User Role` or equivalent) to run **`kubectl`** / **Helm** on **those** clusters only. |
+| **Designate one (or few) AKS cluster(s)** for the PoC—**existing clusters are fine**; **no new cluster** is required if you already run suitable AKS in a **non-production** or **approved** subscription/RG | You only need to **name** which cluster will host **Helm** agents and/or **kubeconfig**-based scans; avoid production if policy requires isolation. |
+| **RBAC**: least-privilege for testers (`Azure Kubernetes Service Cluster User Role` or equivalent) to run **`kubectl`** / **Helm** on the **agreed** cluster(s) only. |
 | **Network** — OpenCNAPP **API** must be **reachable** from where agents/scanners run (same VNet, VPN, or controlled egress). Document **URL**, TLS, firewall rules. |
-| **Service principal / identity** (if scans run from a **CI** or **VM** in Azure) with permission to use **kubeconfig** or AKS API for **test** clusters only. |
+| **Service principal / identity** (if scans run from a **CI** or **VM** in Azure) with permission to use **kubeconfig** or AKS API for the **designated** PoC cluster(s) only. |
 | **Optional**: **Azure Container Registry (ACR)** if we **publish** an internal **agents Helm chart** — otherwise we rely on **scanner + ingest** without in-cluster agents. |
 
-#### 5.3.1 Sandbox AKS — deploy in-cluster agents (Helm) for the PoC
+#### 5.3.1 Choose an AKS cluster for in-cluster agents (Helm) — existing cluster is OK
+
+**You do not need to create a new cluster** for this PoC if you already run AKS: **pick any one cluster** (or a small set) that **management and security approve** for installing the **agents** Helm release and optional scanners—typically **non-production** or a dedicated sandbox, per your policy.
 
 To exercise **end-to-end KSPM** (connectors → optional **agent join token** → **Helm** install → findings), the company should:
 
 | # | Ask | Detail |
 |---|-----|--------|
-| **1** | **Identify a sandbox AKS** | Subscription ID, **resource group name**, **cluster name** — **non-production** only. |
+| **1** | **Identify the PoC AKS** | Subscription ID, **resource group name**, **cluster name** — use an **existing** cluster where allowed, or **provision a sandbox** only if nothing suitable exists. |
 | **2** | **Allow Helm install** | A namespace (e.g. `opencnapp-agents` or your standard) where the **in-cluster agents** chart can run; **NetworkPolicy** / **firewall** rules allowing **HTTPS outbound** from the cluster to the **OpenCNAPP API** URL (`VITE_API_URL` / public API endpoint). |
 | **3** | **Create an agent join token** | In OpenCNAPP: **Settings → Agent join tokens**; paste into Helm values as `global.agents.joinToken` (see **Section 4.8**). |
-| **4** | **Run the Helm command** from a jump box or pipeline with `kubectl` context pointing **only** at the sandbox cluster — *not* production. |
+| **4** | **Run the Helm command** from a jump box or pipeline with `kubectl` context pointing at the **agreed** cluster only (see **`global.clusterName`** in Helm). |
 | **5** | **If no Helm chart is published yet** | Fall back to **Plugin manager** + **kubeconfig** scans or **`POST /ingest/{tool}`**; the PoC still validates findings and dashboards without in-cluster agents. |
 
 **Naming note:** Some teams refer to workload or “chat” agents internally. In OpenCNAPP the wizard calls this **Helm-based agents** / **in-cluster agents** — a **lightweight component** in the test cluster that talks to your **self-hosted** OpenCNAPP API using the **join token**.
@@ -292,7 +299,7 @@ To exercise **end-to-end KSPM** (connectors → optional **agent join token** �
 
 Please provide in writing (email or ticket):
 
-- [ ] **Sandbox AKS**: subscription, resource group, cluster name, region.  
+- [ ] **PoC AKS** (**existing cluster OK**): subscription, resource group, cluster name, region — the cluster you **designate** for Helm/agents (not necessarily a net-new build).  
 - [ ] **Who** will run `az aks get-credentials` and **Helm** (named contacts).  
 - [ ] **Egress**: confirm cluster → OpenCNAPP API **HTTPS** allowed (URL + port 443).  
 - [ ] **Approval** for **passive** KSPM plugins (kubescape, kube-bench, polaris) vs **active** (e.g. kube-hunter) — active should stay **off** unless explicitly approved.  
@@ -350,7 +357,28 @@ The **Add cloud** wizard supports three **Azure** authentication modes (stored i
 
 **For the company’s security review:** Prefer **Reader** at **resource group** scope for the PoC RG. Add **Microsoft Defender for Cloud** read APIs only if you enable **native Defender ingest** (optional; **Section 6.2**).
 
-### 6.1.2 What we need from the company (CSPM) — checklist to send
+### 6.1.2 Azure — what credentials to provide and which permissions to grant
+
+OpenCNAPP’s **Azure** connector needs **read access** to inventory and posture data for the **scoped** subscription or resource group. It does **not** need to create or delete cloud resources for a typical CSPM PoC.
+
+| What you provide | Purpose |
+|------------------|---------|
+| **Tenant ID** | Identifies the Entra ID (Azure AD) directory. |
+| **Subscription ID** | Scope for API calls and scanner filters (prefer a **test** subscription or the PoC sub only). |
+| **Service principal** (recommended for VM/worker) | **Application (client) ID** + **client secret** (or certificate) so the worker can authenticate **non-interactively**. |
+| **Managed identity** (alternative) | If the OpenCNAPP **worker** runs on **Azure** (VM, AKS, etc.), assign a **user-assigned** or **system-assigned** identity and grant RBAC on the PoC scope — **no** client secret stored in OpenCNAPP. |
+| **`az login` / Azure CLI** | **Dev-only** — interactive; not for production workers. |
+
+| Azure permission / role | Typical use | Notes |
+|-------------------------|-------------|--------|
+| **[Reader](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#reader)** on the **PoC resource group** (or test subscription) | **Minimum** for inventory-style CSPM: list resources, read configs, read tags | Prefer **RG scope** so the identity **cannot** read unrelated RGs. |
+| **Extra roles only if a plugin requires them** | Some APIs need **Microsoft.Security** read, Key Vault secret **get** on a specific vault, etc. | Add **narrowly** and document per plugin/runbook — avoid **Owner** / **Contributor** for PoC. |
+| **Microsoft Defender for Cloud** (optional) | Correlate native Defender alerts/recommendations | Often **Security Reader** at subscription (or as documented for the Defender REST APIs you enable); align with **Section 6.2**. |
+| **Kubernetes / AKS (KSPM)** | Separate from CSPM connector | Cluster **user** / **Azure Kubernetes Service Cluster User Role** (or agreed RBAC) for **`kubectl`** / **Helm** on **test** clusters only — see **Section 5.3**. |
+
+**Summary for approvers:** Grant the connector identity **Reader** (or stricter read-only custom role) **only** on the agreed **resource group** or **test subscription**. Add Defender or other APIs **only** if that integration is in scope; do **not** hand **subscription-wide Contributor** for posture testing.
+
+### 6.1.3 What we need from the company (CSPM) — checklist to send
 
 Please provide:
 
@@ -392,7 +420,7 @@ Same principles as KSPM: **egress** from scanners/runners to OpenCNAPP API; **AP
 
 | Team | KSPM asks | CSPM asks |
 |------|---------|-----------|
-| **Cloud team / platform** | Sandbox **AKS** + `get-credentials`; **Helm** namespace + egress to OpenCNAPP API; optional **ACR** for internal agents chart; **Section 5.3.2** checklist. | **Azure-only**: **SP or MI** with **RG-scoped** RBAC; **subscription ID**; **no** full-subscription scan profile; optional **Defender** read; **Section 6.1.2** checklist. |
+| **Cloud team / platform** | **Designated** AKS (**existing** cluster fine—**no new cluster** required) + `get-credentials`; **Helm** namespace + egress to OpenCNAPP API; optional **ACR** for internal agents chart; **Section 5.3.2** checklist. | **Azure-only**: **SP or MI** with **RG-scoped** RBAC; **subscription ID**; **no** full-subscription scan profile; optional **Defender** read; **Section 6.1.3** checklist. |
 | **Security / IAM** | Approve scanner types (active vs passive) for **test** clusters; agent join token handling. | Approve app registration / MI and **least-privilege** role on **PoC RG** only. |
 | **Management** | Approve **non-prod** boundary and **timeline** for Phase 1 then Phase 2. | Approve **scope** (RG-first), **cost** monitoring, and **rollback** if PoC ends. |
 
@@ -403,7 +431,7 @@ Same principles as KSPM: **egress** from scanners/runners to OpenCNAPP API; **AP
 | Owner | Deliverable |
 |-------|-------------|
 | **Security team** (OpenCNAPP project) | Deploy OpenCNAPP (Compose or Helm); document URLs; enable plugins; run test ingest/scans **within agreed scope**; demo dashboard (KSPM then CSPM); coordinate with the company **cloud team** on schedules and scope. |
-| **Company — cloud team** | Sandbox **AKS** + network path to OpenCNAPP API; **Azure** subscription/RG for PoC; **service principal** or **managed identity** per **Section 6.1.1**; **RG-scoped** IAM assignments; named technical contacts; firewall/egress rules; optional **ACR** for agents chart. |
+| **Company — cloud team** | **One designated** AKS for KSPM (**can be an already-running** cluster); network path to OpenCNAPP API; **Azure** subscription/RG for PoC; **service principal** or **managed identity** per **Section 6.1.1**; **RG-scoped** IAM assignments; named technical contacts; firewall/egress rules; optional **ACR** for agents chart. |
 | **Company — security / IAM** (if separate from cloud) | Approve scanner posture (passive vs active), app registrations, and **Defender** API read if used (**Section 6.1.2**). |
 | **Company — management** | Approve non-prod boundary, timeline, and **rollback** when the PoC ends. |
 
@@ -434,33 +462,128 @@ When you have the **full OpenCNAPP source or release**, these files add detail b
 ---
 
 **Document owner:** Testing / platform lead  
-**Revision:** 1.4 — §8.1 deliverables: security team vs company cloud team; see also 1.3 notes (Azure RG scope, checklists).
+**Revision:** 1.7 — KSPM: **existing AKS** OK for Helm agents (**no new cluster** required); see §8.1 for deliverables.
 
 ---
 
-## 11. Appendix — one-page “ask” for the company (email-ready)
+## 11. Appendix — first-time summary + one-page “ask” (email-ready)
 
-**Subject:** OpenCNAPP PoC — Azure + AKS — information and approvals needed
+Use **§11.1** when this is the **first** time management or the cloud team sees the initiative; paste or adapt **§11.2** into email.
 
-We are planning a **phased test** of OpenCNAPP (**KSPM** first, then **CSPM**) in your environment. Please confirm or provide:
+### 11.1 Summary — what we are building and what this PoC is (first-time stakeholders)
 
-1. **Azure — scope**  
-   - PoC will use **resource group–scoped** access (and/or a **test subscription**), **not** a full production subscription crawl.  
-   - Please name the **subscription ID** and **resource group(s)** for CSPM testing.
+**What we are building**
 
-2. **Azure — authentication**  
-   - Preferred: **service principal** (app registration) with **Reader** on the PoC resource group only — **tenant ID, client ID, client secret** (or managed identity if the OpenCNAPP worker runs on Azure with MI).  
-   - Confirm which **connection method** you allow (**Section 6.1.1**).
+**OpenCNAPP** is a **self-hosted**, open-source **CNAPP** (Cloud-Native Application Protection Platform): one place under **your** control to collect **Kubernetes** and **cloud** security posture, **findings**, **inventory**, and **connectors**—with a **dashboard** and **APIs**, not a separate vendor SaaS. For this engagement we deploy the **OpenCNAPP control plane** (for example via Docker Compose or Helm on infrastructure you approve), then connect **test** Azure resources in a **deliberately small scope**.
 
-3. **AKS — sandbox**  
-   - Name the **non-production** cluster, resource group, and who will run **Helm** to deploy **in-cluster agents** (optional) for KSPM — **Section 5.3.1**.  
-   - Confirm **HTTPS egress** from that cluster to our OpenCNAPP API URL.
+**What this PoC is about**
 
-4. **Safety**  
-   - Passive scanners first; **active** tools (e.g. certain probes) only with explicit approval.  
-   - No production clusters or RGs without a separate change.
+This proof of concept is **not** a full rollout. We want to show, in order: **(1) KSPM**—Kubernetes security posture and inventory using agreed scanners and optional **in-cluster agents** on **one designated AKS cluster** (**an already-running cluster is sufficient**—we do **not** require a net-new cluster unless none is approved); prefer **non-production** where policy allows; **(2) CSPM**—Azure cloud posture using an **Azure connector** limited to a **named resource group** or **test subscription**, so we **do not** crawl the entire production estate. Success means **clear visibility** in the UI, **documented** permissions and blast radius, and agreement on **what the company must supply** (which cluster to use, credentials, egress) versus **what we operate** (OpenCNAPP install, demos, runbooks). There is **no** OpenCNAPP subscription fee; **costs** are your Azure usage, egress, and optional APIs (e.g. Defender) as you enable them.
 
-5. **Optional**  
-   - **Microsoft Defender for Cloud** API read for correlation — separate approval.
+**Why we are sharing this now**
 
-We will attach this **plan-of-action** document for full detail.
+This document and the email below give **one place** for approvals: **scope**, **IAM**, **AKS** access, and **safety** rules—so security, cloud, and management can align before any cluster or subscription is touched.
+
+---
+
+### 11.2 Email-ready text (copy or adapt)
+
+**Subject:** OpenCNAPP PoC — Azure + AKS — context, Helm install, and approvals needed
+
+---
+
+Hello,
+
+We are kicking off a **phased proof of concept** for **OpenCNAPP**—a **self-hosted**, open-source **CNAPP** (one dashboard and API under your control for Kubernetes and cloud security posture). Phase **1** validates **KSPM** (Kubernetes posture) on **one agreed AKS cluster**—**you do not need to build a new cluster** if you already run AKS; we can install the **Helm** agents on **any** cluster you **designate** (typically non-production). Phase **2** validates **CSPM** on Azure using a **scoped resource group** or test subscription, **not** a full subscription crawl. The attached **plan-of-action** document (especially **§11.1**) has a fuller first-time summary for stakeholders.
+
+Please confirm or provide the following.
+
+---
+
+**1. Azure — scope (CSPM)**
+
+- PoC uses **resource group–scoped** access and/or a **test subscription**, **not** an open-ended crawl of production.  
+- Please send the **subscription ID** and **resource group name(s)** approved for CSPM testing.
+
+---
+
+**2. Azure — credentials and permissions (CSPM)**
+
+We need **read-only** access for cloud posture and inventory on that scope. OpenCNAPP does **not** require Contributor/Owner on the subscription for a typical PoC.
+
+| Provide | Why |
+|---------|-----|
+| **Tenant ID** | Directory (Entra ID) for the app registration or identity. |
+| **Subscription ID** | Scope for the connector and scanners (test sub or PoC sub only). |
+| **Service principal** (preferred for a VM/worker): **Application (client) ID** + **client secret** (or certificate), **or** **managed identity** if the OpenCNAPP worker runs on Azure (no secret stored in OpenCNAPP). | Non-interactive authentication for the connector and worker. |
+| **`az login` on a dev box** | Acceptable for **developer-only** tests; not for long-running production workers. |
+
+| Azure permission | Notes |
+|------------------|--------|
+| **[Reader](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#reader)** on the **PoC resource group** (or an isolated test subscription) | **Minimum** for inventory-style CSPM: read resource metadata and configs. Prefer **RG scope** so unrelated resources stay out of scope. |
+| **Extra roles** | Only if a specific plugin needs them (e.g. narrow Key Vault read, **Microsoft.Security** read)—document per tool. Avoid **subscription-wide Contributor** for this PoC. |
+| **Microsoft Defender for Cloud** (optional) | If we correlate native Defender data: often **Security Reader** or the roles your org uses for Defender REST APIs—**separate** IAM approval. |
+
+Please confirm which **connection method** you allow (**service principal** vs **managed identity** vs dev **`az login`**). Full options: **Section 6.1.1**.
+
+---
+
+**3. AKS — designate a cluster for Helm agents (KSPM)**
+
+- **No new cluster is required** if you already operate AKS: **name one existing cluster** (subscription, resource group, cluster name) that we may use for the PoC **Helm** install—e.g. any cluster from your **Kubernetes center** inventory that **security and platform approve** (prefer **non-production**).  
+- Name **who** will run **`az aks get-credentials`** and **`kubectl` / Helm** (**Section 5.3.1**).  
+- Confirm **egress** from that cluster to our **OpenCNAPP API** URL (HTTPS as deployed).
+
+If you deploy **in-cluster agents** via Helm (optional), the environment should have **`kubectl`** and **`helm`** configured for that **designated** cluster (e.g. `az aks get-credentials` for AKS). Replace placeholders with **your** registry URL, API URL, tenant UUID, **`global.clusterName`** (must match the chosen cluster’s name in OpenCNAPP), and **join token** from OpenCNAPP (**Settings → Agent join tokens**). Chart value names may vary by release.
+
+**Helm install command (template — same shape as the dashboard “Add cluster” wizard)**
+
+```bash
+helm upgrade --install opencnapp-agents oci://YOUR_REGISTRY/agents \
+  -n opencnapp-agents --create-namespace \
+  --set global.opencnappApiUrl="https://YOUR_OPENCNAPP_API_BASE_URL" \
+  --set global.clusterName="YOUR_CLUSTER_NAME" \
+  --set global.tenantId="YOUR_TENANT_UUID" \
+  --set global.agents.joinToken="YOUR_JOIN_TOKEN" \
+  --set global.runtime.enabled=true \
+  --set global.riskassessment.enabled=true \
+  --set global.kspm.kubescape.enabled=true \
+  --set global.kspm.kubeBench.enabled=true \
+  --set global.kspm.kubeHunter.enabled=false \
+  --set global.kspm.polaris.enabled=true
+```
+
+**Requirements for this command**
+
+| Requirement | Detail |
+|-------------|--------|
+| **Registry** | `oci://YOUR_REGISTRY/agents` is a placeholder—use your published **agents** chart (e.g. private OCI registry or `oci://<acr>.azurecr.io/...`). |
+| **API URL** | Must match the OpenCNAPP API the agents call (same idea as dashboard `VITE_API_URL` / your deployed API hostname). |
+| **Tenant & token** | `global.tenantId` = workspace id from OpenCNAPP; `global.agents.joinToken` = create under **Settings → Agent join tokens**. |
+| **KSPM flags** | Align with **Plugin manager** toggles; enable **kube-hunter** only if active scanning is approved. |
+| **Run location** | Run on a machine with a valid **kubeconfig** for the **designated** cluster—not inside the OpenCNAPP API container. |
+
+More detail: `docs/help/kspm-cluster-onboarding.md` and **Section 4.8** of this plan.
+
+---
+
+**4. Safety**
+
+- Prefer **passive** posture checks first; **active** scanners (e.g. certain probes) only with **explicit** approval.  
+- No production clusters or resource groups without a **separate** change and agreement.
+
+---
+
+**5. Optional**
+
+- **Microsoft Defender for Cloud** API read for correlation—**separate** approval (**Section 6.2**).
+
+---
+
+We will attach the **plan-of-action** document for full checklists and timelines.
+
+Thank you,
+
+[Name / team]
+
+---

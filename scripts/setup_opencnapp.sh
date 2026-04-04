@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 MODE="docker"
@@ -26,11 +30,6 @@ if [[ "$MODE" == "docker" ]]; then
     echo "[WARN] Docker not found. Falling back to local mode."
     MODE="local"
   fi
-fi
-
-if [[ ! -f .env ]]; then
-  cp .env.example .env
-  echo "[INFO] Created .env from .env.example"
 fi
 
 if [[ "$MODE" == "docker" ]]; then
