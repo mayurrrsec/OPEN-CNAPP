@@ -28,6 +28,17 @@ export type ComplianceOverviewRow = {
   passed_pct: number | null
 }
 
+/** Extra aggregates when `domain=kspm` — broader than strict `findings.domain=kspm` (includes CIS/compliance + KSPM tools). */
+export type KspmRollups = {
+  scope_total: number
+  severity_breakdown: SeverityRow[]
+  top_clusters: { name: string; count: number }[]
+  tool_breakdown: NamedCount[]
+  resource_type_breakdown: NamedCount[]
+  connectors: { name: string; display_name: string; status: string }[]
+  public_exposure_heuristic_count: number
+}
+
 export type DashboardSummary = {
   total_findings?: number
   open_findings?: number
@@ -57,6 +68,7 @@ export type DashboardSummary = {
   }
   compliance_overview?: ComplianceOverviewRow[]
   domain_filter?: string | null
+  kspm_rollups?: KspmRollups
 }
 
 export function fetchDashboardSummary(params?: { domain?: string }): Promise<DashboardSummary> {

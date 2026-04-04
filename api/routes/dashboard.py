@@ -2,13 +2,116 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func
+from sqlalchemy import func, or_, desc
 from sqlalchemy.orm import Session
 
 from api.auth import get_current_user
 from api.database.session import get_db
-from api.models import Finding
+from api.inventory.cluster_detail_service import connection_status_from_findings
+from api.models import Connector, Finding
 from api.routes.compliance import FRAMEWORKS
+
+_KSPM_TOOLS = ("kubescape", "kubebench", "kubehunter", "polaris")
+_KSPM_DOMAINS = ("kspm", "cis", "cis-k8s", "compliance")
+
+
+def _kspm_scope_filter(q):
+    return q.filter(
+        or_(
+            Finding.domain.in_(_KSPM_DOMAINS),
+            Finding.tool.in_(_KSPM_TOOLS),
+        )
+    )
+
+
+def _kspm_rollups(db: Session) -> dict:
+    """Broader KSPM-oriented aggregates (domains + scanner tools) for /dashboard/kspm widgets."""
+    base = db.query(Finding)
+    scoped = _kspm_scope_filter(base)
+
+    scope_total = scoped.count()
+
+    sev_rows = (
+        _kspm_scope_filter(db.query(Finding))
+        .with_entities(Finding.severity, func.count(Finding.id))
+        .group_by(Finding.severity)
+        .all()
+    )
+    severity_breakdown = [{"name": s or "UNKNOWN", "value": int(c)} for s, c in sev_rows]
+
+    top_clusters = []
+    rows = (
+        _kspm_scope_filter(db.query(Finding))
+        .with_entities(Finding.account_id, func.count(Finding.id))
+        .filter(Finding.account_id.isnot(None))
+        .filter(Finding.account_id != "")
+        .group_by(Finding.account_id)
+        .order_by(desc(func.count(Finding.id)))
+        .limit(5)
+        .all()
+    )
+    for aid, cnt in rows:
+        top_clusters.append({"name": aid, "count": int(cnt)})
+
+    tool_rows = (
+        _kspm_scope_filter(db.query(Finding))
+        .with_entities(Finding.tool, func.count(Finding.id))
+        .group_by(Finding.tool)
+        .order_by(desc(func.count(Finding.id)))
+        .limit(12)
+        .all()
+    )
+    tool_breakdown = [{"name": t or "unknown", "value": int(c)} for t, c in tool_rows]
+
+    rt_rows = (
+        _kspm_scope_filter(db.query(Finding))
+        .with_entities(Finding.resource_type, func.count(Finding.id))
+        .filter(Finding.resource_type.isnot(None))
+        .filter(Finding.resource_type != "")
+        .group_by(Finding.resource_type)
+        .order_by(desc(func.count(Finding.id)))
+        .limit(8)
+        .all()
+    )
+    resource_type_breakdown = [{"name": r or "unknown", "value": int(c)} for r, c in rt_rows]
+
+    publicish = (
+        _kspm_scope_filter(db.query(Finding))
+        .filter(Finding.title.isnot(None))
+        .filter(
+            or_(
+                Finding.title.ilike("%public%"),
+                Finding.title.ilike("%exposed%"),
+                Finding.title.ilike("%internet%"),
+            )
+        )
+        .count()
+    )
+
+    connectors_out = []
+    for c in (
+        db.query(Connector)
+        .filter(Connector.connector_type.in_(("kubernetes", "onprem")))
+        .order_by(Connector.name.asc())
+        .all()
+    ):
+        connectors_out.append(
+            {
+                "name": c.name,
+                "display_name": c.display_name,
+                "status": connection_status_from_findings(db, c),
+            }
+        )
+
+    return {
+        "scope_total": scope_total,
+        "severity_breakdown": severity_breakdown,
+        "top_clusters": top_clusters,
+        "tool_breakdown": tool_breakdown,
+        "resource_type_breakdown": resource_type_breakdown,
+        "connectors": connectors_out,
+        "public_exposure_heuristic_count": int(publicish),
+    }
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"], dependencies=[Depends(get_current_user)])
 
@@ -158,7 +261,7 @@ def summary(
         {"framework": fw, "findings": fw_counts.get(fw, 0), "passed_pct": None} for fw in FRAMEWORKS
     ]
 
-    return {
+    out: dict = {
         "total_findings": total,
         "open_findings": open_,
         "critical": critical,
@@ -183,3 +286,6 @@ def summary(
         "compliance_overview": compliance_overview,
         "domain_filter": domain,
     }
+    if domain and str(domain).strip().lower() == "kspm":
+        out["kspm_rollups"] = _kspm_rollups(db)
+    return out

@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom'
-import { ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { NoGraphData } from '@/components/ui/NoGraphData'
 import SeverityDonut from '@/components/charts/SeverityDonut'
 import TrendLine from '@/components/charts/TrendLine'
 import DomainBar from '@/components/charts/DomainBar'
 import { RiskScoreGauge } from '@/components/dashboard/RiskScoreGauge'
 import { FindingsByCloudTable } from '@/components/dashboard/FindingsByCloudTable'
+import { KspmWidgetContent } from '@/components/dashboard/KspmWidgetContent'
 import type { DashboardSummary } from '@/api/dashboard'
 import { KSPM_DASHBOARD_WIDGETS } from '@/config/kspmDashboardWidgets'
 
@@ -17,15 +16,18 @@ export function KspmDomainDashboard({ data }: { data: DashboardSummary }) {
   const score = Number(data.secure_score ?? 0)
   const posture = data.risk_posture
   const placeholders = W.slice(5)
+  const rollups = data.kspm_rollups
+  const trend = data.trend ?? []
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">KSPM — Kubernetes security posture</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          Domain rollup from <code className="rounded bg-muted px-1 py-0.5 text-xs">/dashboard/summary?domain=kspm</code> plus
-          AccuKnox-style widget slots. Tiles without data show the same empty pattern as AccuKnox until backend aggregations are
-          wired.
+          Domain rollup from <code className="rounded bg-muted px-1 py-0.5 text-xs">/dashboard/summary?domain=kspm</code>.
+          Expanded tiles use <code className="rounded bg-muted px-1 py-0.5 text-xs">kspm_rollups</code> (KSPM/CIS/compliance
+          domains + kubescape/kube-bench/kube-hunter/polaris findings). Remaining tiles show “No graph data” until richer
+          correlations exist.
         </p>
       </div>
 
@@ -59,7 +61,7 @@ export function KspmDomainDashboard({ data }: { data: DashboardSummary }) {
             <CardTitle>{W[2].title}</CardTitle>
           </CardHeader>
           <CardContent>
-            <TrendLine data={data.trend || []} />
+            <TrendLine data={trend} />
           </CardContent>
         </Card>
         <Card>
@@ -88,16 +90,18 @@ export function KspmDomainDashboard({ data }: { data: DashboardSummary }) {
       </Card>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">KSPM widgets (expanded)</h2>
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">KSPM widgets</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {placeholders.map((w) => (
             <Card key={w.id}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{w.title}</CardTitle>
-                <CardDescription className="text-xs">Awaiting API — placeholder</CardDescription>
+                <CardDescription className="text-xs">
+                  {rollups ? 'Powered by kspm_rollups when data exists' : 'Load summary to hydrate'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <NoGraphData />
+                <KspmWidgetContent w={w} rollups={rollups} trend={trend} />
               </CardContent>
             </Card>
           ))}

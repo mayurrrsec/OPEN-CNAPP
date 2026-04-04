@@ -2,6 +2,7 @@ import { useEffect, useState, type ComponentType } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   Activity,
+  Building2,
   CheckSquare,
   ChevronDown,
   ChevronRight,
@@ -113,6 +114,10 @@ function InventoryAssetsNav() {
           <NavLink to="/inventory/cloud" className={invNavLinkClass}>
             <Cloud className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
             Cloud assets
+          </NavLink>
+          <NavLink to="/inventory/clouds" className={invNavLinkClass}>
+            <Building2 className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+            Cloud accounts
           </NavLink>
 
           <div>

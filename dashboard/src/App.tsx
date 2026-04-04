@@ -21,6 +21,7 @@ import { CloudAssetsInventoryTab } from '@/pages/inventory/CloudAssetsInventoryT
 import { ImagesInventoryTab } from '@/pages/inventory/ImagesInventoryTab'
 import { NamespacesInventoryTab } from '@/pages/inventory/NamespacesInventoryTab'
 import { WorkloadsInventoryTab } from '@/pages/inventory/WorkloadsInventoryTab'
+import { CloudsTab } from '@/pages/inventory/CloudsTab'
 import Settings from '@/pages/Settings'
 import Login from '@/pages/Login'
 import AuthCallback from '@/pages/AuthCallback'
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/inventory" element={<InventoryLayout />}>
             <Route index element={<InventoryIndexRedirect />} />
             <Route path="cloud" element={<CloudAssetsInventoryTab />} />
+            <Route path="clouds" element={<CloudsTab />} />
             <Route path="clusters" element={<ClustersInventoryPage />} />
             <Route path="namespaces" element={<NamespacesInventoryTab />} />
             <Route path="workloads" element={<WorkloadsInventoryTab />} />

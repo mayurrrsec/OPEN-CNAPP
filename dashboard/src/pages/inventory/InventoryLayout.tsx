@@ -26,6 +26,7 @@ export type InventoryOutletContext = {
 
 const SEGMENT_TITLE: Record<string, string> = {
   cloud: 'Cloud assets',
+  clouds: 'Cloud accounts',
   clusters: 'Clusters',
   namespaces: 'Namespaces',
   workloads: 'Workloads',

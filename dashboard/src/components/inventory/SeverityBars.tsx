@@ -2,12 +2,13 @@ import { cn } from '@/lib/utils'
 
 const ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'] as const
 
-const BAR: Record<string, string> = {
-  CRITICAL: 'bg-rose-600',
-  HIGH: 'bg-orange-500',
-  MEDIUM: 'bg-amber-400',
-  LOW: 'bg-sky-500',
-  INFO: 'bg-slate-400',
+/** Hex colors — do not rely on Tailwind palette (may be stripped in minimal builds). */
+const BAR_BG: Record<string, string> = {
+  CRITICAL: '#e11d48',
+  HIGH: '#f97316',
+  MEDIUM: '#fbbf24',
+  LOW: '#0ea5e9',
+  INFO: '#94a3b8',
 }
 
 export type SeverityBreakdown = Partial<Record<(typeof ORDER)[number], number>>
@@ -31,8 +32,8 @@ export function SeverityBars({ breakdown, className }: Props) {
         return (
           <div
             key={k}
-            className={cn('h-full min-w-[2px]', BAR[k])}
-            style={{ width: `${pct}%` }}
+            className="h-full min-w-[2px]"
+            style={{ width: `${pct}%`, backgroundColor: BAR_BG[k] ?? '#94a3b8' }}
           />
         )
       })}
