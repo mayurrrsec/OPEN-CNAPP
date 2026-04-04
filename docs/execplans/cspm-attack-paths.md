@@ -4,6 +4,8 @@ This document is the **Cursor-ready end-to-end plan** for cloud CSPM posture wor
 
 **Architecture diagram (authoritative flow):** [cspm_attack_path_architecture.svg](./cspm_attack_path_architecture.svg)
 
+**IAM / RBAC dense graph (node panel, Orca-style):** see [cloud-iam-rbac-graph.md](./cloud-iam-rbac-graph.md) — separate ExecPlan from findings-only attack paths.
+
 ---
 
 ## 1. Goal

@@ -161,6 +161,7 @@ Shared query helpers: `api/inventory/helpers.py`, `api/inventory/cluster_detail_
 
 - **`docs/plan-of-action-kspm-cspm-testing.md`** — Plan of action for **management / cloud team**: KSPM → CSPM testing.
 - **`docs/execplans/cspm-attack-paths.md`** — CSPM + attack paths implementation plan.
+- **`docs/execplans/cloud-iam-rbac-graph.md`** — IAM/RBAC **dense graph** (Orca-style panel): schema, sync, API, React Flow; cost-aware (direct APIs vs PMapper/Steampipe/Cartography export).
 - `README.md` — Quick overview and API index.
 - `scripts/DEV_CONTEXT.md` — Repo layout and commands (for humans and agents).
 - `docs/roadmap-gap-analysis.md` — Roadmap vs current gaps.
