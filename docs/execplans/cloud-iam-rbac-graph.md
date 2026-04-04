@@ -194,20 +194,23 @@ SQLite vs Postgres: use SQLAlchemy types compatible with existing `opencnapp.db`
 
 ## 8. Deliverables checklist
 
-- [ ] `graph_nodes` / `graph_edges` schema + models
-- [ ] AWS sync **or** PMapper ETL path (document which is default)
-- [ ] Celery task + schedule + optional connector hook
-- [ ] `GET /graph/subgraph` + optional `POST /graph/sync/{name}`
-- [ ] React Flow panel + findings tab layout
-- [ ] Tests + `docs/help/iam-graph.md`
-- [ ] Update `IMPLEMENTATION_STATUS.md` when MVP merges
+- [x] `graph_nodes` / `graph_edges` schema + models (`api/models/iam_graph.py`, `api/database/init.sql`)
+- [x] AWS sync **and** PMapper-style JSON ETL (`api/services/iam_graph_sync_aws.py`, `api/services/iam_graph_etl_pmapper.py`); **default:** **ingest-only**; live `POST /graph/sync` requires **`OPENCNAPP_IAM_LIVE_AWS_SYNC=1`**
+- [x] Celery task `iam_graph.sync` (`api/workers/iam_graph_sync.py`); scheduler/connector hook deferred (optional)
+- [x] `GET /graph/subgraph` + `POST /graph/sync/{name}` + `POST /graph/ingest/{name}`; routes gated by `OPENCNAPP_IAM_GRAPH=0`, `api/main.py`
+- [x] React Flow panel + findings tab layout (`AttackPathDetail.tsx`, `IamAccessGraphFlow.tsx`)
+- [x] Tests + `docs/help/iam-graph.md`
+- [x] `IMPLEMENTATION_STATUS.md` updated (IAM graph row + parity)
 
 ---
 
 ## 9. Evidence log (fill during execution)
 
 | Command | Result | Notes |
-|---------|--------|--------|
+|---------|--------|-------|
+| `python -m unittest discover -s tests -p "test_*.py"` | OK (14 tests) | Includes `tests/test_iam_graph.py` |
+| `python -m compileall api -q` | OK | |
+| `cd dashboard && npm run build` | OK | `@xyflow/react` added |
 | | | |
 
 ---

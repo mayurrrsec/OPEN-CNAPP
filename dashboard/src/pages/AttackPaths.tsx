@@ -60,9 +60,11 @@ export default function AttackPaths() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Attack paths</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Persisted paths built from all domains in <code className="rounded bg-muted px-1 py-0.5 text-xs">findings</code> (CSPM,
-            KSPM, Defender, etc.). Flow graphs use our builder + D3 — not Threatmapper as the graph engine; scanners only feed
-            findings via ingest.
+            Paths are <strong>derived from findings</strong> (aggregated risk), not from IAM graph miners. Detail pages use a
+            D3 <strong>summary flow</strong> (Internet → resource). For identity/policy topology, use{' '}
+            <strong className="text-foreground">IAM graph</strong> on a path node after loading{' '}
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">graph_*</code> via batch ingest (PMapper, Steampipe,
+            Cartography exports).
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

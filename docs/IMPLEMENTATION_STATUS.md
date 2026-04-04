@@ -2,7 +2,7 @@
 
 This file records **what is implemented in the repo today** (not roadmap intent). Update it when you merge meaningful features. For roadmap vs gaps, see `docs/roadmap-gap-analysis.md`.
 
-**Last updated:** 2026-04-04 (CSPM attack paths, connector scan, findings columns — see §CSPM & attack paths)
+**Last updated:** 2026-04-04 (IAM graph tables + panel — see §CSPM & attack paths)
 
 ---
 
@@ -20,7 +20,7 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 
 ## CSPM & attack paths (2026-04)
 
-**ExecPlan:** `docs/execplans/cspm-attack-paths.md` · **Diagram:** `docs/execplans/cspm_attack_path_architecture.svg` · **Help:** `docs/help/attack-paths.md`
+**ExecPlan:** `docs/execplans/cspm-attack-paths.md` · **IAM graph ExecPlan:** `docs/execplans/cloud-iam-rbac-graph.md` · **Diagram:** `docs/execplans/cspm_attack_path_architecture.svg` · **Help:** `docs/help/attack-paths.md`, `docs/help/iam-graph.md`
 
 ### What is implemented
 
@@ -32,7 +32,8 @@ Larger cross-cutting work (global search, SSO hardening) should still be schedul
 | **Adapters** | `defender_for_cloud`, `aws_security_hub` registered for **`POST /ingest/{tool}`** (normalized rows). |
 | **Connectors** | Multi-method: AWS (keys, IAM role, **SSO profile**), Azure (SP, **managed identity**, **az login**), GCP (SA JSON; other methods rejected in test with message). **`AddCloudWizard.tsx`** updated. |
 | **Connector-triggered scan** | **`POST /connectors/{name}/scan`** — queues worker scan (default **prowler** for aws/azure/gcp, **kubescape** for kubernetes); body optional `{ "plugin", "source", "confirm_active_scan" }` (same active-scan guard as **`POST /scans/trigger`**). |
-| **Dashboard** | **`/attack-paths`** — impact cards, **target category chips** (heuristic), table with **View flow**; **`/attack-paths/:pathId`** — horizontal **D3** flow (`AttackFlowGraph.tsx`), attack story, timeline, node sheet (findings for resource). |
+| **Dashboard** | **`/attack-paths`** — impact cards, **target category chips** (heuristic), table with **View flow**; **`/attack-paths/:pathId`** — horizontal **D3** flow (`AttackFlowGraph.tsx`), attack story, timeline, node sheet (**Findings** + **IAM graph** tabs with **React Flow** when connector + resource id present). |
+| **IAM / access graph** | Tables **`graph_nodes`** / **`graph_edges`**; **`GET /graph/subgraph`**, **`POST /graph/ingest/{name}`** (recommended: PMapper / Steampipe / Cartography → JSON); optional live boto3 IAM via **`POST /graph/sync`** only when **`OPENCNAPP_IAM_LIVE_AWS_SYNC=1`** (default **off**); Celery **`iam_graph.sync`**; **`OPENCNAPP_IAM_GRAPH=0`** omits routes. |
 | **Findings** | **`GET /findings?source=`** filter; each row includes **`attack_path_count`**; **`GET /findings/{id}`** includes **`attack_path_count`**. UI: **Source** column, **Paths** link when count > 0, source filter dropdown. |
 
 ### Orca Security–style UI: parity vs OpenCNAPP (honest)
@@ -42,7 +43,7 @@ Commercial UIs (e.g. Orca) combine **deep cloud graph mining** (IAM edges, effec
 | Capability | Orca-style reference | OpenCNAPP today |
 |------------|----------------------|-----------------|
 | **Attack flow (main canvas)** | Multi-hop story: Internet → asset → IAM → crown jewel; alert diamonds; account banners | **Horizontal** Internet → source → target + **alert cards** from **findings** attached to the path; **heuristic** aggregation (cloud→resource→check style), not a full IAM permission graph. |
-| **Node / asset panel (“crazy graph”)** | Second graph: roles, policies, “any principal” → bucket | **Sheet** lists **findings** for **`resource_id`**; **no** separate IAM topology graph (would need IAM/API inventory + graph DB or heavy enrichment). |
+| **Node / asset panel (“crazy graph”)** | Second graph: roles, policies, “any principal” → bucket | **Sheet** tabs: **findings** + **IAM graph** (**React Flow** subgraph from **`/graph/subgraph`** when data exists); **not** full Orca-style dense graphs — MVP is roles + attached managed policies (AWS sync) or **ingested** exports. |
 | **Scoring** | Impact / probability / risk tuned on big data | **impact_score** / **probability_score** / **risk_score** from **severity + exposure heuristics** on aggregated edges. |
 | **Attack story** | Polished copy + MITRE tags | **Steps** from **finding titles/domains** via `api/services/attack_story.py`; MITRE only if **ingest** provides it in **`raw`**. |
 | **Target category chips** | VM, bucket, role, etc. from asset model | **`by_target_category`** + per-row **`target_category`** from **string heuristics** on `target_resource_id` (improves as **`resource_type`** is normalized on findings). |

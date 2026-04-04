@@ -129,3 +129,31 @@ CREATE TABLE IF NOT EXISTS attack_path_edges (
   created_at TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS ix_attack_path_edges_path ON attack_path_edges(attack_path_id);
+
+-- IAM / access graph (Orca-style panel; see api/models/iam_graph.py)
+CREATE TABLE IF NOT EXISTS graph_nodes (
+  id VARCHAR(36) PRIMARY KEY,
+  connector_id VARCHAR(36) NOT NULL REFERENCES connectors(id) ON DELETE CASCADE,
+  cloud_account_id VARCHAR(64) NULL,
+  provider VARCHAR(20) NOT NULL,
+  node_type VARCHAR(64) NOT NULL,
+  external_id TEXT NOT NULL,
+  label TEXT NULL,
+  properties JSONB DEFAULT '{}'::jsonb,
+  last_seen TIMESTAMP DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_graph_nodes_connector_external ON graph_nodes(connector_id, external_id);
+CREATE INDEX IF NOT EXISTS ix_graph_nodes_connector ON graph_nodes(connector_id);
+
+CREATE TABLE IF NOT EXISTS graph_edges (
+  id VARCHAR(36) PRIMARY KEY,
+  connector_id VARCHAR(36) NOT NULL REFERENCES connectors(id) ON DELETE CASCADE,
+  source_node_id VARCHAR(36) NOT NULL REFERENCES graph_nodes(id) ON DELETE CASCADE,
+  target_node_id VARCHAR(36) NOT NULL REFERENCES graph_nodes(id) ON DELETE CASCADE,
+  edge_type VARCHAR(64) NOT NULL,
+  properties JSONB DEFAULT '{}'::jsonb,
+  last_seen TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS ix_graph_edges_connector ON graph_edges(connector_id);
+CREATE INDEX IF NOT EXISTS ix_graph_edges_src ON graph_edges(connector_id, source_node_id);
+CREATE INDEX IF NOT EXISTS ix_graph_edges_tgt ON graph_edges(connector_id, target_node_id);

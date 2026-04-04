@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket
@@ -5,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.bootstrap import ensure_bootstrap_admin, ensure_default_workspace
 from api.models.attack_path import AttackPath, AttackPathEdge  # noqa: F401 — register tables
+from api.models.iam_graph import GraphEdge, GraphNode  # noqa: F401 — register tables
 from api.database.session import Base, SessionLocal, engine
 from api.plugin_engine import sync_plugins_to_db
 from api.routes import (
@@ -28,6 +30,7 @@ from api.routes import (
     search,
     inventory_api,
 )
+from api.routes import graph as graph_routes
 from api.websocket import manager
 from api.workers.scheduler import start_scheduler
 
@@ -76,6 +79,9 @@ for r in [
     inventory_api,
 ]:
     app.include_router(r.router)
+
+if os.getenv("OPENCNAPP_IAM_GRAPH", "1").strip().lower() not in ("0", "false", "no", "off"):
+    app.include_router(graph_routes.router)
 
 
 @app.get("/health")

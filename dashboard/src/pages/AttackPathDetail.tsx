@@ -4,7 +4,9 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AttackFlowGraph } from '@/components/attack-paths/AttackFlowGraph'
+import { IamAccessGraphFlow } from '@/components/graph/IamAccessGraphFlow'
 import {
   fetchAttackPathDetail,
   fetchAttackPathGraph,
@@ -108,7 +110,10 @@ export default function AttackPathDetail() {
         <Card>
           <CardHeader>
             <CardTitle>Attack flow</CardTitle>
-            <CardDescription>Horizontal graph from backend layout (D3-rendered).</CardDescription>
+            <CardDescription>
+              Finding-based storyline (D3). This is not PMapper/Steampipe/Cartography — use the node sheet{' '}
+              <strong>IAM graph</strong> tab after <code className="rounded bg-muted px-1 py-0.5 text-xs">/graph/ingest</code>.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <AttackFlowGraph data={graph} onSelectNode={(n) => setPanelNode(n)} />
@@ -149,32 +154,69 @@ export default function AttackPathDetail() {
       </div>
 
       <Sheet open={!!panelNode} onOpenChange={(o) => !o && setPanelNode(null)}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{panelNode?.label || 'Node'}</SheetTitle>
+        <SheetContent className="overflow-y-auto p-6">
+          <SheetHeader className="pr-8">
+            <SheetTitle className="line-clamp-2 break-all text-left">{panelNode?.label || 'Node'}</SheetTitle>
           </SheetHeader>
-          <div className="mt-4 space-y-3 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground">Type</div>
-              <div>{panelNode?.type}</div>
-            </div>
-            {panelNode?.account ? (
+          {panelNode && p.connector_id && panelNode.type !== 'internet' ? (
+            <Tabs defaultValue="findings" className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="findings">Findings</TabsTrigger>
+                <TabsTrigger value="iam">IAM graph</TabsTrigger>
+              </TabsList>
+              <TabsContent value="findings" className="mt-4 space-y-3 text-sm">
+                <div>
+                  <div className="text-xs text-muted-foreground">Type</div>
+                  <div>{panelNode.type}</div>
+                </div>
+                {panelNode.account ? (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Account</div>
+                    <div>{panelNode.account}</div>
+                  </div>
+                ) : null}
+                <div>
+                  <div className="text-xs text-muted-foreground">Related findings</div>
+                  <ul className="mt-1 list-disc space-y-1 pl-4">
+                    {(assetPanel?.findings || []).slice(0, 12).map((f) => (
+                      <li key={f.id}>
+                        <span className="font-medium">{f.severity}</span> — {f.title}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </TabsContent>
+              <TabsContent value="iam" className="mt-4 min-h-[min(480px,70vh)]">
+                <IamAccessGraphFlow
+                  connectorId={p.connector_id}
+                  resourceArn={panelNode.resource_id || panelNode.label}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="mt-4 space-y-3 text-sm">
               <div>
-                <div className="text-xs text-muted-foreground">Account</div>
-                <div>{panelNode.account}</div>
+                <div className="text-xs text-muted-foreground">Type</div>
+                <div>{panelNode?.type}</div>
               </div>
-            ) : null}
-            <div>
-              <div className="text-xs text-muted-foreground">Related findings</div>
-              <ul className="mt-1 list-disc space-y-1 pl-4">
-                {(assetPanel?.findings || []).slice(0, 12).map((f) => (
-                  <li key={f.id}>
-                    <span className="font-medium">{f.severity}</span> — {f.title}
-                  </li>
-                ))}
-              </ul>
+              {panelNode?.account ? (
+                <div>
+                  <div className="text-xs text-muted-foreground">Account</div>
+                  <div>{panelNode.account}</div>
+                </div>
+              ) : null}
+              <div>
+                <div className="text-xs text-muted-foreground">Related findings</div>
+                <ul className="mt-1 list-disc space-y-1 pl-4">
+                  {(assetPanel?.findings || []).slice(0, 12).map((f) => (
+                    <li key={f.id}>
+                      <span className="font-medium">{f.severity}</span> — {f.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
+          )}
         </SheetContent>
       </Sheet>
     </div>
