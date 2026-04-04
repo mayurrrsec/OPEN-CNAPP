@@ -20,12 +20,28 @@ class AwsConnector(CloudConnector):
     def test_credentials(self, credentials: dict | None, settings: dict | None) -> dict:
         credentials = credentials or {}
         settings = settings or {}
+        conn_method = (settings.get("connection_method") or "access_keys").strip().lower()
         regions = settings.get("regions") or []
         region = (credentials.get("region") or "").strip() or None
         if not region and isinstance(regions, list) and len(regions) > 0:
             region = str(regions[0])
         if not region or not isinstance(region, str):
             region = "us-east-1"
+
+        if conn_method == "sso_profile":
+            profile = (credentials.get("sso_profile") or settings.get("sso_profile") or "").strip()
+            if not profile:
+                return {**self.validate(), "message": "Provide an AWS CLI / SSO profile name (sso_profile).", "resource_count": 0}
+            try:
+                import boto3
+
+                session = boto3.Session(profile_name=profile, region_name=region)
+                sts = session.client("sts")
+                ident = sts.get_caller_identity()
+                arn = ident.get("Arn", "")
+                return {"ok": True, "message": f"AWS profile OK: {arn}", "resource_count": 1}
+            except Exception as e:
+                return {"ok": False, "message": str(e), "resource_count": 0}
 
         ak = (credentials.get("access_key_id") or "").strip()
         sk = (credentials.get("secret_access_key") or "").strip()

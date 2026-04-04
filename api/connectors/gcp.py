@@ -18,6 +18,13 @@ class GcpConnector(CloudConnector):
     def test_credentials(self, credentials: dict | None, settings: dict | None) -> dict:
         credentials = credentials or {}
         settings = settings or {}
+        method = (settings.get("gcp_connection_method") or settings.get("connection_method") or "service_account").strip().lower()
+        if method != "service_account":
+            return {
+                **self.validate(),
+                "message": f"GCP connection method '{method}' is not implemented for credential test; use service_account (JSON key).",
+                "resource_count": 0,
+            }
         raw = (credentials.get("private_key") or "").strip()
         project = (credentials.get("project_id") or "").strip()
         email = (credentials.get("client_email") or "").strip()

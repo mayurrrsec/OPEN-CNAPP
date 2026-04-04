@@ -1,219 +1,169 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { GitBranch } from 'lucide-react'
+import { GitBranch, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { api } from '../api/client'
-import * as d3 from 'd3'
+import {
+  fetchAttackPathsList,
+  fetchAttackPathsLegacyGraph,
+  postAttackPathsRebuild,
+  type AttackPathsListResponse,
+  type LegacyGraphResponse,
+} from '@/api/attackPaths'
 
 export default function AttackPaths() {
-  const [graph, setGraph] = useState<{
-    nodes: unknown[]
-    edges: unknown[]
-    top_paths: { path_id?: string; source: string; target: string; risk: number }[]
-  }>({ nodes: [], edges: [], top_paths: [] })
-  const [selected, setSelected] = useState<any | null>(null)
-  const svgRef = useRef<SVGSVGElement | null>(null)
+  const [data, setData] = useState<AttackPathsListResponse | null>(null)
+  const [legacy, setLegacy] = useState<LegacyGraphResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [rebuilding, setRebuilding] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
 
-  useEffect(() => {
-    api.get('/attack-paths')
-      .then(r => setGraph(r.data))
-      .catch(() => setGraph({ nodes: [], edges: [], top_paths: [] }))
+  const load = useCallback(() => {
+    setLoading(true)
+    setErr(null)
+    Promise.all([
+      fetchAttackPathsList({ limit: 100, offset: 0 }),
+      fetchAttackPathsLegacyGraph().catch(() => null),
+    ])
+      .then(([list, g]) => {
+        setData(list)
+        setLegacy(g)
+      })
+      .catch((e) => setErr(String(e?.message || e)))
+      .finally(() => setLoading(false))
   }, [])
 
-  const nodes = useMemo(() => (graph.nodes || []).map((n: any) => ({ ...n })), [graph.nodes])
-  const links = useMemo(() => (graph.edges || []).map((e: any) => ({ ...e })), [graph.edges])
-
   useEffect(() => {
-    const svg = svgRef.current
-    if (!svg) return
-    const width = svg.clientWidth || 900
-    const height = svg.clientHeight || 520
+    load()
+  }, [load])
 
-    const root = d3.select(svg)
-    root.selectAll('*').remove()
-
-    const g = root.append('g')
-
-    root.call(
-      d3.zoom<SVGSVGElement, unknown>().scaleExtent([0.5, 2.5]).on('zoom', (event) => {
-        g.attr('transform', event.transform.toString())
-      })
-    )
-
-    const maxRisk = Math.max(1, ...links.map((l: any) => Number(l.risk || 0)))
-    const riskColor = (r: number) => (r > 0.75 * maxRisk ? '#ef4444' : r > 0.4 * maxRisk ? '#f97316' : 'rgba(148,163,184,.8)')
-
-    const linkSel = g
-      .append('g')
-      .attr('stroke-linecap', 'round')
-      .selectAll('line')
-      .data(links)
-      .join('line')
-      .attr('stroke', (d: any) => riskColor(Number(d.risk || 0)))
-      .attr('stroke-width', (d: any) => 1 + 3 * (Number(d.risk || 0) / maxRisk))
-      .attr('opacity', 0.85)
-
-    const nodeSel = g
-      .append('g')
-      .selectAll('circle')
-      .data(nodes)
-      .join('circle')
-      .attr('r', (d: any) => d.type === 'cloud' ? 10 : d.type === 'resource' ? 9 : 7)
-      .attr('fill', (d: any) => {
-        const sev = String(d.severity || '').toUpperCase()
-        if (sev === 'CRITICAL') return '#ef4444'
-        if (sev === 'HIGH') return '#f97316'
-        if (sev === 'MEDIUM') return '#f59e0b'
-        return '#4a9eff'
-      })
-      .attr('stroke', 'rgba(255,255,255,.35)')
-      .attr('stroke-width', 1)
-      .style('cursor', 'pointer')
-      .on('click', (_, d: any) => setSelected(d))
-
-    const labelSel = g
-      .append('g')
-      .selectAll('text')
-      .data(nodes)
-      .join('text')
-      .text((d: any) => String(d.id).length > 38 ? String(d.id).slice(0, 38) + '…' : String(d.id))
-      .attr('font-size', 10)
-      .attr('fill', 'rgba(231,236,255,.85)')
-      .attr('paint-order', 'stroke')
-      .attr('stroke', 'rgba(11,16,32,.9)')
-      .attr('stroke-width', 3)
-      .attr('pointer-events', 'none')
-
-    const sim = d3.forceSimulation(nodes as any)
-      .force('link', d3.forceLink(links as any).id((d: any) => d.id).distance((l: any) => l.target?.type === 'check' ? 80 : 120).strength(0.25))
-      .force('charge', d3.forceManyBody().strength(-220))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius((d: any) => (d.type === 'cloud' ? 18 : 16)))
-
-    const drag = d3.drag<SVGCircleElement, any>()
-      .on('start', (event, d) => {
-        if (!event.active) sim.alphaTarget(0.25).restart()
-        d.fx = d.x
-        d.fy = d.y
-      })
-      .on('drag', (event, d) => {
-        d.fx = event.x
-        d.fy = event.y
-      })
-      .on('end', (event, d) => {
-        if (!event.active) sim.alphaTarget(0)
-        d.fx = null
-        d.fy = null
-      })
-
-    nodeSel.call(drag as any)
-
-    sim.on('tick', () => {
-      linkSel
-        .attr('x1', (d: any) => d.source?.x ?? 0)
-        .attr('y1', (d: any) => d.source?.y ?? 0)
-        .attr('x2', (d: any) => d.target?.x ?? 0)
-        .attr('y2', (d: any) => d.target?.y ?? 0)
-
-      nodeSel
-        .attr('cx', (d: any) => d.x ?? 0)
-        .attr('cy', (d: any) => d.y ?? 0)
-
-      labelSel
-        .attr('x', (d: any) => (d.x ?? 0) + 12)
-        .attr('y', (d: any) => (d.y ?? 0) + 4)
-    })
-
-    return () => {
-      sim.stop()
+  const onRebuild = async () => {
+    setRebuilding(true)
+    setErr(null)
+    try {
+      await postAttackPathsRebuild()
+      await load()
+    } catch (e: unknown) {
+      setErr(String((e as { message?: string }).message || e))
+    } finally {
+      setRebuilding(false)
     }
-  }, [nodes, links])
+  }
+
+  const impact = data?.summary?.by_impact
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="page-title">Attack Paths</h1>
-          <p className="page-subtitle">Interactive graph view (v1) derived from findings relationships.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Attack paths</h1>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+            Persisted paths built from all domains in <code className="rounded bg-muted px-1 py-0.5 text-xs">findings</code> (CSPM,
+            KSPM, Defender, etc.). Flow graphs use our builder + D3 — not Threatmapper as the graph engine; scanners only feed
+            findings via ingest.
+          </p>
         </div>
-        <div className="pill">Nodes: <strong>{graph.nodes.length}</strong> · Edges: <strong>{graph.edges.length}</strong></div>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => load()}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button type="button" size="sm" disabled={rebuilding} onClick={() => void onRebuild()}>
+            {rebuilding ? 'Rebuilding…' : 'Rebuild paths'}
+          </Button>
+        </div>
       </div>
 
-      {graph.nodes.length === 0 && graph.edges.length === 0 ? (
-        <div style={{ marginTop: 12 }}>
-          <EmptyState
-            icon={GitBranch}
-            title="No attack paths found"
-            description="Attack paths appear after running scans with connected clouds and relationship data."
-            action={{ label: 'Run scan', onClick: () => (window.location.href = '/plugins') }}
-          />
+      {err ? <p className="text-sm text-destructive">{err}</p> : null}
+
+      {loading && !data ? (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading…
         </div>
       ) : null}
 
-      <div className="grid two" style={{ marginTop: 12 }}>
-        <div className="card">
-          <div className="graph-wrap">
-            <svg ref={svgRef} width="100%" height="100%" />
-          </div>
-          <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 10 }}>
-            Tip: scroll to zoom, drag to pan, drag nodes to reposition.
-          </div>
+      {impact ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(
+            [
+              ['High', impact.high, '#e11d48'],
+              ['Medium', impact.medium, '#f97316'],
+              ['Low', impact.low, '#fbbf24'],
+              ['Informational', impact.informational, '#64748b'],
+            ] as const
+          ).map(([label, n, color]) => (
+            <Card key={label}>
+              <CardHeader className="pb-2">
+                <CardDescription>{label}</CardDescription>
+                <CardTitle className="text-2xl tabular-nums">{n}</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="h-1 w-full rounded" style={{ backgroundColor: color }} />
+              </CardContent>
+            </Card>
+          ))}
         </div>
-        <div className="card">
-          <h3>Node details</h3>
-          {!selected && <div style={{ color: 'var(--muted)' }}>Click a node in the graph to inspect it.</div>}
-          {selected && (
-            <div>
-              <div className="row">
-                <div><div className="metric-label">Type</div><div>{selected.type || '-'}</div></div>
-                <div><div className="metric-label">Severity</div><div className={`sev ${String(selected.severity || '').toUpperCase()}`}>{String(selected.severity || '-').toUpperCase()}</div></div>
-              </div>
-              <div className="card" style={{ marginTop: 12 }}>
-                <h3>ID</h3>
-                <div style={{ wordBreak: 'break-word' }}>{String(selected.id)}</div>
-              </div>
-              <button className="btn-secondary" style={{ marginTop: 12 }} onClick={() => setSelected(null)}>Clear</button>
-            </div>
-          )}
-        </div>
-      </div>
+      ) : null}
 
-      <div className="card" style={{ marginTop: 12 }}>
-        <h3>Top risky paths</h3>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Source</th>
-              <th>Target</th>
-              <th>Risk / story</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(graph.top_paths || []).slice(0, 20).map((p, idx) => (
-              <tr key={p.path_id ?? idx}>
-                <td style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {String(p.source)}
-                </td>
-                <td style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {String(p.target)}
-                </td>
-                <td className="whitespace-nowrap">
-                  <span className="mr-3">{Number(p.risk).toFixed(1)}</span>
-                  {p.path_id ? (
-                    <Button variant="link" className="h-auto p-0 text-sm" asChild>
-                      <Link to={`/attack-paths/${encodeURIComponent(p.path_id)}`}>Attack story</Link>
-                    </Button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-            {(!graph.top_paths || graph.top_paths.length === 0) && (
-              <tr><td colSpan={3} style={{ color: 'var(--muted)' }}>No paths yet. Ingest findings to populate the graph.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {!loading && data && (data.items?.length ?? 0) === 0 ? (
+        <EmptyState
+          icon={GitBranch}
+          title="No attack paths yet"
+          description="Ingest findings (any domain), then click Rebuild paths, or wait for automatic rebuild after ingest."
+          action={{ label: 'Open plugins', onClick: () => (window.location.href = '/plugins') }}
+        />
+      ) : null}
+
+      {data && data.items && data.items.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Paths ({data.summary?.total_paths ?? data.total})</CardTitle>
+            <CardDescription>Open a row for the Orca-style flow, story, and timeline.</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="py-2 pr-3">Title</th>
+                  <th className="py-2 pr-3">Impact</th>
+                  <th className="py-2 pr-3">Band</th>
+                  <th className="py-2 pr-3">Cloud</th>
+                  <th className="py-2">Flow</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((p) => (
+                  <tr key={p.id} className="border-b border-border/60">
+                    <td className="max-w-md py-2 pr-3">
+                      <div className="font-medium line-clamp-2">{p.title}</div>
+                      <div className="text-xs text-muted-foreground line-clamp-1">
+                        {p.source_resource_id} → {p.target_resource_id}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap py-2 pr-3 tabular-nums">{p.impact_score?.toFixed(0)}</td>
+                    <td className="py-2 pr-3">{p.impact_band}</td>
+                    <td className="py-2 pr-3">{p.cloud_provider || '—'}</td>
+                    <td className="py-2">
+                      <Button variant="link" className="h-auto p-0" asChild>
+                        <Link to={`/attack-paths/${encodeURIComponent(p.id)}`}>View flow</Link>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {legacy && (legacy.nodes?.length ?? 0) > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Legacy aggregate graph: {legacy.meta?.node_count ?? legacy.nodes.length} nodes ·{' '}
+          {legacy.meta?.edge_count ?? legacy.edges.length} edges (widget compatibility).
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -26,10 +26,17 @@ const accountTypes = [
   { id: 'organization', label: 'Organization', hint: 'Org / management group / folder root' },
 ] as const
 
-const connectionMethods = [
+const awsConnectionMethods = [
   { id: 'terraform', label: 'Access keys — Terraform script (recommended)' },
   { id: 'access_keys', label: 'Access keys (manual)' },
   { id: 'iam_role', label: 'IAM role / assume role (manual)' },
+  { id: 'sso_profile', label: 'AWS CLI / SSO profile' },
+] as const
+
+const azureConnectionMethods = [
+  { id: 'service_principal', label: 'Service principal (app registration)' },
+  { id: 'managed_identity', label: 'Managed identity (Azure-hosted runtime)' },
+  { id: 'az_login', label: 'Azure CLI login (az login)' },
 ] as const
 
 const scanAssetTypes = [
@@ -41,7 +48,8 @@ const schema = z
   .object({
     provider: z.enum(['aws', 'azure', 'gcp']),
     account_type: z.enum(['standalone', 'organization']),
-    connection_method: z.enum(['terraform', 'access_keys', 'iam_role']),
+    connection_method: z.enum(['terraform', 'access_keys', 'iam_role', 'sso_profile']),
+    azure_connection_method: z.enum(['service_principal', 'managed_identity', 'az_login']),
     display_name: z.string().min(1, 'Display name is required'),
     connector_id: z
       .string()
@@ -53,6 +61,7 @@ const schema = z
     secret_access_key: z.string().optional(),
     external_id: z.string().optional(),
     role_arn: z.string().optional(),
+    aws_sso_profile: z.string().optional(),
     azure_tenant_id: z.string().optional(),
     azure_client_id: z.string().optional(),
     azure_client_secret: z.string().optional(),
@@ -69,10 +78,11 @@ const schema = z
   })
   .superRefine((data, ctx) => {
     const needKeys =
-      data.connection_method === 'access_keys' ||
-      data.connection_method === 'terraform' ||
-      (data.provider === 'aws' && data.connection_method === 'iam_role')
-    if (data.provider === 'aws' && needKeys) {
+      data.provider === 'aws' &&
+      (data.connection_method === 'access_keys' ||
+        data.connection_method === 'terraform' ||
+        data.connection_method === 'iam_role')
+    if (needKeys) {
       if (!data.access_key_id?.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['access_key_id'], message: 'Access Key ID is required' })
       }
@@ -92,22 +102,33 @@ const schema = z
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['role_arn'], message: 'Role ARN is required' })
       }
     }
+    if (data.provider === 'aws' && data.connection_method === 'sso_profile') {
+      if (!data.aws_sso_profile?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['aws_sso_profile'],
+          message: 'Profile name is required (matches ~/.aws/config)',
+        })
+      }
+    }
     if (data.provider === 'azure') {
-      if (!data.azure_tenant_id?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['azure_tenant_id'], message: 'Tenant ID is required' })
-      }
-      if (!data.azure_client_id?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['azure_client_id'], message: 'Application (client) ID is required' })
-      }
-      if (!data.azure_client_secret?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['azure_client_secret'], message: 'Client secret is required' })
-      }
       if (!data.azure_subscription_id?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['azure_subscription_id'],
-          message: 'Subscription ID is required for standalone',
+          message: 'Subscription ID is required',
         })
+      }
+      if (data.azure_connection_method === 'service_principal') {
+        if (!data.azure_tenant_id?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['azure_tenant_id'], message: 'Tenant ID is required' })
+        }
+        if (!data.azure_client_id?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['azure_client_id'], message: 'Application (client) ID is required' })
+        }
+        if (!data.azure_client_secret?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['azure_client_secret'], message: 'Client secret is required' })
+        }
       }
     }
     if (data.provider === 'gcp') {
@@ -155,6 +176,7 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
       provider: 'aws',
       account_type: 'standalone',
       connection_method: 'terraform',
+      azure_connection_method: 'service_principal',
       display_name: '',
       connector_id: '',
       regions: 'us-east-1',
@@ -163,6 +185,7 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
       secret_access_key: '',
       external_id: '',
       role_arn: '',
+      aws_sso_profile: '',
       azure_tenant_id: '',
       azure_client_id: '',
       azure_client_secret: '',
@@ -191,7 +214,12 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
         provider: (initial.connector_type as 'aws' | 'azure' | 'gcp') || 'aws',
         account_type: (initial.settings?.account_type as 'standalone' | 'organization') || 'standalone',
         connection_method:
-          (initial.settings?.connection_method as 'terraform' | 'access_keys' | 'iam_role') || 'terraform',
+          (initial.settings?.connection_method as 'terraform' | 'access_keys' | 'iam_role' | 'sso_profile') ||
+          'terraform',
+        azure_connection_method:
+          (initial.settings?.azure_connection_method as 'service_principal' | 'managed_identity' | 'az_login') ||
+          'service_principal',
+        aws_sso_profile: String(initial.settings?.sso_profile || ''),
         display_name: initial.display_name,
         connector_id: initial.name,
         regions: Array.isArray(initial.settings?.regions)
@@ -243,6 +271,8 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
         azure_management_group_ids: '',
         gcp_folder_org_notes: '',
         terraform_notes: '',
+        azure_connection_method: 'service_principal',
+        aws_sso_profile: '',
       })
     }
   }
@@ -262,9 +292,14 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
     const settings: Record<string, unknown> = {
       wizard: 'add_cloud',
       account_type: values.account_type,
-      connection_method: values.connection_method,
+      connection_method: values.provider === 'aws' ? values.connection_method : undefined,
+      azure_connection_method: values.provider === 'azure' ? values.azure_connection_method : undefined,
+      gcp_connection_method: values.provider === 'gcp' ? 'service_account' : undefined,
       regions,
       scan_asset_type: values.scan_asset_type,
+    }
+    if (values.provider === 'aws' && values.connection_method === 'sso_profile' && values.aws_sso_profile?.trim()) {
+      settings.sso_profile = values.aws_sso_profile.trim()
     }
     if (values.provider === 'aws' && values.connection_method === 'iam_role') {
       settings.external_id = values.external_id
@@ -283,12 +318,17 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
       if (values.access_key_id) credentials.access_key_id = values.access_key_id
       if (values.secret_access_key) credentials.secret_access_key = values.secret_access_key
       if (regions[0]) credentials.region = regions[0]
+      if (values.connection_method === 'sso_profile' && values.aws_sso_profile?.trim()) {
+        credentials.sso_profile = values.aws_sso_profile.trim()
+      }
     }
     if (values.provider === 'azure') {
-      credentials.tenant_id = values.azure_tenant_id || ''
-      credentials.client_id = values.azure_client_id || ''
-      credentials.client_secret = values.azure_client_secret || ''
       credentials.subscription_id = values.azure_subscription_id || ''
+      if (values.azure_connection_method === 'service_principal') {
+        credentials.tenant_id = values.azure_tenant_id || ''
+        credentials.client_id = values.azure_client_id || ''
+        credentials.client_secret = values.azure_client_secret || ''
+      }
     }
     if (values.provider === 'gcp') {
       credentials.project_id = values.gcp_project_id || ''
@@ -358,7 +398,10 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
       return
     }
     if (step === 2) {
-      const ok = await form.trigger(['connection_method', 'display_name', 'connector_id'])
+      const fields: (keyof z.infer<typeof schema>)[] = ['display_name', 'connector_id']
+      if (provider === 'aws') fields.push('connection_method')
+      if (provider === 'azure') fields.push('azure_connection_method')
+      const ok = await form.trigger(fields)
       if (ok) setStep(3)
     }
   }
@@ -430,22 +473,57 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
 
         {step === 2 ? (
           <div className="grid gap-4 py-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Connection method</label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={connectionMethod}
-                onChange={(e) =>
-                  form.setValue('connection_method', e.target.value as 'terraform' | 'access_keys' | 'iam_role')
-                }
-              >
-                {connectionMethods.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {provider === 'aws' ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Connection method</label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={connectionMethod}
+                  onChange={(e) =>
+                    form.setValue(
+                      'connection_method',
+                      e.target.value as 'terraform' | 'access_keys' | 'iam_role' | 'sso_profile'
+                    )
+                  }
+                >
+                  {awsConnectionMethods.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {provider === 'azure' ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Connection method</label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={form.watch('azure_connection_method')}
+                  onChange={(e) =>
+                    form.setValue(
+                      'azure_connection_method',
+                      e.target.value as 'service_principal' | 'managed_identity' | 'az_login'
+                    )
+                  }
+                >
+                  {azureConnectionMethods.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Managed identity and Azure CLI require the API/worker to run where that identity or login session exists.
+                </p>
+              </div>
+            ) : null}
+            {provider === 'gcp' ? (
+              <p className="text-sm text-muted-foreground">
+                GCP uses a service account JSON key (entered in the next step). Workload identity federation can be added
+                later.
+              </p>
+            ) : null}
             <div className="space-y-2">
               <label className="text-sm font-medium">Display name</label>
               <Input
@@ -572,38 +650,61 @@ export function AddCloudWizard({ open, onOpenChange, onSaved, initial }: AddClou
                     </div>
                   </>
                 ) : null}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Access Key ID</label>
-                  <Input {...form.register('access_key_id')} autoComplete="off" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Secret Access Key</label>
-                  <Input type="password" {...form.register('secret_access_key')} autoComplete="off" />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  For Terraform, paste keys after running the generated script, or use placeholders until apply completes.
-                </p>
+                {connectionMethod === 'sso_profile' ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">AWS profile name</label>
+                    <Input {...form.register('aws_sso_profile')} placeholder="e.g. my-sso-profile" autoComplete="off" />
+                    <p className="text-xs text-muted-foreground">
+                      Must match a profile in the environment where the API tests credentials (often ~/.aws/config on the
+                      host).
+                    </p>
+                  </div>
+                ) : null}
+                {connectionMethod !== 'sso_profile' ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Access Key ID</label>
+                      <Input {...form.register('access_key_id')} autoComplete="off" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Secret Access Key</label>
+                      <Input type="password" {...form.register('secret_access_key')} autoComplete="off" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      For Terraform, paste keys after running the generated script, or use placeholders until apply completes.
+                    </p>
+                  </>
+                ) : null}
               </>
             ) : null}
 
             {provider === 'azure' ? (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Directory (tenant) ID</label>
-                  <Input {...form.register('azure_tenant_id')} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Application (client) ID</label>
-                  <Input {...form.register('azure_client_id')} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Client secret</label>
-                  <Input type="password" {...form.register('azure_client_secret')} />
-                </div>
-                <div className="space-y-2">
                   <label className="text-sm font-medium">Subscription ID</label>
                   <Input {...form.register('azure_subscription_id')} />
                 </div>
+                {form.watch('azure_connection_method') === 'service_principal' ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Directory (tenant) ID</label>
+                      <Input {...form.register('azure_tenant_id')} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Application (client) ID</label>
+                      <Input {...form.register('azure_client_id')} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Client secret</label>
+                      <Input type="password" {...form.register('azure_client_secret')} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No application secret required — authentication uses the runtime managed identity or{' '}
+                    <code className="rounded bg-muted px-1 py-0.5 text-xs">az login</code> on the API host.
+                  </p>
+                )}
               </>
             ) : null}
 

@@ -174,14 +174,14 @@ Run and record pass/fail:
 
 ## 8. Deliverables checklist
 
-- [ ] Connector multi-method backend + wizard UI
-- [ ] `attack_paths` / `attack_path_edges` schema + SQLAlchemy models
-- [ ] Attack path builder + ingest hook
-- [ ] Attack paths REST API (list, detail, graph, asset, rebuild)
-- [ ] Dashboard: list, detail, flow graph, node panel, story/timeline
-- [ ] Native ingest adapters (Defender, Security Hub minimum)
-- [ ] Tests + evidence log below
-- [ ] Architecture SVG committed at `docs/execplans/cspm_attack_path_architecture.svg`
+- [x] Connector multi-method backend + wizard UI
+- [x] `attack_paths` / `attack_path_edges` schema + SQLAlchemy models
+- [x] Attack path builder + ingest hook
+- [x] Attack paths REST API (list, detail, graph, asset, rebuild)
+- [x] Dashboard: list, detail, flow graph, node panel, story/timeline
+- [x] Native ingest adapters (Defender, Security Hub minimum) + registry
+- [x] Tests + evidence log below
+- [x] Architecture SVG committed at `docs/execplans/cspm_attack_path_architecture.svg`
 
 ---
 
@@ -189,7 +189,11 @@ Run and record pass/fail:
 
 | Command | Result | Notes |
 |---------|--------|--------|
-| | | |
+| `python -m compileall api -q` | pass | |
+| `python -m unittest discover -s tests -p "test_*.py" -v` | pass | 12 tests including `test_attack_paths` |
+| `npm run build` (dashboard) | pass | |
+| Phases A–G | implemented | See git commit |
+
 
 ---
 

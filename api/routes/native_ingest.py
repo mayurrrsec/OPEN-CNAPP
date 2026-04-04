@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from api.connectors.aws import AwsConnector
 from api.connectors.azure import AzureConnector
 from api.connectors.gcp import GcpConnector
+from api.attack_path_builder import rebuild_all_attack_paths
 from api.database.session import get_db
 from api.models import Finding
 
@@ -52,4 +53,8 @@ def ingest_native(provider: str, db: Session = Depends(get_db)):
         created += 1
 
     db.commit()
+    try:
+        rebuild_all_attack_paths(db)
+    except Exception:
+        pass
     return {"provider": provider, "ingested": created}

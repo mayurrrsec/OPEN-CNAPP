@@ -23,10 +23,43 @@ class AzureConnector(CloudConnector):
     def test_credentials(self, credentials: dict | None, settings: dict | None) -> dict:
         credentials = credentials or {}
         settings = settings or {}
+        method = (settings.get("azure_connection_method") or settings.get("connection_method") or "service_principal").strip().lower()
+        sub = (credentials.get("subscription_id") or "").strip()
+
+        if method in ("managed_identity", "az_login"):
+            if not sub:
+                return {**self.validate(), "message": "Subscription ID is required.", "resource_count": 0}
+            try:
+                if method == "managed_identity":
+                    from azure.identity import DefaultAzureCredential
+
+                    cred = DefaultAzureCredential(exclude_interactive_browser_credential=True)
+                else:
+                    from azure.identity import AzureCliCredential
+
+                    cred = AzureCliCredential()
+                token = cred.get_token("https://management.azure.com/.default")
+                url = f"https://management.azure.com/subscriptions/{sub}/resourcegroups"
+                r = httpx.get(
+                    url,
+                    params={"api-version": "2021-04-01"},
+                    headers={"Authorization": f"Bearer {token.token}"},
+                    timeout=30.0,
+                )
+                if r.status_code == 200:
+                    n = len(r.json().get("value", []))
+                    return {
+                        "ok": True,
+                        "message": f"Azure subscription reachable ({n} resource group(s)) via {method}",
+                        "resource_count": n,
+                    }
+                return {"ok": False, "message": r.text[:400], "resource_count": 0}
+            except Exception as e:
+                return {"ok": False, "message": str(e), "resource_count": 0}
+
         tid = (credentials.get("tenant_id") or "").strip()
         cid = (credentials.get("client_id") or "").strip()
         sec = (credentials.get("client_secret") or "").strip()
-        sub = (credentials.get("subscription_id") or "").strip()
         if not all([tid, cid, sec, sub]):
             return {
                 **self.validate(),

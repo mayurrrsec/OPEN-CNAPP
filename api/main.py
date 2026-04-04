@@ -4,6 +4,7 @@ from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.bootstrap import ensure_bootstrap_admin, ensure_default_workspace
+from api.models.attack_path import AttackPath, AttackPathEdge  # noqa: F401 — register tables
 from api.database.session import Base, SessionLocal, engine
 from api.plugin_engine import sync_plugins_to_db
 from api.routes import (

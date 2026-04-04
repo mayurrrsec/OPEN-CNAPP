@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from api.adapters.registry import get_adapter
+from api.attack_path_builder import rebuild_all_attack_paths
 from api.models import Finding
 
 # SQLAlchemy column names we accept from normalized dicts (id/timestamps excluded)
@@ -84,6 +85,11 @@ def persist_normalized_findings(
         db.add(Finding(**fc))
         created += 1
     db.commit()
+    try:
+        rebuild_all_attack_paths(db)
+    except Exception:
+        # Ingest must succeed even if path rebuild fails (e.g. empty DB edge case)
+        pass
     return created, deduped
 
 

@@ -70,8 +70,8 @@ export default function App() {
             <Route path="workloads" element={<WorkloadsInventoryTab />} />
             <Route path="images" element={<ImagesInventoryTab />} />
           </Route>
-          <Route path="/attack-paths" element={<AttackPaths />} />
           <Route path="/attack-paths/:pathId" element={<AttackPathDetail />} />
+          <Route path="/attack-paths" element={<AttackPaths />} />
           <Route path="/pentest" element={<PentestRunner />} />
           <Route path="/plugins" element={<PluginManager />} />
           <Route path="/connectors" element={<Connectors />} />

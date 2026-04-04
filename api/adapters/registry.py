@@ -17,6 +17,8 @@ from api.adapters.sonarqube import SonarqubeAdapter
 from api.adapters.zap import ZapAdapter
 from api.adapters.snyk import SnykAdapter
 from api.adapters.sbom import SbomAdapter
+from api.adapters.defender_for_cloud import DefenderForCloudAdapter
+from api.adapters.aws_security_hub import AwsSecurityHubAdapter
 
 
 ADAPTERS: dict[str, type[BaseAdapter]] = {
@@ -38,6 +40,8 @@ ADAPTERS: dict[str, type[BaseAdapter]] = {
     "zap": ZapAdapter,
     "snyk": SnykAdapter,
     "sbom": SbomAdapter,
+    "defender_for_cloud": DefenderForCloudAdapter,
+    "aws_security_hub": AwsSecurityHubAdapter,
 }
 
 
