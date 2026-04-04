@@ -1,6 +1,6 @@
 # Quickstart
 1. Copy `.env.example` to `.env`.
-2. Run `docker compose up --build`.
+2. Run `./scripts/setup_opencnapp.sh` (installs `dashboard/` deps with `npm ci`, then `docker compose build` + up) **or** manually: `docker compose up --build`.
 3. Open API docs at `http://localhost:8000/docs`.
 4. Open dashboard at `http://localhost:3000`.
 5. **After `git pull`:** if the dashboard errors on a missing package (e.g. `@xyflow/react`), install JS deps and restart the dashboard service:  
