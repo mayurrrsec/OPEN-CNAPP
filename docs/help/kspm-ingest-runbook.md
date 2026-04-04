@@ -4,7 +4,10 @@ This runbook matches the backend behavior after **KSPM normalizers**, **`ingest_
 
 ## 1. Why inventory is empty
 
-**Inventory → Clusters** only shows findings when rows exist in `findings` with **`account_id` = connector `name`** (or matching `resource_id` / `resource_name`). Use **`connector_id`** on ingest or in the wrapped body.
+**Every ingest must tag the cluster** or cluster tabs stay empty: the API matches findings to a connector via `findings_for_connector` — **`Finding.account_id` = connector `name`** (slug), or matching `resource_id` / `resource_name` to the cluster label.
+
+- **Required for manual/API ingest:** `POST /ingest/{tool}?connector_id=<connector-name>` **or** a wrapped body field **`connector_id`** (see below). Omitting it leaves `account_id` unset, so **no rows** match that connector.
+- **Worker scans** set `account_id` from the `connector` field in the trigger payload when configured.
 
 ## 2. Ingest (manual or CI)
 
@@ -53,10 +56,22 @@ Defaults live in **`plugins/`**:
 
 If a scanner fails or prints logs before `{`, adjust **`plugin.config`** via Plugin manager or YAML and **`POST /plugins/sync`**.
 
-## 5. “Disconnected” cluster status
+## 5. Connection status (UI)
 
-Status is derived from **recent findings** / activity. After successful ingest for that connector, refresh the cluster panel.
+Status uses the latest **attributed** finding’s timestamp (`findings_for_connector`):
 
-## 6. KSPM domain dashboard (`/dashboard/kspm`)
+| Status | Meaning |
+|--------|---------|
+| **connected** | Latest finding is newer than **30 minutes**. |
+| **pending** | No findings yet **or** latest finding is **30 minutes to 24 hours** old (use `connector_id` on first ingest so rows attribute correctly). |
+| **disconnected** | Latest finding is **older than 24 hours**. |
 
-Placeholder tiles stay empty until **`GET /dashboard/summary?domain=kspm`** has data; wire extra widgets after ingest is stable.
+New connectors with **no** scans show **pending**, not disconnected.
+
+## 6. `k8s_nodes` and the Overview tab
+
+The **`k8s_nodes`** table is filled by **`POST /inventory/sync-k8s-tables`** (not by ingest alone). Until you run that sync for your connectors, the Overview tab may show **“No nodes reported yet”** even when findings exist — that is expected.
+
+## 7. KSPM domain dashboard (`/dashboard/kspm`)
+
+Tiles use **`GET /dashboard/summary?domain=kspm`** (includes `kspm_rollups` when data exists). Empty charts until findings are ingested with proper **`connector_id`** / **`account_id`** tagging.

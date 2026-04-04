@@ -40,7 +40,8 @@ def connection_status_from_findings(db: Session, connector: Connector) -> str:
     fq = findings_for_connector(db, connector)
     latest = fq.order_by(Finding.created_at.desc()).first()
     if not latest or not latest.created_at:
-        return "disconnected"
+        # No attributed findings yet — distinct from "stale scan" (disconnected).
+        return "pending"
     now = datetime.utcnow()
     last = latest.created_at
     if getattr(last, "tzinfo", None) is not None:
