@@ -147,7 +147,7 @@ Shared query helpers: `api/inventory/helpers.py`, `api/inventory/cluster_detail_
 ## Known remaining gaps (explicit)
 
 1. **Attack path depth** — No **IAM permission graph** inside the asset panel (Orca-style second graph). Needs IAM/identity inventory + edge model beyond **findings**-only heuristics.
-2. **AccuKnox-style Cloud Assets §7** — Multi-row filters, refresh/clear/export: only partially mirrored.
+2. **AccuKnox-style Cloud Assets §7** — Multi-row filters: still partial; **`/inventory/cloud`** adds **Clear filters** + **Export CSV** (UTF-8 BOM) alongside **Refresh**.
 3. **TanStack on every surface** — Cluster list, namespaces, workloads, cloud use shared table patterns; **cluster detail** sub-tabs may still use mixed table implementations.
 4. **Scheduled sync** — `k8s_clusters` / `k8s_nodes` are filled by **POST** `/inventory/sync-k8s-tables` (or UI button); no automatic scheduler unless added elsewhere.
 5. **Policies tab** — Presentation is enriched when **`raw`** / normalizer provides fields; full parity depends on ingest.

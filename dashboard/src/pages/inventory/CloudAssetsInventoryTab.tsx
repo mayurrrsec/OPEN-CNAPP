@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
-import { ChevronDown, ChevronRight, Columns3, RefreshCw, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, Columns3, Download, RefreshCw, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { InventoryDataTable } from '@/components/inventory/InventoryDataTable'
@@ -58,6 +58,27 @@ const FLAT_LABELS: Record<string, string> = {
   cloud: 'Cloud',
   account: 'Account',
   findings: 'Findings',
+}
+
+function escapeCsvCell(value: string | number | null | undefined): string {
+  const s = value === null || value === undefined ? '' : String(value)
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+  return s
+}
+
+/** UTF-8 BOM helps Excel open Unicode CSV reliably on Windows. */
+function downloadCsv(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
+  const lines = [
+    headers.map(escapeCsvCell).join(','),
+    ...rows.map((r) => r.map(escapeCsvCell).join(',')),
+  ]
+  const blob = new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function flatRowId(a: FlatAsset, i: number) {
@@ -194,6 +215,50 @@ export function CloudAssetsInventoryTab() {
   const groupVisibleCols =
     Number(groupColVis.category) + Number(groupColVis.findings) + Number(groupColVis.count)
 
+  const clearFilters = () => {
+    setSearch('')
+    setDebounced('')
+    setCloudProvider('all')
+    setGroupByCategory(true)
+    setExpanded({})
+    setFlatPagination({ pageIndex: 0, pageSize: 25 })
+    setGroupPagination({ pageIndex: 0, pageSize: 25 })
+  }
+
+  const exportCsvSnapshot = () => {
+    if (!data) return
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+    const grouped = groupByCategory && 'groups' in data
+    if (grouped) {
+      const rows: (string | number | null | undefined)[][] = []
+      for (const g of filteredGroups) {
+        for (const a of g.assets) {
+          rows.push([
+            g.label,
+            a.resource_name ?? '',
+            a.resource_id ?? '',
+            a.resource_type ?? '',
+            a.cloud_provider ?? '',
+            a.account_id ?? '',
+            a.finding_count,
+          ])
+        }
+      }
+      downloadCsv(`opencnapp-cloud-assets-grouped-${stamp}.csv`, ['Category', 'Name', 'Resource ID', 'Type', 'Cloud', 'Account', 'Findings'], rows)
+      return
+    }
+    const rows = filteredFlat.map((a) => [
+      a.resource_name ?? '',
+      a.resource_id ?? '',
+      a.resource_type ?? '',
+      a.category,
+      a.cloud_provider ?? '',
+      a.account_id ?? '',
+      a.finding_count,
+    ])
+    downloadCsv(`opencnapp-cloud-assets-${stamp}.csv`, ['Name', 'Resource ID', 'Type', 'Category', 'Cloud', 'Account', 'Findings'], rows)
+  }
+
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">Loading cloud assets…</p>
   }
@@ -252,9 +317,16 @@ export function CloudAssetsInventoryTab() {
             />
             Group by category
           </label>
+          <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+            Clear filters
+          </Button>
           <Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={() => void refetch()}>
             <RefreshCw className={cn('mr-1 h-4 w-4', isFetching && 'animate-spin')} />
             Refresh
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => exportCsvSnapshot()} title="Export current filtered view">
+            <Download className="mr-1 h-4 w-4" />
+            Export CSV
           </Button>
         </div>
       </div>
